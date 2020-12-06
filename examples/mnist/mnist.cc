@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <fstream>
 #include <functional>
-//#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -57,20 +56,15 @@ struct tensor
         return ans;
     }
 
-    //constexpr self_type const copy() const { return deep_copy(); }
-
     constexpr value_type& operator[]( std::size_t idx ) { return *( data() + idx ); }
 
     constexpr value_type const& operator[]( std::size_t idx ) const { return *( data() + idx ); }
 
     tensor() {}
 
-    //constexpr tensor( std::vector<std::size_t> const& shape, std::initializer_list<T> init, const Allocator& alloc = allocator() ) : shape_{ shape }, vector_{std::make_shared<vector_type>( init, alloc )} {}
     constexpr tensor( std::vector<std::size_t> const& shape, std::vector<T> init, const Allocator& alloc = allocator() ) : shape_{ shape }, vector_{std::make_shared<vector_type>( init, alloc )} {}
 
     constexpr tensor( std::vector<std::size_t> const& shape ): shape_{shape}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ) { return x * y; } ), T{0} ) } {}
-
-    //constexpr tensor( std::initializer_list<std::size_t> shape ) : tensor{ std::vector<std::size_t>{shape} } {}
 
     constexpr tensor( value_type const& v ) : shape_{ std::vector<std::size_t>{1UL, 1UL} }, vector_{ std::make_shared<vector_type>( 1Ul, v ) } {}
 
@@ -86,8 +80,6 @@ struct tensor
     constexpr std::size_t size() const noexcept { return ( *vector_ ).size(); }
 
     constexpr self_type& reshape( std::vector< std::size_t > const& new_shape ) { ( *this ).shape_ = new_shape; return *this; }
-
-    //constexpr self_type& reshape( std::initializer_list< std::size_t > new_shape ) { return reshape( std::vector< std::size_t > {new_shape} ); }
 
     [[nodiscard]] constexpr bool empty() const noexcept { return 0 == shape_.size(); }
 
@@ -357,26 +349,14 @@ auto sum( Tsor const& tsor )
     return std::accumulate( tsor.data(), tsor.data() + tsor.size(), value_type{0} );
 }
 
-/*
-template< Tensor Tsor >
-auto mean( Tsor const& tsor )
-{
-    if ( 0 == tsor.size() ) return typename Tsor::value_type{0};
-
-    return sum( tsor ) / tsor.size();
-}
-*/
-
 template< Tensor Tsor >
 Tsor abs( Tsor const& tsor )
 {
     auto ans = tsor.deep_copy();
-    ans.map( []( auto & x )
-    {
-        x = std::abs( x );
-    } );
+    ans.map( []( auto & x ) { x = std::abs( x ); } );
     return ans;
 }
+
 template< Tensor Tsor >
 Tsor softmax( Tsor const& tsor )
 {
@@ -417,9 +397,7 @@ Tsor reduce( Tsor const& ts, std::size_t axis, typename Tsor::value_type const& 
             auto start = ts.begin() + idx * post * n + jdx;
             auto val = init;
             for ( auto si = start; si != start+n*post; si += post )
-            {
                 val = func( val, *si );
-            }
             *itor++ = val;
         }
 
@@ -436,22 +414,15 @@ Tsor reduce( Tsor const& ts, std::size_t axis, typename Tsor::value_type const& 
 template <Tensor Tsor>
 Tsor sum( Tsor const& ts, std::size_t axis, bool keepdims = false ) noexcept
 {
-    return reduce( ts, axis, typename Tsor::value_type{0}, []( auto const & a, auto const & b )
-    {
-        return a + b;
-    }, keepdims );
+    return reduce( ts, axis, typename Tsor::value_type{0}, []( auto const & a, auto const & b ) { return a + b; }, keepdims );
 }
 
 template< typename T, typename A = std::allocator<T>>
 struct place_holder
 {
     std::shared_ptr<tensor<T, A>> data_;
-    place_holder()
-    {
-    }
-    ~place_holder()
-    {
-    }
+    place_holder() { }
+    ~place_holder() { }
     tensor<T, A> const forward() const
     {
         return *data_;
@@ -464,9 +435,7 @@ struct place_holder
     {
         (*data_) = T{0};
     }
-    void backward( auto ) const noexcept
-    {
-    }
+    void backward( auto ) const noexcept { }
 };
 
 template< typename T >
@@ -591,10 +560,7 @@ struct backward_wrapper
     template< typename Op >
     auto operator() ( Op& op ) const noexcept
     {
-        return [&op]<typename T, typename A>( tensor<T, A> const & grad )
-        {
-            op.backward( grad );
-        };
+        return [&op]<typename T, typename A>( tensor<T, A> const & grad ) { op.backward( grad ); };
     }
     template< typename T, typename A >
     auto operator() ( std::reference_wrapper<place_holder<T, A> const> ) const noexcept
@@ -609,10 +575,7 @@ struct backward_wrapper
     template< typename Op >
     auto operator() ( std::reference_wrapper<Op> op ) noexcept
     {
-        return [op]<typename T, typename A>( tensor<T, A> const & grad )
-        {
-            op.get().backward( grad );
-        };
+        return [op]<typename T, typename A>( tensor<T, A> const & grad ) { op.get().backward( grad ); };
     }
 };
 
@@ -781,7 +744,7 @@ auto constexpr relu( Op const& op ) noexcept
     )( op );
 }
 
-template < typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator>&& Operation<Rhs_Operator>
+template < typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
 auto constexpr cross_entropy_loss( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
 {
     return make_binary_operator
