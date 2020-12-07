@@ -47,17 +47,15 @@ int main()
     // 2nd layer
     auto w2 = variable<double>{ randn<double>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
     auto b2 = variable<double>{ zeros<double>( { 1, 128 } ) };
-    auto l2 = relu( l1 * w2 + b2 );
+    //auto l2 = relu( l1 * w2 + b2 );
+    auto l2 = sigmoid( l1 * w2 + b2 );
 
     // 3rd layer
     auto w3 = variable<double>{ randn<double>( {128, 10}, 0.0, 1.0/35.8 ) };
     auto b3 = variable<double>{ zeros<double>( { 1, 10 } ) };
     auto output = l2 * w3 + b3;
-    //auto output = softmax(l2 * w3 + b3);
-    //auto output = l2 * w3;
 
     auto ground_truth = place_holder<double>{}; // 1-D, 10
-    //auto loss = cross_entropy_error( ground_truth, output );
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training

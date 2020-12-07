@@ -186,12 +186,10 @@ namespace ceras
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        //typedef typename Tsor::value_type value_type;
                                         better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
 
                                         auto const& grad_fun = [&grad]( auto const& input )
                                         {
-                                            //value_type const batch_size = static_cast<value_type>(grad.size()) / static_cast<value_type>(input.size());
                                             Tsor ans = grad.deep_copy();
                                             while( input.ndim() < ans.ndim() )
                                             {
@@ -304,8 +302,11 @@ namespace ceras
                 )( lhs_op, rhs_op );
     };
 
-    //Hadamard product
-
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
+    auto constexpr hadamard_product( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    {
+        return elementwise_multiply( lhs_op, rhs_op );
+    }
 
     template <Operation Op>
     auto constexpr sum_reduce( Op const& op ) noexcept
