@@ -30,7 +30,6 @@ struct stride_iterator
     self_type& operator++() noexcept
     {
         std::advance( iterator_, step_ );
-        //iterator_ += step_;
         return *this;
     }
     const self_type operator++( int ) noexcept
@@ -41,7 +40,6 @@ struct stride_iterator
     }
     self_type& operator+=( const difference_type dt ) noexcept
     {
-        //iterator_ += dt * step_;
         std::advance( iterator_, step_*dt );
         return *this;
     }
@@ -57,7 +55,6 @@ struct stride_iterator
     }
     self_type& operator--() noexcept
     {
-        //iterator_ -= step_;
         std::advance( iterator_, -step_ );
         return *this;
     }
@@ -69,7 +66,6 @@ struct stride_iterator
     }
     self_type& operator-=( const difference_type dt ) noexcept
     {
-        //iterator_ -= dt * step_;
         std::advance( iterator_, -dt * step_ );
         return *this;
     }
@@ -98,38 +94,6 @@ struct stride_iterator
 
     auto operator<=>(const self_type&) const = default;
 
-    /*
-    friend bool operator==( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return false;
-        return lhs.iterator_ == rhs.iterator_;
-    }
-    friend bool operator!=( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return true;
-        return lhs.iterator_ != rhs.iterator_;
-    }
-    friend bool operator<( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return false;
-        return lhs.iterator_ < rhs.iterator_;
-    }
-    friend bool operator<=( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return false;
-        return lhs.iterator_ <= rhs.iterator_;
-    }
-    friend bool operator>( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return false;
-        return lhs.iterator_ > rhs.iterator_;
-    }
-    friend bool operator>=( const self_type& lhs, const self_type& rhs ) noexcept
-    {
-        if ( lhs.step_ != rhs.step_ ) return false;
-        return lhs.iterator_ >= rhs.iterator_;
-    }
-    */
     friend difference_type operator-( const self_type& lhs, const self_type& rhs ) noexcept
     {
         better_assert( lhs.step_ == rhs.step_ && "stride iterators of different steps" );

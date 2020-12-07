@@ -15,7 +15,7 @@ namespace ceras
     //  auto loss = ...;
     //  auto optimizer = gradient{ loss, 1.0e-3f };
     //  for i = 1 : 1000
-    //      ss.run( loss )
+    //      ss.run( loss, batch_size )
     //      ss.run( optimizer )
     //
     template< typename Loss, typename T >
@@ -27,7 +27,7 @@ namespace ceras
 
         gradient_descent(Loss& loss, std::size_t batch_size, T learning_rate=1.0e-3, T momentum=0.0) noexcept : loss_(loss), learning_rate_(learning_rate), momentum_(momentum)
         {
-            learning_rate_ /= static_cast<T>( batch_size );
+            learning_rate_ /= static_cast<T>( batch_size ); // fix for batch size
         }
 
         void forward()
@@ -40,7 +40,6 @@ namespace ceras
             {
                 *(v.get().data_) -= learning_rate_ * (*(v.get().gradient_)) * (1.0-momentum_);
                 *(v.get().data_) -= learning_rate_ * (*(v.get().old_gradient_)) * momentum_;
-                //std::cout << "Updating gradient with:\n" << (*v.get().gradient_) << std::endl;
             }
         }
 
