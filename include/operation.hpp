@@ -175,11 +175,10 @@ namespace ceras
     template< typename T >
     concept Operation = Operator<T> || Variable<T> || Place_Holder<T>;
 
-
-    template< typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
     auto constexpr plus( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
     {
-        return make_binary_operator( []<typename T, typename A>( tensor<T,A> const& lhs_tensor, tensor<T,A> const& rhs_tensor ) noexcept
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
                                         better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
@@ -206,7 +205,6 @@ namespace ceras
                                                     ans = sum( ans, axis, true );
                                                 }
                                             }
-                                            //ans /= batch_size;
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
@@ -214,84 +212,74 @@ namespace ceras
                 )( lhs_op, rhs_op );
     }
 
-    template< typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
     auto constexpr operator + ( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
     {
         return plus( lhs_op, rhs_op );
     }
 
-    template< typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
     auto constexpr operator * ( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
     {
-        return make_binary_operator( []<typename T, typename A>( tensor<T,A> const& lhs_tensor, tensor<T,A> const& rhs_tensor ) noexcept
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
-                                        //std::cout << "Operator * with lhs:\n" <<  lhs_tensor << std::endl;
-                                        //std::cout << "Operator * with rhs:\n" <<  rhs_tensor << std::endl;
                                         better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
                                         return multiply( lhs_tensor, rhs_tensor );
                                      },
-                                     []<typename T, typename A>( tensor<T,A> const& lhs_input, tensor<T,A> const& rhs_input, tensor<T,A> const&, tensor<T,A> const grad ) noexcept
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
                                         better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
                                         // left branch <-- grad * rhs^T
                                         auto const& g_shape = grad.shape();
                                         auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
                                         auto const k = *(lhs_input.shape().rbegin()); // 13
-                                        tensor<T, A> lhs_grad{ lhs_input.shape() };
+                                        Tsor lhs_grad{ lhs_input.shape() };
                                         gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
                                         better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
 
                                         // right branch <-- lhs^T * grad
-                                        tensor<T,A> rhs_grad{ rhs_input.shape() };
+                                        Tsor rhs_grad{ rhs_input.shape() };
                                         gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
                                         better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
 
 
-                                        //fix batch_size
-                                        //T batch_size = static_cast<T>( *(output.shape().begin()) );
-                                        //lhs_grad /= batch_size;
-                                        //rhs_grad /= batch_size;
-
                                         return std::make_tuple( lhs_grad, rhs_grad );
-                                        //return std::make_tuple( grad * lhs_input.transpose(), rhs_input.transpose() * grad );
                                      }
                 )( lhs_op, rhs_op );
     }
 
 
-    //static auto constexpr log = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr log( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& input ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
                                         better_assert( !has_nan( input ), "forward propagation for operator log: input contains Nan!" );
                                         auto ans = input.deep_copy();
-                                        ans.map( [](T& x){ x = std::log(x); } );
+                                        ans.map( [](auto & x){ x = std::log(x); } );
                                         return ans;
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator log contains NaN!" );
-                                        auto ans = elementwise_divide(grad, input); // error here
+                                        auto ans = elementwise_divide(grad, input); // TODO: error here
                                         better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
                                         return ans;
                                     }
                 )( op );
     };
 
-    //static auto constexpr negative = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr negative( Op const& op ) noexcept
     {
-        return make_unary_operator( []( auto const& tensor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tensor ) noexcept
                                     {
                                         better_assert( !has_nan( tensor ), "forward propagation for operator log: tensor contains Nan!" );
                                         return -tensor;
                                     },
-                                    []( auto const&, auto const&, auto const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator negative contains NaN!" );
                                         return -grad;
@@ -299,18 +287,16 @@ namespace ceras
                 )( op );
     };
 
-    // elementwise_multiply ==== elementwise_product
-    //static auto constexpr elementwise_multiply =[]<typename Lhs_Operator, typename Rhs_Operator>(Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op) noexcept requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
-    template< typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
     auto constexpr elementwise_multiply( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
     {
-        return make_binary_operator( []<typename T, typename A>( tensor<T, A> const& lhs_tensor, tensor<T, A> const& rhs_tensor ) noexcept
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
                                         better_assert( !has_nan( lhs_tensor ), "forward propagation for operator elementwise_multiply: lhs_tensor contains Nan!" );
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator elementwise_multiply: rhs_tensor contains Nan!" );
                                         return elementwise_product( lhs_tensor, rhs_tensor );
                                      },
-                                     []<typename T, typename A>( tensor<T,A> const& lhs_input, tensor<T,A> const& rhs_input, tensor<T,A> const&, tensor<T,A> const grad ) noexcept
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
                                         better_assert( !has_nan( grad ), "input gradient for operator elementwise_multiply contains NaN!" );
                                         return std::make_tuple( elementwise_product(grad, rhs_input), elementwise_product(grad, lhs_input) );
@@ -318,124 +304,112 @@ namespace ceras
                 )( lhs_op, rhs_op );
     };
 
-    //static auto constexpr sum_reduce = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    //Hadamard product
+
+
+    template <Operation Op>
     auto constexpr sum_reduce( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
                                         better_assert( !has_nan( tsor ), "forward propagation for operator sum_reduce: tensor contains Nan!" );
                                         return reduce_sum( tsor );
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator sum_reduce contains NaN!" );
                                         better_assert( grad.size() == 1, "sum_reduce should only output one value" );
-                                        tensor<T,A> ans = ones_like( input );
+                                        Tsor ans = ones_like( input );
                                         ans *= grad[0];
                                         return ans;
                                     }
                 )( op );
     }
 
-    //static auto constexpr mean_reduce = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr mean_reduce( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
                                         better_assert( !has_nan( tsor ), "forward propagation for operator mean: tensor contains Nan!" );
                                         return reduce_mean( tsor );
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator mean_reduce contains NaN!" );
                                         better_assert( grad.size() == 1, "mean_reduce should only output one value" );
-                                        tensor<T,A> ans = ones_like( input );
+                                        Tsor ans = ones_like( input );
                                         ans *= grad[0];
                                         std::size_t const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
-                                        ans /= static_cast<T>(batch_size);
+                                        ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
                                     }
                 )( op );
     }
 
-    template< typename Lhs_Operator, typename Rhs_Operator > requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
+    template< Operation Lhs_Operator, Operation Rhs_Operator >
     auto constexpr minus( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
     {
         return plus( lhs_op, negative(rhs_op) );
     }
 
-    /*
-    static auto constexpr minus = []<typename Lhs_Operator, typename Rhs_Operator>( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept requires Operation<Lhs_Operator> && Operation<Rhs_Operator>
-    {
-        return plus( lhs_op, negative(rhs_op) );
-    };
-    */
-
-
-    //static auto constexpr square = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr square( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
                                         better_assert( !has_nan( tsor ), "forward propagation for operator square: tensor contains Nan!" );
-                                        tensor<T,A> ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( T& v ){ v *= v; } );
+                                        Tsor ans = tsor.deep_copy();
+                                        std::for_each( ans.data(), ans.data() + ans.size(), []( auto & v ){ v *= v; } );
                                         return ans;
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator square contains NaN!" );
-                                        tensor<T,A> ans = input.deep_copy();
+                                        Tsor ans = input.deep_copy();
                                         ans *= grad;
-                                        ans *= T{2};
+                                        ans *= typename Tsor::value_type{2};
                                         return ans;
                                     }
                 )( op );
     }
 
 
-    // use 'ceras::abs' instead of 'abs'
-    //static auto constexpr abs = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr abs( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
                                         better_assert( !has_nan( tsor ), "forward propagation for operator abs: tensor contains Nan!" );
-                                        tensor<T,A> ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( T& v ){ v = std::abs(v); } );
+                                        Tsor ans = tsor.deep_copy();
+                                        std::for_each( ans.data(), ans.data() + ans.size(), []( typename Tsor::value_type & v ){ v = std::abs(v); } );
                                         return ans;
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator abs contains NaN!" );
-                                        tensor<T,A> ans = grad;
+                                        Tsor ans = grad;
                                         for ( auto idx : range( ans.size() ) )
-                                            ans[idx] = (input[idx]>T{0}) ? ans[idx] : -ans[idx];
+                                            ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
                                         return ans;
                                     }
                 )( op );
     }//;
 
-    // use 'ceras::exp' instead of 'exp'
-    //static auto constexpr exp = []<typename Op>( Op const& op ) noexcept requires Operation<Op>
-    template <typename Op> requires Operation<Op>
+    template <Operation Op>
     auto constexpr exp( Op const& op ) noexcept
     {
-        return make_unary_operator( []<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
                                         better_assert( !has_nan( tsor ), "forward propagation for operator exp: tensor contains Nan!" );
-                                        tensor<T,A> ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( T& v ){ v = std::exp(v); } );
+                                        Tsor ans = tsor.deep_copy();
+                                        std::for_each( ans.data(), ans.data() + ans.size(), []( auto & v ){ v = std::exp(v); } );
                                         return ans;
                                     },
-                                    []<typename T, typename A>( tensor<T,A> const&, tensor<T,A> const& output, tensor<T,A> const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator exp contains NaN!" );
-                                        tensor<T,A> ans = grad;
+                                        Tsor ans = grad;
                                         grad *= output;
                                         return ans;
                                     }
@@ -445,22 +419,23 @@ namespace ceras
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper ) noexcept
     {
-        return [lower, upper]<typename Op>( Op const& op ) noexcept requires Operation<Op>
+        return [lower, upper]<Operation Op>( Op const& op ) noexcept
         {
-            return make_unary_operator( [lower, upper]<typename T, typename A>( tensor<T,A> const& tsor ) noexcept
+            return make_unary_operator( [lower, upper]<Tensor Tsor>( Tsor const& tsor ) noexcept
                                         {
                                             better_assert( !has_nan( tsor ), "forward propagation for operator clip: tensor contains Nan!" );
-                                            tensor<T,A> ans = tsor.deep_copy();
+                                            Tsor ans = tsor.deep_copy();
                                             clip( ans, lower, upper );
                                             return ans;
                                         },
-                                        [lower, upper]<typename T, typename A>( tensor<T,A> const& input, tensor<T,A> const&, tensor<T,A> const& grad ) noexcept
+                                        [lower, upper]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                         {
                                             better_assert( !has_nan( grad ), "input gradient for operator clip contains NaN!" );
-                                            tensor<T,A> ans = grad;
+                                            const typename Tsor::value_type zero{0};
+                                            Tsor ans = grad;
                                             for ( auto idx : range( input.size() ) )
-                                                ans[idx] = (input[idx] < lower) ? T{0} :
-                                                           (input[idx] > upper) ? T{0} :
+                                                ans[idx] = (input[idx] < lower) ? zero :
+                                                           (input[idx] > upper) ? zero :
                                                            ans[idx];
                                             return ans;
                                         }
