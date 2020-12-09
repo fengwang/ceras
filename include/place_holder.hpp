@@ -34,6 +34,8 @@ namespace ceras
             data_.reset();
         }
 
+        // note: should not be written as 'void backward( ... ) const'
+        // reason: cannot pass object of non-trivial type through variadic method
         void backward( auto ) const noexcept { }
     };
 
