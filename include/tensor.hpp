@@ -374,7 +374,7 @@ namespace ceras
         better_assert( y_col == a_col );
         better_assert( x_col == y_row );
 
-        gemm( x.data(), false, y.data(), false, x_row, x_col, y_col, ans.data() );
+        gemm( x.data(), x.transposed_, y.data(), y.transposed_, x_row, x_col, y_col, ans.data() );
     }
 
     // always taking channel last data formate
@@ -416,12 +416,6 @@ namespace ceras
     Tsor minus( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
         return add( lhs, -rhs );
-        /*
-        better_assert( lhs.shape() == rhs.shape() );
-        Tsor ans{ lhs.shape() };
-        std::transform( lhs.data(), lhs.data()+lhs.size(), rhs.data(), ans.data(), []( T x, T y ) { return x-y; } );
-        return ans;
-        */
     }
 
     template< Tensor Tsor >
