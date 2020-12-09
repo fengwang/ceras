@@ -28,7 +28,7 @@ namespace private_namespace
 // int a;
 // ...
 // better_assert( a > 0 ); //same as 'assert'
-// better_assert( a > 0, "a is expected larger than 0, but now a = " a ); //with more info dumped to std::cerr
+// better_assert( a > 0, "a is expected to be larger than 0, but actually a = " a ); //with more info dumped to std::cerr
 //
 //#define better_assert(EXPRESSION, ... ) ((EXPRESSION) ? (void)0 : private_namespace::print_assertion(std::cerr, "[Assertion Failure]: '", #EXPRESSION, "' in File: ", __FILE__, " in Line: ",  __LINE__ __VA_OPT__(,) __VA_ARGS__))
 //#define better_assert(EXPRESSION, ... ) ((EXPRESSION) ? (void)0 : private_namespace::print_assertion(std::cerr, color::rize("Assertion Failure", "Red"), ": '", #EXPRESSION, "' in File: ", color::rize(__FILE__, "Cyan"), " in Line: ",  color::rize(__LINE__, "Blue"), " "  __VA_OPT__(,) __VA_ARGS__))

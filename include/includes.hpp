@@ -3,6 +3,7 @@
 
 #include "./config.hpp"
 
+#include <array>
 #include <algorithm>
 #include <chrono>
 #include <cmath>

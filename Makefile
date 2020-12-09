@@ -1,6 +1,6 @@
 CXX           = clang++
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=3 -ftemplate-backtrace-limit=0 $(OP)
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
+CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
 LFLAGS        = $(OP) -pthread
 LINK          = $(CXX)
 
@@ -58,6 +58,10 @@ softmax: test/softmax.cc
 tensor_add: test/tensor_add.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tensor_add.o test/tensor_add.cc
 	$(LINK) -o $(BIN_DIR)/test_tensor_add $(OBJECTS_DIR)/test_tensor_add.o $(LFLAGS)
+
+buffered_allocator: test/buffered_allocator.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_buffered_allocator.o test/buffered_allocator.cc
+	$(LINK) -o $(BIN_DIR)/test_buffered_allocator $(OBJECTS_DIR)/test_buffered_allocator.o $(LFLAGS)
 
 tensor_io: test/tensor_io.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tensor_io.o test/tensor_io.cc

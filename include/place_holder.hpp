@@ -14,13 +14,9 @@ namespace ceras
     {
         std::shared_ptr<tensor<T, A>> data_;
 
-        place_holder()
-        {
-        }
+        place_holder() { }
 
-        ~place_holder()
-        {
-        }
+        ~place_holder() { }
 
         tensor<T, A> const forward() const
         {
@@ -38,9 +34,7 @@ namespace ceras
             data_.reset();
         }
 
-        void backward( auto ) const noexcept
-        {
-        }
+        void backward( ... ) const noexcept { }
     };
 
     template< typename T >

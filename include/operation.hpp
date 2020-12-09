@@ -444,6 +444,57 @@ namespace ceras
         };
     }
 
+    auto constexpr reshape( std::vector<std::size_t> const& new_shape ) noexcept
+    {
+        return [&new_shape]<Operation Op>( Op const& op ) noexcept
+        {
+            return make_unary_operator( [&new_shape]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                                        {
+                                            std::vector<std::size_t> const& old_shape = tsor.shape();
+                                            std::size_t const batch_size = old_shape[0];
+                                            {
+                                                std::size_t const new_size_per_batch = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                                                better_assert( batch_size * new_size_per_batch == tsor.size(), "size mismatch for reshape operator, got ",  batch_size*new_size_per_batch, " but input is ", tsor.size() );
+                                            }
+
+                                            std::vector<std::size_t> batched_new_shape;
+                                            {
+                                                batched_new_shape.resize( 1 + new_shape.size() );
+                                                batched_new_shape[0] = batch_size;
+                                                std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
+                                            }
+
+                                            Tsor ans{ tsor };
+                                            ans.reshape( batched_new_shape );
+                                            return ans;
+                                        },
+                                        []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                        {
+                                            return grad.reshape( input.shape() );
+                                        }
+                    )( op );
+        };
+    }
+
+    template <Operation Op>
+    auto constexpr flatten( Op const& op ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept
+            {
+                std::size_t const batch_size = *(tsor.shape().begin());
+                std::size_t const dim = tsor.size() / batch_size;
+                return tsor.reshape( {batch_size, dim} );
+            },
+            []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                return grad.reshape( input.shape() );
+            }
+        )( op );
+    }
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM
+

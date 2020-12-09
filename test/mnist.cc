@@ -63,7 +63,7 @@ int main()
     tensor<double> input_images{ {batch_size, 28*28} };
     tensor<double> output_labels{ {batch_size, 10} };
 
-    std::size_t const epoch = 2;
+    std::size_t const epoch = 100;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
