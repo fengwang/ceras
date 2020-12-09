@@ -35,20 +35,18 @@ int main()
     std::vector<std::uint8_t> training_labels = load_binary( training_label_path ); // [u32, u32, uint8, uint8, ... ]
 
 
-    // define computation graph, a 3-layered dense net with topology 784x256x128x10
     using namespace ceras;
     auto input = place_holder<double>{}; // 1-D, 28x28 pixels
 
     // 1st layer
     auto w1 = variable<double>{ randn<double>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
     auto b1 = variable<double>{ zeros<double>( { 1, 256 } ) };
-    auto l1 = relu( input * w1 + b1 );
+    auto l1 = leaky_relu(0.1)( input * w1 + b1 );
 
     // 2nd layer
     auto w2 = variable<double>{ randn<double>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
     auto b2 = variable<double>{ zeros<double>( { 1, 128 } ) };
-    //auto l2 = relu( l1 * w2 + b2 );
-    auto l2 = sigmoid( l1 * w2 + b2 );
+    auto l2 = leaky_relu(0.1)( l1 * w2 + b2 );
 
     // 3rd layer
     auto w3 = variable<double>{ randn<double>( {128, 10}, 0.0, 1.0/35.8 ) };

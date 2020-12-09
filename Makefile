@@ -80,6 +80,10 @@ mnist: test/mnist.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist.o test/mnist.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist $(OBJECTS_DIR)/test_mnist.o $(LFLAGS)
 
+mnist_leaky_relu: test/mnist_leaky_relu.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_leaky_relu.o test/mnist_leaky_relu.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_leaky_relu $(OBJECTS_DIR)/test_mnist_leaky_relu.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

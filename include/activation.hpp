@@ -99,6 +99,29 @@ namespace ceras
                 )( op );
     }
 
+    template< typename T > requires std::floating_point<T>
+    auto leaky_relu( T const factor ) noexcept
+    {
+        better_assert( factor < T{1}, "Expecting leak_relu with a factor less than 1, but got factor = ", factor );
+        return [factor]<Operation Op>( Op const& op ) noexcept
+        {
+            return make_unary_operator( [factor]<Tensor Tsor>( Tsor const& input ) noexcept
+                                        {
+                                            Tsor ans{ input.shape() };
+                                            for_each( ans.begin(), ans.end(), input.begin(), [factor]( auto& v_out, auto v_in ){ v_out = std::max( v_in, factor*v_in ); } );
+                                            return ans;
+                                        },
+                                        [factor]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                        {
+                                            typedef typename Tsor::value_type value_type;
+                                            Tsor ans = grad;// OK for shallow copy
+                                            for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
+                                            return ans;
+                                        }
+                    )( op );
+        };
+    }
+
 }//namespace ceras
 
 #endif//DJDWJBHNDAYTNOXLFOBDSGAQAAYPWMXJGEBYIRKEAKAQUUWVGDUGGDKSDXUKSPCYYNTWTDNII
