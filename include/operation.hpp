@@ -51,7 +51,7 @@ namespace ceras
         template< typename Op > // here Operation can also be variable
         auto operator() ( Op& op ) const noexcept
         {
-            return [&op]<typename T, typename A>( tensor<T, A> const& grad )
+            return [&op]<Tensor Tsor>( Tsor const& grad )
             {
                 op.backward(grad);
             };
@@ -66,7 +66,7 @@ namespace ceras
         template< typename Op > // Operation and also variable
         auto operator() ( std::reference_wrapper<Op> op ) noexcept
         {
-            return [op]<typename T, typename A>(tensor<T,A> const& grad)
+            return [op]<Tensor Tsor>(Tsor const& grad)
             {
                 op.get().backward(grad);
             };

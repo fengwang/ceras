@@ -60,7 +60,7 @@ namespace ceras
                                      {
                                         Tsor ground_truth_gradient = ground_truth_input;
                                         Tsor sm = softmax( prediction_input ) - ground_truth_input;
-                                        return make_tuple( ground_truth_gradient, sm );
+                                        return std::make_tuple( ground_truth_gradient, sm );
                                      }
                 )( lhs_op, rhs_op );
     }

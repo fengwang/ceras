@@ -16,7 +16,7 @@ namespace ceras
     std::reference_wrapper<session<T, A>> get_default_session();
 
 
-    template< typename T, typename A = std::allocator<T> >
+    template< typename T, typename A = default_allocator<T> >
     struct variable
     {
         int id_;
@@ -29,7 +29,7 @@ namespace ceras
             data_{ std::make_shared<tensor<T, A>>( data ) },
             gradient_{ std::make_shared<tensor<T, A>>(data.shape()) },
             old_gradient_{std::make_shared<tensor<T, A>>(data.shape())}
-        {}
+        { }
         variable() = delete;
 
         void backward( auto const& grad )

@@ -15,15 +15,15 @@ TEST_CASE("tensor_add", "[tensor_add]")
     for ( auto idx : range( upper_dims ) )
         vdims.push_back( idx+1 );
 
-    for ( auto _ : range( tests ) )
+    for ( [[maybe_unused]]auto _ : range( tests ) )
     {
         for ( unsigned long dims_ = 0UL; dims_ != upper_dims; ++dims_ )
         {
             unsigned long dims = dims_ + 1;
 
-            auto a = numeric::random<double>( {dims, dims} );
-            auto b = numeric::random<double>( {1, dims} );
-            auto c = numeric::random<double>( {dims, dims} );
+            auto a = random<double>( {dims, dims} );
+            auto b = random<double>( {1, dims} );
+            auto c = random<double>( {dims, dims} );
 
             auto ab = a+b;
             for ( auto r : range( dims ) )

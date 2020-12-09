@@ -1,8 +1,17 @@
 CXX           = clang++
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
 CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
 LFLAGS        = $(OP) -pthread
+
+#CXX           = g++
+#OP            = -O0  -pg -DDEBUG
+#CXXFLAGS      = -std=c++2a -Wall -Wextra $(OP)
+#LFLAGS        = $(OP) -pg -O0
+
+
 LINK          = $(CXX)
+
+
 
 ####### Output directory
 OBJECTS_DIR   = ./obj

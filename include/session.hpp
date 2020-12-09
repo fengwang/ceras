@@ -11,7 +11,7 @@
 namespace ceras
 {
 
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     struct session
     {
         typedef tensor<T, A> tensor_type;

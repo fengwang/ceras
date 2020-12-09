@@ -6,6 +6,7 @@
 #include "./variable.hpp"
 #include "./session.hpp"
 #include "./utils/color.hpp"
+#include "./utils/debug.hpp"
 
 namespace ceras
 {
@@ -35,7 +36,7 @@ namespace ceras
             // update the gradient in the loss
             loss_.backward( ones<T>({1,}) );
             //update variables
-            auto& ss = get_default_session<T,std::allocator<T>>().get();
+            auto& ss = get_default_session<T,default_allocator<T>>().get();
             for ( auto [id, v] : ss.variables_ )
             {
                 *(v.get().data_) -= learning_rate_ * (*(v.get().gradient_)) * (1.0-momentum_);

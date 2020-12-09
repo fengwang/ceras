@@ -6,6 +6,7 @@
 #include "./utils/range.hpp"
 #include "./utils/stride_iterator.hpp"
 #include "./utils/for_each.hpp"
+#include "./utils/buffered_allocator.hpp"
 
 namespace ceras
 {
@@ -14,9 +15,12 @@ namespace ceras
     // static random number generator
     static std::mt19937 generator{seed};
 
+    template< typename T >
+    using default_allocator = buffered_allocator<T, 256>;
+
     // Beware: shallow copy
     // TODO: impl tensor_view, enabling stride dataset
-    template< typename T, typename Allocator = std::allocator<T> >
+    template< typename T, typename Allocator = default_allocator<T> >
     struct tensor
     {
         typedef T value_type;
@@ -220,7 +224,7 @@ namespace ceras
 
     };
 
-    template <typename T, typename A=std::allocator<T> > requires std::floating_point<T>
+    template <typename T, typename A=default_allocator<T> > requires std::floating_point<T>
     constexpr tensor<T, A> as_tensor( T val ) noexcept
     {
         tensor<T, A> ans{ {1,} };
@@ -635,15 +639,27 @@ namespace ceras
         return  ans;
     }
 
-    template< typename T, typename A=std::allocator<T> >
+    /*
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> ones( std::initializer_list<std::size_t> shape )
     {
         tensor<T,A> ans{ shape };
         std::fill_n( ans.data(), ans.size(), T{1} );
         return ans;
     }
+    */
 
-    template< typename T, typename A=std::allocator<T> >
+    /*
+    template< typename T, typename A = default_allocator<T> >
+    tensor<T, A> const ones( std::vector<std::size_t> shape )
+    {
+        tensor<T,A> ans{ shape };
+        std::fill_n( ans.data(), ans.size(), T{1} );
+        return ans;
+    }
+    */
+
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> randn( std::initializer_list<std::size_t> shape, T mean=T{0}, T stddev=T{1} )
     {
         std::normal_distribution<T> distribution( mean, stddev );
@@ -652,7 +668,7 @@ namespace ceras
         return ans;
     }
 
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> random( std::initializer_list<std::size_t> shape, T min=T{0}, T max=T{1} )
     {
         std::uniform_real_distribution<T> distribution( min, max );
@@ -662,7 +678,7 @@ namespace ceras
     }
 
     // Glorot, Xavier, and Yoshua Bengio. “Understanding the Difficulty of Training Deep Feedforward Neural Networks.” In Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics, 249–256, 2010.
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> glorot_uniform( std::initializer_list<std::size_t> shape )
     {
         T prev_dim = *(shape.begin());
@@ -737,7 +753,7 @@ namespace ceras
         return tsor.size() == 0;
     }
 
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> zeros( std::vector<std::size_t> const& shape )
     {
         return {shape};
@@ -749,7 +765,7 @@ namespace ceras
         return {tsor.shape()};
     }
 
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     tensor<T,A> ones( std::vector<std::size_t> const& shape )
     {
         tensor<T, A> ans{ shape };
@@ -930,7 +946,7 @@ namespace ceras
         return reduce( ts, axis, std::numeric_limits<typename Tsor::value_type>::max(), []( auto const& a, auto const& b ){ return a < b ? a : b; }, keepdims );
     }
 
-    template < typename T, typename A=std::allocator<T> > requires std::floating_point<T>
+    template < typename T, typename A=default_allocator<T> > requires std::floating_point<T>
     tensor<T,A> linspace( T start, T stop, std::size_t num, bool endpoint=true ) noexcept
     {
         better_assert( num > 1, "tensor::linspace: expecting number larger than 1, but got ", num );
@@ -956,7 +972,7 @@ namespace ceras
     // 2 3
     // 0.910905 0.525709 0.584262 0.34063 0.613034 0.0803866
     //
-    template < typename T, typename A=std::allocator<T> > requires std::floating_point<T>
+    template < typename T, typename A=default_allocator<T> > requires std::floating_point<T>
     tensor<T,A> loadtxt( std::string const& file_name )
     {
         std::ifstream ifs( file_name );

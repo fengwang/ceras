@@ -9,7 +9,7 @@
 namespace ceras
 {
 
-    template< typename T, typename A=std::allocator<T> >
+    template< typename T, typename A=default_allocator<T> >
     struct place_holder
     {
         std::shared_ptr<tensor<T, A>> data_;
@@ -34,7 +34,7 @@ namespace ceras
             data_.reset();
         }
 
-        void backward( ... ) const noexcept { }
+        void backward( auto ) const noexcept { }
     };
 
     template< typename T >
