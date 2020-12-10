@@ -440,67 +440,33 @@ namespace ceras
         return ans;
     }
 
-    // GEMM:
-    //      could be
-    //          A[r][n] * B[n][c]
-    //      or
-    //          A[batch][r][n] * B[n][c]
-    //
-    //      note that memory allocation time is not considered, but could be optimized in future
-    //
+    template< Tensor Tsor >
+    Tsor reshape( Tsor const& ts, std::vector<std::size_t> const& new_shape )
+    {
+        Tsor ans = ts;
+        return ans.reshape( new_shape );
+    }
+
     template< Tensor Tsor >
     Tsor multiply( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
+        if ( 1 == lhs.ndim() )
+            return multiply( reshape( lhs, {1UL, lhs.size()} ), rhs );
+
+        if ( 1 == rhs.ndim() )
+            return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ) );
+
         typedef typename Tsor::value_type value_type;
-        auto const lhs_shape = lhs.shape();
-        auto const rhs_shape = rhs.shape();
+        auto const& lhs_shape = lhs.shape();
+        auto const& rhs_shape = rhs.shape();
 
-        better_assert( rhs_shape.size() == 2 );
-
-        if ( lhs_shape.size() == 2 ) // direct multiply
-        {
-            //debug
-            if( lhs_shape[1] != rhs_shape[0] )
-            {
-                std::cerr << "Problem with lhs shape " << lhs_shape[0] << "x" << lhs_shape[1] << std::endl;
-                std::cerr << "lhs is\n" << lhs << std::endl;
-                std::cerr << "Problem with rhs shape " << rhs_shape[0] << "x" << rhs_shape[1] << std::endl;
-                std::cerr << "rhs is\n" << rhs << std::endl;
-            }
-            better_assert( lhs_shape[1] == rhs_shape[0], "Expecting same dimension for tensor multiplication, but lhs_shape[1]=", lhs_shape[1], " and rhs_shape[0]=", rhs_shape[0] ); //dim check
-            view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
-            view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
-
-            auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
-            Tsor ans{ std::vector<std::size_t>{ {row, col} } };// Memory allocation here!
-            view_2d<value_type> z{ ans.data(), row, col };
-
-            gemm( x, y, z );
-            return ans;
-        }
-
-        //TODO: batch gemm optimization with GPU, or rewrite this to
-        //          batch_gemm( x, y, z )
-        if ( lhs_shape.size() == 3 )
-        {
-            better_assert( lhs_shape[2] == rhs_shape[0] ); //dim check
-            auto const [batch, row, n] = std::make_tuple( lhs_shape[0], lhs_shape[1], lhs_shape[2] );
-            auto const col = rhs_shape[1];
-
-            Tsor ans{ std::vector<std::size_t>{ {batch, row, col} } }; //Memory allocation here!
-            view_2d<value_type> y{ rhs.data(), n, col };
-            for ( auto idx = 0UL; idx != batch; ++idx )
-            {
-                view_2d<value_type> x{ lhs.data() + row * n * idx, row, n };
-                view_2d<value_type> z{ ans.data() + row * col * idx, row, col };
-                gemm( x, y, z );
-            }
-
-            return ans;
-        }
-
-        better_assert( !"You are not expected to reach here!" );
-        return Tsor{};
+        view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
+        view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
+        auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
+        Tsor ans{ std::vector<std::size_t>{ {row, col} } };
+        view_2d<value_type> z{ ans.data(), row, col };
+        gemm( x, y, z );
+        return ans;
     }
 
     template< Tensor Tsor >
@@ -517,10 +483,14 @@ namespace ceras
         better_assert( !has_nan( rhs ), "elementwise_product: rhs tensor contains Nan!" );
 
         Tsor ans{ lhs.shape() };
-        for ( auto idx = 0UL; idx != ans.size(); ++idx )
-            ans[idx] = lhs[idx] * rhs[idx];
-            //*(ans.data()+idx) = (*(lhs.data()+idx)) * (*(rhs.data()+idx));
+        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x*y; } );
         return ans;
+    }
+
+    template< Tensor Tsor >
+    Tsor hadamard_product( Tsor const& lhs, Tsor const& rhs ) noexcept
+    {
+        return elementwise_product( lhs, rhs );
     }
 
     template< Tensor Tsor >
@@ -528,8 +498,7 @@ namespace ceras
     {
         better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
         Tsor ans{ lhs.shape() };
-        for ( auto idx = 0UL; idx != ans.size(); ++idx )
-            *(ans.data()+idx) = (*(lhs.data()+idx)) / (*(rhs.data()+idx));
+        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x/y; } );
         return ans;
     }
 
@@ -537,7 +506,7 @@ namespace ceras
     Tsor operator / ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
     {
         Tsor ans = lhs.deep_copy();
-        ans.map( [rhs]( auto& x ){ x /= rhs; } );
+        for_each( ans.begin(), ans.end(), [&rhs]( auto& x ){ x /= rhs; } );
         return ans;
     }
 
@@ -555,41 +524,6 @@ namespace ceras
         return rhs * lhs;
     }
 
-    // keeping shape last dim reduce
-    //
-    // max reduce:
-    //     last_dim_reduce( tsor, []( auto x, auto y ){ return x > y ? x : y; }, std::numeric_limits<double>::min() );
-    // min reduce:
-    //     last_dim_reduce( tsor, []( auto x, auto y ){ return x < y ? x : y; }, std::numeric_limits<double>::max() );
-    // sum reduce:
-    //     last_dim_reduce( tsor, []( auto x, auto y ){ return x+y; }, 0.0 );
-    //
-    template< Tensor Tsor, typename Function >
-    Tsor last_dim_reduce( Tsor const& tsor, Function const& func, typename Tsor::value_type init_value )
-    {
-        Tsor ans{ tsor.shape() };
-        auto const& shape = ans.shape();
-        std::size_t const iterations = std::max( 1UL, std::accumulate( shape.begin(), shape.begin()+shape.size()-1, 1UL, [](auto x, auto y){ return x*y; } ) );
-        std::size_t const dim_offset = *(shape.rbegin());
-        for ( auto idx = 0UL; idx != iterations; ++idx )
-        {
-            std::size_t const offset = dim_offset * idx;
-            std::fill_n( ans.data()+offset, dim_offset, std::reduce( tsor.data()+offset, tsor.data()+offset+dim_offset, init_value, func ) );
-        }
-        return ans;
-    }
-
-    template< Tensor Tsor >
-    Tsor last_dim_max_reduce( Tsor const& tsor )
-    {
-        return last_dim_reduce( tsor, [](auto x, auto y){ return std::max(x, y); }, std::numeric_limits<typename Tsor::value_type>::min() );
-    }
-
-    template< Tensor Tsor >
-    Tsor last_dim_sum_reduce( Tsor const& tsor )
-    {
-        return last_dim_reduce( tsor, [](auto x, auto y){ return x+y; }, typename Tsor::value_type{0} );
-    }
 
     template< Tensor Tsor >
     Tsor reduce_sum( Tsor const& tsor )
@@ -632,26 +566,6 @@ namespace ceras
         ans.shape_.swap( new_shape );
         return  ans;
     }
-
-    /*
-    template< typename T, typename A=default_allocator<T> >
-    tensor<T,A> ones( std::initializer_list<std::size_t> shape )
-    {
-        tensor<T,A> ans{ shape };
-        std::fill_n( ans.data(), ans.size(), T{1} );
-        return ans;
-    }
-    */
-
-    /*
-    template< typename T, typename A = default_allocator<T> >
-    tensor<T, A> const ones( std::vector<std::size_t> shape )
-    {
-        tensor<T,A> ans{ shape };
-        std::fill_n( ans.data(), ans.size(), T{1} );
-        return ans;
-    }
-    */
 
     template< typename T, typename A=default_allocator<T> >
     tensor<T,A> randn( std::initializer_list<std::size_t> shape, T mean=T{0}, T stddev=T{1} )
@@ -901,7 +815,6 @@ namespace ceras
                 stride_iterator si{ start, static_cast<std::int64_t>(post) };
                 *itor++ = std::reduce( si, si+n, init, func );
             }
-
 
         if ( !keepdims )
         {
