@@ -13,8 +13,8 @@ namespace ceras
     // for expression/activation with only single input/output, the corresponding tensor can be reused without allocating new memory
     //
 
-    template <Operation Op>
-    auto constexpr softmax( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr softmax( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -38,11 +38,11 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), output.begin(), grad.begin(), []( auto & a, auto o, auto g ){ a = g * o * ( typename Tsor::value_type{1} - o ); } );
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
-    template <Operation Op>
-    auto constexpr sigmoid( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr sigmoid( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -56,11 +56,11 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), output.begin(), grad.begin(), []( auto & a, auto o, auto g ){ a = g * o * ( typename Tsor::value_type{1} - o ); } );
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
-    template <Operation Op>
-    auto constexpr tanh( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr tanh( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -75,11 +75,11 @@ namespace ceras
                                         ans *= grad;
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
-    template <Operation Op>
-    auto constexpr relu( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr relu( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -96,14 +96,14 @@ namespace ceras
                                             ans[idx] = ( input[idx] > zero ) ? grad[idx] : zero;
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
     template< typename T > requires std::floating_point<T>
     auto leaky_relu( T const factor ) noexcept
     {
         better_assert( factor < T{1}, "Expecting leak_relu with a factor less than 1, but got factor = ", factor );
-        return [factor]<Operation Op>( Op const& op ) noexcept
+        return [factor]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator( [factor]<Tensor Tsor>( Tsor const& input ) noexcept
                                         {
@@ -118,7 +118,7 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
                                             return ans;
                                         }
-                    )( op );
+                    )( ex );
         };
     }
 

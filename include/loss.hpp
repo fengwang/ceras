@@ -7,45 +7,45 @@
 namespace ceras
 {
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr squared_Loss( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr squared_Loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return sum_reduce( square( minus(lhs_op, rhs_op)) );
+        return sum_reduce( square( minus(lhs_ex, rhs_ex)) );
     }
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr mean_squared_error( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr mean_squared_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return mean_reduce( square( minus(lhs_op, rhs_op)) );
+        return mean_reduce( square( minus(lhs_ex, rhs_ex)) );
     }
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr mse( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr mse( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return mean_squared_error( lhs_op, rhs_op );
+        return mean_squared_error( lhs_ex, rhs_ex );
     }
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr abs_loss( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr abs_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return sum_reduce( abs( minus(lhs_op, rhs_op)) );
+        return sum_reduce( abs( minus(lhs_ex, rhs_ex)) );
     }
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr mean_absolute_error( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr mean_absolute_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return mean_reduce( abs( minus(lhs_op, rhs_op)) );
+        return mean_reduce( abs( minus(lhs_ex, rhs_ex)) );
     };
 
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr mae( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr mae( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return mean_absolute_error( lhs_op, rhs_op );
+        return mean_absolute_error( lhs_ex, rhs_ex );
     };
 
     // beware: do not apply softmax activation before this layer, as this loss is softmax+xentropy already
-    template < Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr cross_entropy_loss( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr cross_entropy_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& ground_truth_input, Tsor const& prediction_input ) noexcept
                                      {
@@ -62,7 +62,7 @@ namespace ceras
                                         Tsor sm = softmax( prediction_input ) - ground_truth_input;
                                         return std::make_tuple( ground_truth_gradient, sm );
                                      }
-                )( lhs_op, rhs_op );
+                )( lhs_ex, rhs_ex );
     }
 
 }//namespace ceras

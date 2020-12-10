@@ -172,11 +172,12 @@ namespace ceras
     template< typename T >
     concept Operator = is_operator_v<T>;
 
-    template< typename T >
-    concept Operation = Operator<T> || Variable<T> || Place_Holder<T>;
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr plus( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< typename T >
+    concept Expression = Operator<T> || Variable<T> || Place_Holder<T>;
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
@@ -207,17 +208,17 @@ namespace ceras
                                         };
                                         return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
                                      }
-                )( lhs_op, rhs_op );
+                )( lhs_ex, rhs_ex );
     }
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr operator + ( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr operator + ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return plus( lhs_op, rhs_op );
+        return plus( lhs_ex, rhs_ex );
     }
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr operator * ( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
@@ -245,12 +246,12 @@ namespace ceras
 
                                         return std::make_tuple( lhs_grad, rhs_grad );
                                      }
-                )( lhs_op, rhs_op );
+                )( lhs_ex, rhs_ex );
     }
 
 
-    template <Operation Op>
-    auto constexpr log( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr log( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -266,11 +267,11 @@ namespace ceras
                                         better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     };
 
-    template <Operation Op>
-    auto constexpr negative( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr negative( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tensor ) noexcept
                                     {
@@ -282,11 +283,11 @@ namespace ceras
                                         better_assert( !has_nan( grad ), "input gradient for operator negative contains NaN!" );
                                         return -grad;
                                     }
-                )( op );
+                )( ex );
     };
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr elementwise_multiply( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr elementwise_multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
@@ -299,17 +300,17 @@ namespace ceras
                                         better_assert( !has_nan( grad ), "input gradient for operator elementwise_multiply contains NaN!" );
                                         return std::make_tuple( elementwise_product(grad, rhs_input), elementwise_product(grad, lhs_input) );
                                      }
-                )( lhs_op, rhs_op );
+                )( lhs_ex, rhs_ex );
     };
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr hadamard_product( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr hadamard_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return elementwise_multiply( lhs_op, rhs_op );
+        return elementwise_multiply( lhs_ex, rhs_ex );
     }
 
-    template <Operation Op>
-    auto constexpr sum_reduce( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr sum_reduce( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
@@ -324,11 +325,11 @@ namespace ceras
                                         ans *= grad[0];
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
-    template <Operation Op>
-    auto constexpr mean_reduce( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr mean_reduce( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
@@ -345,17 +346,17 @@ namespace ceras
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
-    template< Operation Lhs_Operator, Operation Rhs_Operator >
-    auto constexpr minus( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr minus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return plus( lhs_op, negative(rhs_op) );
+        return plus( lhs_ex, negative(rhs_ex) );
     }
 
-    template <Operation Op>
-    auto constexpr square( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr square( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
@@ -372,12 +373,12 @@ namespace ceras
                                         ans *= typename Tsor::value_type{2};
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
 
-    template <Operation Op>
-    auto constexpr abs( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr abs( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
@@ -394,11 +395,11 @@ namespace ceras
                                             ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }//;
 
-    template <Operation Op>
-    auto constexpr exp( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr exp( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
                                     {
@@ -414,13 +415,13 @@ namespace ceras
                                         grad *= output;
                                         return ans;
                                     }
-                )( op );
+                )( ex );
     }
 
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper ) noexcept
     {
-        return [lower, upper]<Operation Op>( Op const& op ) noexcept
+        return [lower, upper]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator( [lower, upper]<Tensor Tsor>( Tsor const& tsor ) noexcept
                                         {
@@ -440,13 +441,13 @@ namespace ceras
                                                            ans[idx];
                                             return ans;
                                         }
-                    )( op );
+                    )( ex );
         };
     }
 
     auto constexpr reshape( std::vector<std::size_t> const& new_shape ) noexcept
     {
-        return [&new_shape]<Operation Op>( Op const& op ) noexcept
+        return [&new_shape]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator( [&new_shape]<Tensor Tsor>( Tsor const& tsor ) noexcept
                                         {
@@ -472,12 +473,12 @@ namespace ceras
                                         {
                                             return grad.reshape( input.shape() );
                                         }
-                    )( op );
+                    )( ex );
         };
     }
 
-    template <Operation Op>
-    auto constexpr flatten( Op const& op ) noexcept
+    template <Expression Ex>
+    auto constexpr flatten( Ex const& ex ) noexcept
     {
         return make_unary_operator
         (
@@ -491,7 +492,7 @@ namespace ceras
             {
                 return grad.reshape( input.shape() );
             }
-        )( op );
+        )( ex );
     }
 
 }//namespace ceras
