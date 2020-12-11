@@ -116,8 +116,20 @@ namespace ceras
         template< typename T, typename A >
         void backward( tensor<T,A> const& grad )
         {
-            auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
-            backward_wrapper{}( op_ )( current_gradient );
+            if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&>::value )
+            {
+                auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
+                backward_wrapper{}( op_ )( current_gradient );
+            }
+            else if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value )
+            {
+                auto const& current_gradient = backward_action_( input_data_, output_data_, grad, context_ );
+                backward_wrapper{}( op_ )( current_gradient );
+            }
+            else
+            {
+                better_assert( false, "Should not be here!" );
+            }
         }
     };
 
