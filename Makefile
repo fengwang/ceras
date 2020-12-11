@@ -1,5 +1,5 @@
 CXX           = clang++
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
 CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
 LFLAGS        = $(OP) -pthread
 

@@ -154,6 +154,8 @@ namespace ceras
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
+        std::vector<tensor_type> context_;
+
         binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
             lhs_op_{operator_type_wrapper{}(lhs_op)}, rhs_op_{operator_type_wrapper{}(rhs_op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
 
@@ -161,16 +163,47 @@ namespace ceras
         {
             lhs_input_data_ = forward_wrapper{}( lhs_op_ );
             rhs_input_data_ = forward_wrapper{}( rhs_op_ );
-            output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+
+            if constexpr( std::is_invocable<Forward_Action, tensor_type const&, tensor_type const&>::value )
+            {
+                output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+            }
+            else if constexpr( std::is_invocable<Forward_Action, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value )
+            {
+                output_data_ = forward_action_( lhs_input_data_, rhs_input_data_, context_ );
+            }
+            else
+            {
+                better_assert( false, "Should not be here!" );
+            }
+
+            //output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
         }
 
         template< typename T, typename A >
         void backward( tensor<T,A> const& grad )
         {
-            auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-            backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-            backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
+            if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, tensor_type const&>::value )
+            {
+                auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
+                backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
+                backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
+            }
+            else if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value)
+            {
+                auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad, context_ );
+                backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
+                backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
+            }
+            else
+            {
+                better_assert( false, "Should not be here!" );
+            }
+
+            //auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
+            //backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
+            //backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
         }
     };
 
