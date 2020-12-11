@@ -87,6 +87,8 @@ namespace ceras
         tensor_type input_data_;
         tensor_type output_data_;
 
+        std::vector<tensor_type> context_;
+
         unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
             op_{operator_type_wrapper{}(op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
 
@@ -94,7 +96,18 @@ namespace ceras
         auto forward()// const
         {
             input_data_ = forward_wrapper{}( op_ );
-            output_data_ = forward_action_(  input_data_ );
+            if constexpr( std::is_invocable<Forward_Action, tensor_type const&>::value )
+            {
+                output_data_ = forward_action_( input_data_ );
+            }
+            else if constexpr( std::is_invocable<Forward_Action, tensor_type const&, std::vector<tensor_type>&>::value )
+            {
+                output_data_ = forward_action_( input_data_, context_ );
+            }
+            else
+            {
+                better_assert( false, "Should not be here!" );
+            }
 
             return output_data_;
         }
