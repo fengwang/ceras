@@ -553,6 +553,135 @@ namespace ceras
         )( ex );
     }
 
+
+    auto constexpr img2col( std::size_t const row_stride, std::size_t const col_stride, std::size_t const kernel_row, std::size_t const kernel_col, std::string const& padding ) noexcept
+    {
+        auto const& pixel_at = []<Tensor Tsor>( Tsor const& tsor, std::size_t const bs, std::size_t const r, std::size_t const c, std::size_t const ch, std::size_t pading_row, std::size_t pading_col ) noexcept
+        {
+            //
+            //tsor is a 4D tensor of shape [BS, R, C, CH]
+            //this function is to retrieve the pixel at (bs, r, c, ch) with padding (padding_row, padding_col)
+            //
+
+            better_assert( tsor.ndim() == 4, "Expecting a 4D tensor, but actual dimension is ", tsor.ndim() );
+            typedef typename Tsor::value_type value_type;
+
+            if ( r < padding_row ) return value_type{0};
+            if ( c < padding_col ) return value_type{0};
+
+            std::size_t const row = r - padding_row;
+            std::size_t const col = c - padding_col;
+
+            std::vector<std::size_t> const& shape = tsor.shape();
+            auto const[BS, R, C, CH] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+
+            if ( row >= R ) return value_type{0};
+            if ( col >= C ) return value_type{0};
+
+            std::size_t const offset = ch + CH * (c + C* (r + bs * R));
+            return *(tsor.begin() + offset)
+        };
+
+        // TODO: move this to GPU
+        auto const& img2col = [&pixel_at, row_stride, col_stride, kernel_row, kernel_col]<Tensor Tsor>
+        ( Tsor const& input, Tsor& output, std::size_t const padding_row, std::size_t const padding_col ) noexcept
+        {
+            better_assert( input.ndim() == 4, "Expecting a 4D tensor, but actual dimension is ", input.ndim() );
+
+            std::vector<std::size_t> const& shape = tsor.shape();
+            auto const[BS, R, C, CH] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+
+            std::size_t const new_row = static_cast<std::size_t>( (R + padding_row + padding_row - kernel_row) / row_stride ) + 1;
+            std::size_t const new_col = static_cast<std::size_t>( (C + padding_col + padding_col - kernel_col) / col_stride ) + 1;
+
+            output.reshape( {BS*new_row*new_col, kernel_row*kernel_col*CH} );
+
+            // dat = input[bs, r*stride_row:stride_row:(r+kernel_row)*stride_row, c*stride_col:stride_col:(c+kernel_col)*stride_col, : ]
+            std::size_t const stride_kc = CH;
+            std::size_t const stride_kr = kernel_col * stride_kc;
+            std::size_t const stride_c = kernel_row * stride_kr;
+            std::size_t const stride_r = new_col * stride_c;
+            std::size_t const stride_bs = new_row * stride_r;
+            for ( auto bs : range( BS ) )
+            {
+                std::size_t const offset_bs = bs * stride_bs;
+                for ( auto r : range( new_row ) )
+                {
+                    std::size_t const offset_r = offset_bs + r * stride_r;
+                    for ( auto c : range( new_col ) )
+                    {
+                        std::size_t const offset_c =  offset_r + c * stride_c;
+                        for ( auto kr : range( kernel_row ) )
+                        {
+                            std::size_t const offset_kr = offset_c + kr * stride_kr;
+                            for ( auto kc : range( kernel_col ) )
+                            {
+                                std::size_t const offset_kc = offset_kr + kc * stride_kc;
+                                for ( auto ch : range( CH ) )
+                                {
+                                    std::size_t const offset_ch = offset_kc + ch;
+                                    *(output.begin()+offset_ch) = pixel_at( input, bs, r, c, ch, padding_row, padding_col );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        return [row_stride, col_stride, kernel_row, kernel_col, &img2col, &padding]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                []<Tensor Tsor>( Tsor const & tsor, std::vector<Tsor>& context ) noexcept
+                {
+                    context.resize( 1 );
+
+                    std::size_t padding_row = 0UL;
+                    std::size_t padding_col = 0UL;
+                    if ( padding == std::string{"same"} )
+                    {
+                        padding_row = (kernel_row-row_stride+1) >> 1;
+                        padding_col = (kernel_col-col_stride+1) >> 1;
+                    }
+
+                    img2col( tsor, context[0], padding_row, padding_col );
+                    return context[0];
+                },
+                []<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, std::vector<Tsor>& context ) noexcept
+                {
+
+                }
+            )( ex );
+        };
+    }
+
+    auto constexpr conv2d( std::size_t const row_stride, std::size_t const col_stride, std::string const& padding="same" ) noexcept
+    {
+
+        // lhs_ex is for one 4D tensor of [BS, R, C, CH]
+        // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, 1, r, c, CH]
+        // the output tensor is of shape [BS, .., .., NC]
+        //
+        // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
+        //
+        return [row_stride, col_stride, padding]<Expression Ex, Variable Va>( Expression const& lhs_ex, Va const& rhs_ex ) noexcept
+        {
+            std::vector<std::size_t> const& shape = rhs_ex.shape();
+            better_assert( shape.size() == 4 );
+            auto const[kernel_row, kernel_col] = std::make_tuple( shape[1], shape[2] );
+
+            auto lhs_ex_as_col = img2col(row_stride, col_stride, kernel_row, kernel_col, padding)( lhs_ex );
+            auto rhs_ex_flatten = flatten( rhs_ex );
+            auto flatten_output = rhs_ex_flatten * lhs_ex_as_col;
+            auto ans = reshape()( flatten_output );
+            return ans;
+        };
+    }
+
+
+
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM

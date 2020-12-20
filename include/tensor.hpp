@@ -112,8 +112,6 @@ namespace ceras
 
         constexpr tensor( tensor const& other, std::size_t memory_offset ) : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
 
-        //constexpr tensor( std::initializer_list<std::size_t> shape ) : tensor{ std::vector<std::size_t>{shape} } {}
-
         constexpr tensor( self_type const& ) = default;
         constexpr tensor( self_type && ) noexcept = default;
         constexpr self_type& operator = ( self_type const& ) = default;
@@ -124,17 +122,21 @@ namespace ceras
 
         constexpr self_type& reshape( std::vector< std::size_t > const& new_shape )
         {
+            /*
             better_assert( (*this).size() == std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
             (*this).shape_ = new_shape;
             return *this;
-        }
+            */
 
-        /*
-        constexpr self_type& reshape( std::initializer_list< std::size_t > new_shape )
-        {
-            return reshape( std::vector< std::size_t >{new_shape} );
+            std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
+            if( size() != new_size )
+            {
+                (*vector_).resize(new_size);
+                memory_offset_ = 0UL;
+            }
+            (*this).shape_ = new_shape;
+            return *this;
         }
-        */
 
         [[nodiscard]] constexpr bool empty() const noexcept
         {

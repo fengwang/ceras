@@ -45,6 +45,11 @@ namespace ceras
             (*gradient_).reset( T{0} );
             return *data_;
         }
+
+        std::vector<std::size_t> shape() const noexcept
+        {
+            return data_.shape();
+        }
     };//struct variable
 
     template< typename T >

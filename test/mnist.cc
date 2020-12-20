@@ -37,42 +37,42 @@ int main()
 
     // define computation graph, a 3-layered dense net with topology 784x256x128x10
     using namespace ceras;
-    auto input = place_holder<double>{}; // 1-D, 28x28 pixels
+    auto input = place_holder<float>{}; // 1-D, 28x28 pixels
 
     // 1st layer
-    auto w1 = variable<double>{ randn<double>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    auto b1 = variable<double>{ zeros<double>( { 1, 256 } ) };
+    auto w1 = variable<float>{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+    auto b1 = variable<float>{ zeros<float>( { 1, 256 } ) };
     auto l1 = relu( input * w1 + b1 );
 
     // 2nd layer
-    auto w2 = variable<double>{ randn<double>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    auto b2 = variable<double>{ zeros<double>( { 1, 128 } ) };
+    auto w2 = variable<float>{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
+    auto b2 = variable<float>{ zeros<float>( { 1, 128 } ) };
     //auto l2 = relu( l1 * w2 + b2 );
     auto l2 = sigmoid( l1 * w2 + b2 );
 
     // 3rd layer
-    auto w3 = variable<double>{ randn<double>( {128, 10}, 0.0, 1.0/35.8 ) };
-    auto b3 = variable<double>{ zeros<double>( { 1, 10 } ) };
+    auto w3 = variable<float>{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
+    auto b3 = variable<float>{ zeros<float>( { 1, 10 } ) };
     auto output = l2 * w3 + b3;
 
-    auto ground_truth = place_holder<double>{}; // 1-D, 10
+    auto ground_truth = place_holder<float>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
     std::size_t const batch_size = 10;
-    tensor<double> input_images{ {batch_size, 28*28} };
-    tensor<double> output_labels{ {batch_size, 10} };
+    tensor<float> input_images{ {batch_size, 28*28} };
+    tensor<float> output_labels{ {batch_size, 10} };
 
     std::size_t const epoch = 1;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
-    session<double> s;
+    session<float> s;
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 
     // proceed training
-    double learning_rate = 1.0e-1f;
+    float learning_rate = 1.0e-1f;
     auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
 
     for ( auto e : range( epoch ) )
@@ -83,7 +83,7 @@ int main()
             // generate images
             std::size_t const image_offset = 16 + i * batch_size * 28 * 28;
             for ( auto j : range( batch_size * 28 * 28 ) )
-                input_images[j] = static_cast<double>(training_images[j+image_offset]) / 127.5f - 1.0f;
+                input_images[j] = static_cast<float>(training_images[j+image_offset]) / 127.5f - 1.0f;
             better_assert( !has_nan( input_images ), "input_images has nan at iteration ", i );
 
             // generating labels
@@ -113,7 +113,7 @@ int main()
     std::vector<std::uint8_t> testing_labels = load_binary( testing_label_path );
     std::size_t const testing_iterations = 10000 / new_batch_size;
 
-    tensor<double> new_input_images{ {new_batch_size, 28 * 28} };
+    tensor<float> new_input_images{ {new_batch_size, 28 * 28} };
     s.bind( input, new_input_images );
 
     unsigned long errors = 0;
@@ -123,7 +123,7 @@ int main()
         std::size_t const image_offset = 16 + i * new_batch_size * 28 * 28;
 
         for ( auto j = 0UL; j != new_batch_size*28*28; ++j )
-            new_input_images[j] = static_cast<double>( testing_images[j + image_offset] ) / 127.5f - 1.0f;
+            new_input_images[j] = static_cast<float>( testing_images[j + image_offset] ) / 127.5f - 1.0f;
 
         auto prediction = s.run( output );
         prediction.reshape( {prediction.size(), } );
@@ -140,7 +140,7 @@ int main()
 
     }
 
-    double const err = 1.0 * errors / 10000;
+    float const err = 1.0 * errors / 10000;
     std::cout << "Prediction error on the testing set is " << err << std::endl;
 
     return 0;
