@@ -553,9 +553,73 @@ namespace ceras
         )( ex );
     }
 
-
+    /*
     auto constexpr img2col( std::size_t const row_stride, std::size_t const col_stride, std::size_t const kernel_row, std::size_t const kernel_col, std::string const& padding ) noexcept
     {
+        // in case of [0xffff, 0xffff, 0xffff, 0xffff], it is padding
+        // otherwise, it is coordinate of a 4D tensor
+        struct compressed_index
+        {
+            typedef std::uint16_t size_type; // 65535 should be ok
+            size_type bs_;
+            size_type row_;
+            size_type col_;
+            size_type ch_;
+        };
+
+        // index_record is a 2D matrix with type of compressed_index,
+        // in this operator, 'img2col', it is supposed to be a shared pointer captured by lambdas
+        std::shared_ptr<tensor<compressed_index>> s_index_record;
+
+        auto constexpr img2col_forward = [s_index_record]<Tensor Tsor>
+        (
+            Tsor const& input_img, Tsor& output_col,
+            std::size_t kernel_row, std::size_t kernel_col,
+            std::size_t padding_row, std::size_t padding_col,
+            std::size_t stride_row, std::size_t stride_col,
+            std::size_t dialation_row, std::size_t dialation_col
+        ) noexcept
+        {
+            typedef typename Tsor::value_type value_type;
+            tensor<compressed_index>& index_record = *s_index_record;
+
+            std::vector<std::size_t> input_shape = input_img.shape();
+            better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
+            auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
+
+            std::size_t const output_row = ( R + 2 * padding_row - ( dialation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
+            std::size_t const output_col = ( C + 2 * padding_col - ( dialation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
+
+            std::size_t const output_column_matrix_row = BS * ouptut_row * output_col;
+            std::size_t const output_column_matrix_col = kernel_row * kernel_col * CH;
+
+            if ( index_record.empty() )
+            {// construct index coordinate matrix
+                index_record.resize( {output_column_matrix_row, output_column_matrix_col} );
+                //ops here!!
+                for ( auto ocr : range(output_column_matrix_row) )
+                {
+                    for ( auto occ : range(output_column_matrix_col) )
+                    {
+                    }
+                }
+            }
+
+            // check index_record's dimension
+
+            for ( auto r_ : range( output_column_matrix_row ) )
+            {
+                for ( auto c_ : range( output_column_matrix_col ) )
+                {
+                    auto const [_bs, _row, _col, _ch] = index_record[r_][c_]; // 2D view of index_record
+                    if ( _bs == 0xffff && _row == 0xffff && _col == 0xffff && _ch == 0xffff )
+                        output_col[r_][c_] = value_type{0};
+                    else
+                        output_col[r_][c_] = input_img[_bs][_row*R*CH+_col*CH+_ch];
+                }
+            }
+        };
+
         auto const& pixel_at = []<Tensor Tsor>( Tsor const& tsor, std::size_t const bs, std::size_t const r, std::size_t const c, std::size_t const ch, std::size_t pading_row, std::size_t pading_col ) noexcept
         {
             //
@@ -678,7 +742,7 @@ namespace ceras
             return ans;
         };
     }
-
+    */
 
 
 

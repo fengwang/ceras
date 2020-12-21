@@ -258,6 +258,15 @@ int main()
         std::cout << "sum(x, 1, true):\n" << sum(x, 1, true) << std::endl;
         std::cout << "sum(x, -1, true):\n" << sum(x, -1, true) << std::endl;
     }
+    {
+        auto x = ceras::random<double>( {1, 2, 3, 4}, 0.0, 10.0 );
+        auto v4 = ceras::view_4d{ x.data(), 1, 2, 3, 4 };
+        std::cout << v4[0][0][0][0] << std::endl;
+        std::cout << v4[0][1][2][3] << std::endl;
+        auto v3 = ceras::view_3d{ x.data(), 2, 3, 4 };
+        std::cout << v3[0][0][0] << std::endl;
+        std::cout << v3[1][2][3] << std::endl;
+    }
 
     return 0;
 }

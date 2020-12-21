@@ -929,6 +929,50 @@ namespace ceras
         ofs.close();
     }
 
+    template< typename T >
+    struct view_3d
+    {
+        T* data_;
+        std::size_t row_;
+        std::size_t col_;
+        std::size_t channel_;
+
+        constexpr view_3d( T* data, std::size_t row, std::size_t col, std::size_t channel ) noexcept : data_{data}, row_{row}, col_{col}, channel_{channel} {}
+
+        constexpr auto operator[]( std::size_t index ) noexcept
+        {
+            return view_2d{ data_+index*col_*channel_, col_, channel_ };
+        }
+
+        constexpr auto operator[]( std::size_t index ) const noexcept
+        {
+            return view_2d{ data_+index*col_*channel_, col_, channel_ };
+        }
+    };
+
+    template< typename T >
+    struct view_4d
+    {
+        T* data_;
+        std::size_t batch_size_;
+        std::size_t row_;
+        std::size_t col_;
+        std::size_t channel_;
+
+        constexpr view_4d( T* data, std::size_t batch_size, std::size_t row, std::size_t col, std::size_t channel ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
+
+        constexpr auto operator[]( std::size_t index ) noexcept
+        {
+            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
+        }
+
+        constexpr auto operator[]( std::size_t index ) const noexcept
+        {
+            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
+        }
+    };
+
+
 }//namespace ceras
 
 #endif//HQKGLAXWWVFBFHQNHBVTQJKGUFTPCQPTPXDVNOSBDJIBHITCEKDISJYNAMCPLJDURURDAISFV
