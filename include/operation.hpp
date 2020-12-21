@@ -553,23 +553,13 @@ namespace ceras
         )( ex );
     }
 
-    /*
-    auto constexpr img2col( std::size_t const row_stride, std::size_t const col_stride, std::size_t const kernel_row, std::size_t const kernel_col, std::string const& padding ) noexcept
+    auto constexpr img2col(
+                            std::size_t const row_kernel, std::size_t const row_kernel,
+                            std::size_t const row_padding, std::size_t const col_padding,
+                            std::size_t const row_stride, std::size_t const col_stride,
+                            std::size_t const row_dilation, std::size_t const col_dilation ) noexcept
     {
-        // in case of [0xffff, 0xffff, 0xffff, 0xffff], it is padding
-        // otherwise, it is coordinate of a 4D tensor
-        struct compressed_index
-        {
-            typedef std::uint16_t size_type; // 65535 should be ok
-            size_type bs_;
-            size_type row_;
-            size_type col_;
-            size_type ch_;
-        };
-
-        // index_record is a 2D matrix with type of compressed_index,
-        // in this operator, 'img2col', it is supposed to be a shared pointer captured by lambdas
-        std::shared_ptr<tensor<compressed_index>> s_index_record;
+        std::shared_ptr<std::vector<std::int32_t>> s_index_record; // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto constexpr img2col_forward = [s_index_record]<Tensor Tsor>
         (
@@ -577,172 +567,136 @@ namespace ceras
             std::size_t kernel_row, std::size_t kernel_col,
             std::size_t padding_row, std::size_t padding_col,
             std::size_t stride_row, std::size_t stride_col,
-            std::size_t dialation_row, std::size_t dialation_col
+            std::size_t dilation_row, std::size_t dilation_col
         ) noexcept
         {
             typedef typename Tsor::value_type value_type;
-            tensor<compressed_index>& index_record = *s_index_record;
+            std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
             std::vector<std::size_t> input_shape = input_img.shape();
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
             auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
 
-            std::size_t const output_row = ( R + 2 * padding_row - ( dialation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
-            std::size_t const output_col = ( C + 2 * padding_col - ( dialation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
+            std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
+            std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
+            std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH; // TODO: check here
+            std::size_t const output_column_matrix_col = BS * output_row * output_col; // TODO: check here
+            output_col.resize( {output_column_matrix_row, output_column_matrix_col} );
 
-            std::size_t const output_column_matrix_row = BS * ouptut_row * output_col;
-            std::size_t const output_column_matrix_col = kernel_row * kernel_col * CH;
-
-            if ( index_record.empty() )
-            {// construct index coordinate matrix
-                index_record.resize( {output_column_matrix_row, output_column_matrix_col} );
-                //ops here!!
-                for ( auto ocr : range(output_column_matrix_row) )
-                {
-                    for ( auto occ : range(output_column_matrix_col) )
-                    {
-                    }
-                }
-            }
-
-            // check index_record's dimension
-
-            for ( auto r_ : range( output_column_matrix_row ) )
+            if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
-                for ( auto c_ : range( output_column_matrix_col ) )
+                index_record.resize( output_column_matrix_row * output_column_matrix_col );
+
+                for ( auto bs : range( BS ) )
                 {
-                    auto const [_bs, _row, _col, _ch] = index_record[r_][c_]; // 2D view of index_record
-                    if ( _bs == 0xffff && _row == 0xffff && _col == 0xffff && _ch == 0xffff )
-                        output_col[r_][c_] = value_type{0};
-                    else
-                        output_col[r_][c_] = input_img[_bs][_row*R*CH+_col*CH+_ch];
-                }
-            }
-        };
-
-        auto const& pixel_at = []<Tensor Tsor>( Tsor const& tsor, std::size_t const bs, std::size_t const r, std::size_t const c, std::size_t const ch, std::size_t pading_row, std::size_t pading_col ) noexcept
-        {
-            //
-            //tsor is a 4D tensor of shape [BS, R, C, CH]
-            //this function is to retrieve the pixel at (bs, r, c, ch) with padding (padding_row, padding_col)
-            //
-
-            better_assert( tsor.ndim() == 4, "Expecting a 4D tensor, but actual dimension is ", tsor.ndim() );
-            typedef typename Tsor::value_type value_type;
-
-            if ( r < padding_row ) return value_type{0};
-            if ( c < padding_col ) return value_type{0};
-
-            std::size_t const row = r - padding_row;
-            std::size_t const col = c - padding_col;
-
-            std::vector<std::size_t> const& shape = tsor.shape();
-            auto const[BS, R, C, CH] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
-
-            if ( row >= R ) return value_type{0};
-            if ( col >= C ) return value_type{0};
-
-            std::size_t const offset = ch + CH * (c + C* (r + bs * R));
-            return *(tsor.begin() + offset)
-        };
-
-        // TODO: move this to GPU
-        auto const& img2col = [&pixel_at, row_stride, col_stride, kernel_row, kernel_col]<Tensor Tsor>
-        ( Tsor const& input, Tsor& output, std::size_t const padding_row, std::size_t const padding_col ) noexcept
-        {
-            better_assert( input.ndim() == 4, "Expecting a 4D tensor, but actual dimension is ", input.ndim() );
-
-            std::vector<std::size_t> const& shape = tsor.shape();
-            auto const[BS, R, C, CH] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
-
-            std::size_t const new_row = static_cast<std::size_t>( (R + padding_row + padding_row - kernel_row) / row_stride ) + 1;
-            std::size_t const new_col = static_cast<std::size_t>( (C + padding_col + padding_col - kernel_col) / col_stride ) + 1;
-
-            output.reshape( {BS*new_row*new_col, kernel_row*kernel_col*CH} );
-
-            // dat = input[bs, r*stride_row:stride_row:(r+kernel_row)*stride_row, c*stride_col:stride_col:(c+kernel_col)*stride_col, : ]
-            std::size_t const stride_kc = CH;
-            std::size_t const stride_kr = kernel_col * stride_kc;
-            std::size_t const stride_c = kernel_row * stride_kr;
-            std::size_t const stride_r = new_col * stride_c;
-            std::size_t const stride_bs = new_row * stride_r;
-            for ( auto bs : range( BS ) )
-            {
-                std::size_t const offset_bs = bs * stride_bs;
-                for ( auto r : range( new_row ) )
-                {
-                    std::size_t const offset_r = offset_bs + r * stride_r;
-                    for ( auto c : range( new_col ) )
+                    std::int64_t const col_offset = bs * output_row * output_col * kernel_row * kernel_col * CH;
+                    std::int64_t const im_offset = bs * R * C * CH;
+                    for ( auto c : range( CH * kernel_row * kernel_col ) )
                     {
-                        std::size_t const offset_c =  offset_r + c * stride_c;
-                        for ( auto kr : range( kernel_row ) )
+                        std::int64_t const w_offset = c % kernel_col;
+                        std::int64_t const h_offset = ( c / kernel_col ) % kernel_row;
+                        std::int64_t const c_im = c / ( kernel_col * kernel_row );
+
+                        for ( auto h : range( output_row ) )
                         {
-                            std::size_t const offset_kr = offset_c + kr * stride_kr;
-                            for ( auto kc : range( kernel_col ) )
+                            std::int64_t const im_row_idx = h * stride[0] - padding[0] + h_offset * dilation_row;
+                            for ( auto w : range( output_col ) )
                             {
-                                std::size_t const offset_kc = offset_kr + kc * stride_kc;
-                                for ( auto ch : range( CH ) )
-                                {
-                                    std::size_t const offset_ch = offset_kc + ch;
-                                    *(output.begin()+offset_ch) = pixel_at( input, bs, r, c, ch, padding_row, padding_col );
-                                }
+                                std::int64_t const im_col_idx = w * stride[1] - padding[1] + w_offset * dilation_col;
+                                std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
+                                std::int64_t const col_idx = col_offset+( c * output_row + h ) * col + w; // TODO: check
+                                index_record[col_id] = static_cast<std::int32_t>( ( im_row_idx < 0 || im_row_idx >= R || im_col_idx < 0 || im_col_idx >= C ) ? 0xffffffff : im_idx );
                             }
                         }
                     }
                 }
             }
+
+            // fill-in
+            for ( auto idx : range( output_col.size() ) )
+            {
+                auto const index = index_record[idx];
+                ouput_col[idx] = index == 0xffffffff ? value_type{0} : input_img[index];
+            }
         };
 
-        return [row_stride, col_stride, kernel_row, kernel_col, &img2col, &padding]<Expression Ex>( Ex const& ex ) noexcept
+        auto constexpr img2col_backward = [s_index_record]<Tensor Tsor> ( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
+        {
+            typedef typename Tsor::value_type value_type;
+            std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
+            ans.resize( input.shape() );
+
+            for ( auto idx : range( grad.size() ) )
+            {
+                auto const index = index_record[idx];
+                if ( index != 0xffffffff )
+                    ans[index] += grad[idx];
+            }
+        };
+
+        return [ row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation, img2col_forward, img2col_backward ]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
-                []<Tensor Tsor>( Tsor const & tsor, std::vector<Tsor>& context ) noexcept
+                [=]<Tensor Tsor>( Tsor const & tsor, std::vector<Tsor>& context ) noexcept
                 {
-                    context.resize( 1 );
-
-                    std::size_t padding_row = 0UL;
-                    std::size_t padding_col = 0UL;
-                    if ( padding == std::string{"same"} )
-                    {
-                        padding_row = (kernel_row-row_stride+1) >> 1;
-                        padding_col = (kernel_col-col_stride+1) >> 1;
-                    }
-
-                    img2col( tsor, context[0], padding_row, padding_col );
+                    context.resize( 2 ); //reserve [output tensor, back-propagate tensor]
+                    img2col_forward( tsor, context[0], row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
                     return context[0];
                 },
-                []<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, std::vector<Tsor>& context ) noexcept
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, std::vector<Tsor>& context ) noexcept
                 {
-
+                    context.resize( 2 ); //reserve [output tensor, back-propagate tensor]
+                    img2col_backward( input, output, grad, context[1] );
+                    return context[1];
                 }
             )( ex );
         };
     }
 
-    auto constexpr conv2d( std::size_t const row_stride, std::size_t const col_stride, std::string const& padding="same" ) noexcept
+    auto constexpr conv2d( std::size_t const row_stride, std::size_t const col_stride, std::size_t const row_dilation, std::size_t const col_dilation, std::string const& padding="same" ) noexcept
     {
 
         // lhs_ex is for one 4D tensor of [BS, R, C, CH]
-        // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, 1, r, c, CH]
+        // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
         // the output tensor is of shape [BS, .., .., NC]
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
         //
-        return [row_stride, col_stride, padding]<Expression Ex, Variable Va>( Expression const& lhs_ex, Va const& rhs_ex ) noexcept
+        return [row_stride, col_stride, row_dilation, col_dilation, padding]<Expression Ex, Variable Va>( Expression const& lhs_ex, Va const& rhs_ex ) noexcept
         {
             std::vector<std::size_t> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
-            auto const[kernel_row, kernel_col] = std::make_tuple( shape[1], shape[2] );
+            auto const[new_channel, row_kernel, row_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2] );
 
-            auto lhs_ex_as_col = img2col(row_stride, col_stride, kernel_row, kernel_col, padding)( lhs_ex );
-            auto rhs_ex_flatten = flatten( rhs_ex );
+            /*
+                o = [i + 2*p - k - (k-1)*(d-1)]/s + 1, in which
+
+                o = output
+                i = input
+                p = padding
+                k = kernel_size
+                s = stride
+                d = dilation
+            */
+            std::size_t row_padding = 0;
+            std::size_t col_padding = 0;
+            if ( padding == "same" )
+            {
+                row_padding = (row_kernel + (row_kernel - 1) * (dilation - 1) - row_stride) >> 1;
+                col_padding = (col_kernel + (col_kernel - 1) * (dilation - 1) - col_stride) >> 1;
+            }
+
+            // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
+            auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex );
+            //auto rhs_ex_flatten = flatten( rhs_ex );
+            auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             auto flatten_output = rhs_ex_flatten * lhs_ex_as_col;
             auto ans = reshape()( flatten_output );
             return ans;
+
         };
     }
-    */
 
 
 

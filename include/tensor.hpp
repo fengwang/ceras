@@ -120,20 +120,30 @@ namespace ceras
         constexpr std::vector< std::size_t > const& shape() const noexcept { return shape_; }
         constexpr std::size_t size() const noexcept { return (*vector_).size() - memory_offset_; }
 
-        constexpr self_type& reshape( std::vector< std::size_t > const& new_shape )
+        constexpr self_type& resize( std::vector< std::size_t > const& new_shape )
         {
-            /*
-            better_assert( (*this).size() == std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
-            (*this).shape_ = new_shape;
-            return *this;
-            */
-
             std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
             if( size() != new_size )
             {
                 (*vector_).resize(new_size);
                 memory_offset_ = 0UL;
             }
+            (*this).shape_ = new_shape;
+            return *this;
+        }
+
+        //reshape is resize
+        constexpr self_type& reshape( std::vector< std::size_t > const& new_shape )
+        {
+            std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
+            better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
+            /*
+            if( size() != new_size )
+            {
+                (*vector_).resize(new_size);
+                memory_offset_ = 0UL;
+            }
+            */
             (*this).shape_ = new_shape;
             return *this;
         }
@@ -226,7 +236,7 @@ namespace ceras
 
     };
 
-    template <typename T, typename A=default_allocator<T> > requires std::floating_point<T>
+    template <typename T, typename A=default_allocator<T> >
     constexpr tensor<T, A> as_tensor( T val ) noexcept
     {
         tensor<T, A> ans{ {1,} };
@@ -881,7 +891,7 @@ namespace ceras
     // 2 3
     // 0.910905 0.525709 0.584262 0.34063 0.613034 0.0803866
     //
-    template < typename T, typename A=default_allocator<T> > requires std::floating_point<T>
+    template < typename T, typename A=default_allocator<T> >
     tensor<T,A> loadtxt( std::string const& file_name )
     {
         std::ifstream ifs( file_name );

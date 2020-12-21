@@ -266,6 +266,9 @@ int main()
         auto v3 = ceras::view_3d{ x.data(), 2, 3, 4 };
         std::cout << v3[0][0][0] << std::endl;
         std::cout << v3[1][2][3] << std::endl;
+
+        v3[1][2][3] = 1.0;
+        std::cout << v4[0][1][2][3] << std::endl;
     }
 
     return 0;
