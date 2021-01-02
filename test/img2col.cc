@@ -90,8 +90,8 @@ int main()
 {
     using namespace ceras;
 
-    //test_55_33();
-    //test_3320_33();
+    test_55_33();
+    test_3320_33();
 
     std::cout << "<--------------->" << std::endl;
     test_332_33();
