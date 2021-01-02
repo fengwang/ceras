@@ -74,6 +74,13 @@ namespace ceras
             return shape_.size();
         }
 
+        constexpr self_type& deep_copy( self_type const& other )
+        {
+            (*this).resize( other.shape );
+            std::copy_n( other.data(), size(), (*this).data() );
+            return *this;
+        }
+
         constexpr self_type const deep_copy() const
         {
             self_type ans{ shape_ };

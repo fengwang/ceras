@@ -553,17 +553,16 @@ namespace ceras
         )( ex );
     }
 
-    auto constexpr img2col(
-                            std::size_t const row_kernel, std::size_t const row_kernel,
+    auto inline    img2col( std::size_t const row_kernel, std::size_t const col_kernel,
                             std::size_t const row_padding, std::size_t const col_padding,
                             std::size_t const row_stride, std::size_t const col_stride,
                             std::size_t const row_dilation, std::size_t const col_dilation ) noexcept
     {
         std::shared_ptr<std::vector<std::int32_t>> s_index_record; // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
-        auto constexpr img2col_forward = [s_index_record]<Tensor Tsor>
+        auto img2col_forward = [s_index_record]<Tensor Tsor>
         (
-            Tsor const& input_img, Tsor& output_col,
+            Tsor const& input_img, Tsor& output_col_mat,
             std::size_t kernel_row, std::size_t kernel_col,
             std::size_t padding_row, std::size_t padding_col,
             std::size_t stride_row, std::size_t stride_col,
@@ -581,7 +580,7 @@ namespace ceras
             std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
             std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH; // TODO: check here
             std::size_t const output_column_matrix_col = BS * output_row * output_col; // TODO: check here
-            output_col.resize( {output_column_matrix_row, output_column_matrix_col} );
+            output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
 
             if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
@@ -599,13 +598,13 @@ namespace ceras
 
                         for ( auto h : range( output_row ) )
                         {
-                            std::int64_t const im_row_idx = h * stride[0] - padding[0] + h_offset * dilation_row;
+                            std::int64_t const im_row_idx = h * stride_row - padding_row + h_offset * dilation_row;
                             for ( auto w : range( output_col ) )
                             {
-                                std::int64_t const im_col_idx = w * stride[1] - padding[1] + w_offset * dilation_col;
+                                std::int64_t const im_col_idx = w * stride_col - padding_col + w_offset * dilation_col;
                                 std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
-                                std::int64_t const col_idx = col_offset+( c * output_row + h ) * col + w; // TODO: check
-                                index_record[col_id] = static_cast<std::int32_t>( ( im_row_idx < 0 || im_row_idx >= R || im_col_idx < 0 || im_col_idx >= C ) ? 0xffffffff : im_idx );
+                                std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w; // TODO: check
+                                index_record[col_idx] = static_cast<std::int32_t>( ( im_row_idx < 0 || im_row_idx >= R || im_col_idx < 0 || im_col_idx >= C ) ? 0xffffffff : im_idx );
                             }
                         }
                     }
@@ -613,14 +612,14 @@ namespace ceras
             }
 
             // fill-in
-            for ( auto idx : range( output_col.size() ) )
+            for ( auto idx : range( output_col_mat.size() ) )
             {
                 auto const index = index_record[idx];
-                ouput_col[idx] = index == 0xffffffff ? value_type{0} : input_img[index];
+                output_col_mat[idx] = index == 0xffffffff ? value_type{0} : input_img[index];
             }
         };
 
-        auto constexpr img2col_backward = [s_index_record]<Tensor Tsor> ( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
+        auto img2col_backward = [s_index_record]<Tensor Tsor> ( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
         {
             typedef typename Tsor::value_type value_type;
             std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
@@ -654,7 +653,7 @@ namespace ceras
         };
     }
 
-    auto constexpr conv2d( std::size_t const row_stride, std::size_t const col_stride, std::size_t const row_dilation, std::size_t const col_dilation, std::string const& padding="same" ) noexcept
+    auto inline conv2d( std::size_t const row_stride, std::size_t const col_stride, std::size_t const row_dilation, std::size_t const col_dilation, std::string const& padding="same" ) noexcept
     {
 
         // lhs_ex is for one 4D tensor of [BS, R, C, CH]
@@ -663,11 +662,11 @@ namespace ceras
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
         //
-        return [row_stride, col_stride, row_dilation, col_dilation, padding]<Expression Ex, Variable Va>( Expression const& lhs_ex, Va const& rhs_ex ) noexcept
+        return [row_stride, col_stride, row_dilation, col_dilation, padding]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
         {
             std::vector<std::size_t> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
-            auto const[new_channel, row_kernel, row_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2] );
+            auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
 
             /*
                 o = [i + 2*p - k - (k-1)*(d-1)]/s + 1, in which
@@ -683,8 +682,8 @@ namespace ceras
             std::size_t col_padding = 0;
             if ( padding == "same" )
             {
-                row_padding = (row_kernel + (row_kernel - 1) * (dilation - 1) - row_stride) >> 1;
-                col_padding = (col_kernel + (col_kernel - 1) * (dilation - 1) - col_stride) >> 1;
+                row_padding = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride) >> 1;
+                col_padding = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride) >> 1;
             }
 
             // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
@@ -692,7 +691,9 @@ namespace ceras
             //auto rhs_ex_flatten = flatten( rhs_ex );
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             auto flatten_output = rhs_ex_flatten * lhs_ex_as_col;
-            auto ans = reshape()( flatten_output );
+            std::size_t const new_row = 1;//TODO: fixme
+            std::size_t const new_col = 1;//TODO: fixme
+            auto ans = reshape({new_row, new_col, new_channel})( flatten_output );
             return ans;
 
         };
