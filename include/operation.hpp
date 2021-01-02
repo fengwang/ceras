@@ -87,8 +87,6 @@ namespace ceras
         tensor_type input_data_;
         tensor_type output_data_;
 
-        std::vector<tensor_type> context_;
-
         unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
             op_{operator_type_wrapper{}(op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
 
@@ -96,18 +94,7 @@ namespace ceras
         auto forward()// const
         {
             input_data_ = forward_wrapper{}( op_ );
-            if constexpr( std::is_invocable<Forward_Action, tensor_type const&>::value )
-            {
-                output_data_ = forward_action_( input_data_ );
-            }
-            else if constexpr( std::is_invocable<Forward_Action, tensor_type const&, std::vector<tensor_type>&>::value )
-            {
-                output_data_ = forward_action_( input_data_, context_ );
-            }
-            else
-            {
-                better_assert( false, "Should not be here!" );
-            }
+            output_data_ = forward_action_( input_data_ );
 
             return output_data_;
         }
@@ -116,20 +103,8 @@ namespace ceras
         template< typename T, typename A >
         void backward( tensor<T,A> const& grad )
         {
-            if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&>::value )
-            {
-                auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
-                backward_wrapper{}( op_ )( current_gradient );
-            }
-            else if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value )
-            {
-                auto const& current_gradient = backward_action_( input_data_, output_data_, grad, context_ );
-                backward_wrapper{}( op_ )( current_gradient );
-            }
-            else
-            {
-                better_assert( false, "Should not be here!" );
-            }
+            auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
+            backward_wrapper{}( op_ )( current_gradient );
         }
     };
 
@@ -154,8 +129,6 @@ namespace ceras
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
-        std::vector<tensor_type> context_;
-
         binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
             lhs_op_{operator_type_wrapper{}(lhs_op)}, rhs_op_{operator_type_wrapper{}(rhs_op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
 
@@ -164,46 +137,17 @@ namespace ceras
             lhs_input_data_ = forward_wrapper{}( lhs_op_ );
             rhs_input_data_ = forward_wrapper{}( rhs_op_ );
 
-            if constexpr( std::is_invocable<Forward_Action, tensor_type const&, tensor_type const&>::value )
-            {
-                output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
-            }
-            else if constexpr( std::is_invocable<Forward_Action, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value )
-            {
-                output_data_ = forward_action_( lhs_input_data_, rhs_input_data_, context_ );
-            }
-            else
-            {
-                better_assert( false, "Should not be here!" );
-            }
-
-            //output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+            output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
         }
 
         template< typename T, typename A >
         void backward( tensor<T,A> const& grad )
         {
-            if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, tensor_type const&>::value )
-            {
-                auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-                backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-                backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
-            }
-            else if constexpr( std::is_invocable<Backward_Action, tensor_type const&, tensor_type const&, tensor_type const&, tensor_type const&, std::vector<tensor_type>&>::value)
-            {
-                auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad, context_ );
-                backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-                backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
-            }
-            else
-            {
-                better_assert( false, "Should not be here!" );
-            }
+            auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
+            backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
+            backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
 
-            //auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-            //backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-            //backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
         }
     };
 
@@ -553,12 +497,21 @@ namespace ceras
         )( ex );
     }
 
-    auto inline    img2col( std::size_t const row_kernel, std::size_t const col_kernel,
-                            std::size_t const row_padding, std::size_t const col_padding,
-                            std::size_t const row_stride, std::size_t const col_stride,
-                            std::size_t const row_dilation, std::size_t const col_dilation ) noexcept
+    auto inline img2col( std::size_t const row_kernel, std::size_t const col_kernel,
+                         std::size_t const row_padding=1, std::size_t const col_padding=1,
+                         std::size_t const row_stride=1, std::size_t const col_stride=1,
+                         std::size_t const row_dilation=1, std::size_t const col_dilation=1 ) noexcept
     {
-        std::shared_ptr<std::vector<std::int32_t>> s_index_record; // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
+        debug_print( "calling img2col with row_kernel=", row_kernel );
+        debug_print( "col_kernel=", col_kernel );
+        debug_print( "row_padding=", row_padding );
+        debug_print( "col_padding=", col_padding );
+        debug_print( "row_stride=", row_stride );
+        debug_print( "col_stride=", col_stride );
+        debug_print( "row_dilation=", row_dilation );
+        debug_print( "col_dilation=", col_dilation );
+
+        std::shared_ptr<std::vector<std::int32_t>> s_index_record = std::make_shared<std::vector<std::int32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto img2col_forward = [s_index_record]<Tensor Tsor>
         (
@@ -569,6 +522,8 @@ namespace ceras
             std::size_t dilation_row, std::size_t dilation_col
         ) noexcept
         {
+            debug_print( "img2col_forward with kernel_row=", kernel_row, ", kernel_col=", kernel_col, ", stride_row=", stride_row, ", stride_col=", stride_col, ", dilation_row=", dilation_row, ", dilation_col=", dilation_col );
+
             typedef typename Tsor::value_type value_type;
             std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
@@ -576,15 +531,23 @@ namespace ceras
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
             auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
 
+            debug_print( "img2col_forward: Bs=", BS, " R=", R, " C=", C, " CH=", CH );
+
             std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
             std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
             std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH; // TODO: check here
             std::size_t const output_column_matrix_col = BS * output_row * output_col; // TODO: check here
+
+            debug_print( "img2col_forward: output_row=", output_row, ", output_col=", output_col, ", output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
+
             output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
+
+            debug_print( "img2col_forward: outptu_col_mat resize with output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
             if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
-                index_record.resize( output_column_matrix_row * output_column_matrix_col );
+                debug_print( "index_record has not yet been filled, trying to fill it!" );
+                index_record.resize( {output_column_matrix_row * output_column_matrix_col,} );
 
                 for ( auto bs : range( BS ) )
                 {
@@ -615,7 +578,7 @@ namespace ceras
             for ( auto idx : range( output_col_mat.size() ) )
             {
                 auto const index = index_record[idx];
-                output_col_mat[idx] = index == 0xffffffff ? value_type{0} : input_img[index];
+                output_col_mat[idx] = (index == 0xffffffff) ? value_type{0} : input_img[index];
             }
         };
 
@@ -637,17 +600,17 @@ namespace ceras
         {
             return make_unary_operator
             (
-                [=]<Tensor Tsor>( Tsor const & tsor, std::vector<Tsor>& context ) noexcept
+                [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
-                    context.resize( 2 ); //reserve [output tensor, back-propagate tensor]
-                    img2col_forward( tsor, context[0], row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
-                    return context[0];
+                    Tsor output;
+                    img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
+                    return output;
                 },
-                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, std::vector<Tsor>& context ) noexcept
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
-                    context.resize( 2 ); //reserve [output tensor, back-propagate tensor]
-                    img2col_backward( input, output, grad, context[1] );
-                    return context[1];
+                    Tsor back_grad;
+                    img2col_backward( input, output, grad, back_grad );
+                    return back_grad;
                 }
             )( ex );
         };
@@ -684,6 +647,11 @@ namespace ceras
             {
                 row_padding = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride) >> 1;
                 col_padding = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride) >> 1;
+            }
+            if ( padding == "transposed" )
+            {
+                row_padding = row_kernel - 1;
+                col_padding = col_kernel - 1;
             }
 
             // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]

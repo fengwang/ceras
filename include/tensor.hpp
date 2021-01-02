@@ -7,6 +7,7 @@
 #include "./utils/stride_iterator.hpp"
 #include "./utils/for_each.hpp"
 #include "./utils/buffered_allocator.hpp"
+#include "./utils/debug.hpp"
 
 namespace ceras
 {
@@ -105,7 +106,7 @@ namespace ceras
             return *(data()+idx);
         }
 
-        tensor() : memory_offset_{0} {}
+        tensor() : memory_offset_{0}, vector_{std::make_shared<vector_type>()} {}
 
         //
         // tensor<double> A{ {2,2}, { 1.0, 1.0, 1.0, 1.0} };
@@ -130,7 +131,9 @@ namespace ceras
         constexpr self_type& resize( std::vector< std::size_t > const& new_shape )
         {
             std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if( size() != new_size )
+            debug_print( "calling tensor::resize with new size ", new_size );
+            debug_print( "while the old size is ", (*this).size() );
+            if( (*this).size() != new_size )
             {
                 (*vector_).resize(new_size);
                 memory_offset_ = 0UL;

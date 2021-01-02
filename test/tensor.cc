@@ -270,6 +270,13 @@ int main()
         v3[1][2][3] = 1.0;
         std::cout << v4[0][1][2][3] << std::endl;
     }
+    {
+        auto x = ceras::random<double>( {1, 2, 3, 4}, 0.0, 10.0 );
+        std::cout << "Testing size(): expecting 24, got " << x.size() << std::endl;
+
+        x.resize( {12, 1} );
+        std::cout << "Testing resize(): resize to {12, 1}, got:\n" << x << std::endl;
+    }
 
     return 0;
 }

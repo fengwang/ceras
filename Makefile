@@ -1,12 +1,12 @@
-CXX           = clang++
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
-LFLAGS        = $(OP) -pthread
+#CXX           = clang++
+#OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
+#CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
+#LFLAGS        = $(OP) -pthread
 
-#CXX           = g++
-#OP            = -O0  -pg -DDEBUG
-#CXXFLAGS      = -std=c++2a -Wall -Wextra $(OP)
-#LFLAGS        = $(OP) -pg -O0
+CXX           = g++
+OP            = -O0  -pg -DDEBUG
+CXXFLAGS      = -std=c++2a -Wall -Wextra $(OP)
+LFLAGS        = $(OP) -pg -O0
 
 
 LINK          = $(CXX)
@@ -83,6 +83,10 @@ mnist: test/mnist.cc
 mnist_leaky_relu: test/mnist_leaky_relu.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_leaky_relu.o test/mnist_leaky_relu.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_leaky_relu $(OBJECTS_DIR)/test_mnist_leaky_relu.o $(LFLAGS)
+
+img2col: test/img2col.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_img2col.o test/img2col.cc
+	$(LINK) -o $(BIN_DIR)/test_img2col $(OBJECTS_DIR)/test_img2col.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin
