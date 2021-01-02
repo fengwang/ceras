@@ -569,7 +569,7 @@ namespace ceras
                                 std::int64_t const im_col_idx = w * stride_col - padding_col + w_offset * dilation_col;
                                 std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
                                 std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w; // TODO: check
-                                index_record[col_idx] = static_cast<std::uint32_t>( ( im_row_idx < 0 || im_row_idx >= static_cast<std::int64_t>(R) || im_col_idx < 0 || im_col_idx >= static_cast<std::int64_t>(C) ) ? 0xffffffff : im_idx );
+                                index_record[col_idx] = static_cast<std::uint32_t>((im_row_idx<0 || im_row_idx>=static_cast<std::int64_t>(R) || im_col_idx<0 || im_col_idx>=static_cast<std::int64_t>(C)) ? 0xffffffff : im_idx);
                             }
                         }
                     }
