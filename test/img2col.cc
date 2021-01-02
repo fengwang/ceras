@@ -71,6 +71,20 @@ void test_2332_33()
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
 
+void test_3332_33()
+{
+    auto a = ceras::linspace<double>( 1.0, 54.0, 54 );
+    std::cout << "a created with:\n" << a << std::endl;
+    a.reshape( {3, 3, 3, 2} );
+
+    auto va = ceras::variable<double>{ a };
+    auto col_va = ceras::img2col(2,2)( va );
+
+    ceras::session<double> s;
+    auto col_im = s.run( col_va );
+    std::cout << "after col2img:\n" << col_im << std::endl;
+}
+
 
 int main()
 {
@@ -83,6 +97,9 @@ int main()
     test_332_33();
 
     std::cout << "---------------" << std::endl;
+    test_3332_33();
+
+    std::cout << ">---------------<" << std::endl;
     test_2332_33();
 
 
