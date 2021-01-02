@@ -497,11 +497,13 @@ namespace ceras
         )( ex );
     }
 
-    auto inline img2col( std::size_t const row_kernel, std::size_t const col_kernel,
-                         std::size_t const row_padding=1, std::size_t const col_padding=1,
+    auto inline img2col( std::size_t const row_kernel, std::size_t col_kernel=-1,
+                         std::size_t const row_padding=0, std::size_t col_padding=0,
                          std::size_t const row_stride=1, std::size_t const col_stride=1,
                          std::size_t const row_dilation=1, std::size_t const col_dilation=1 ) noexcept
     {
+        if ( col_kernel == (std::size_t)-1 ) col_kernel = row_kernel;
+
         debug_print( "calling img2col with row_kernel=", row_kernel );
         debug_print( "col_kernel=", col_kernel );
         debug_print( "row_padding=", row_padding );
@@ -511,7 +513,7 @@ namespace ceras
         debug_print( "row_dilation=", row_dilation );
         debug_print( "col_dilation=", col_dilation );
 
-        std::shared_ptr<std::vector<std::int32_t>> s_index_record = std::make_shared<std::vector<std::int32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
+        std::shared_ptr<std::vector<std::uint32_t>> s_index_record = std::make_shared<std::vector<std::uint32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto img2col_forward = [s_index_record]<Tensor Tsor>
         (
@@ -525,7 +527,7 @@ namespace ceras
             debug_print( "img2col_forward with kernel_row=", kernel_row, ", kernel_col=", kernel_col, ", stride_row=", stride_row, ", stride_col=", stride_col, ", dilation_row=", dilation_row, ", dilation_col=", dilation_col );
 
             typedef typename Tsor::value_type value_type;
-            std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
+            std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
             std::vector<std::size_t> input_shape = input_img.shape();
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
@@ -567,7 +569,7 @@ namespace ceras
                                 std::int64_t const im_col_idx = w * stride_col - padding_col + w_offset * dilation_col;
                                 std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
                                 std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w; // TODO: check
-                                index_record[col_idx] = static_cast<std::int32_t>( ( im_row_idx < 0 || im_row_idx >= R || im_col_idx < 0 || im_col_idx >= C ) ? 0xffffffff : im_idx );
+                                index_record[col_idx] = static_cast<std::uint32_t>( ( im_row_idx < 0 || im_row_idx >= static_cast<std::int64_t>(R) || im_col_idx < 0 || im_col_idx >= static_cast<std::int64_t>(C) ) ? 0xffffffff : im_idx );
                             }
                         }
                     }
@@ -582,10 +584,10 @@ namespace ceras
             }
         };
 
-        auto img2col_backward = [s_index_record]<Tensor Tsor> ( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
+        auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
         {
-            typedef typename Tsor::value_type value_type;
-            std::vector<std::int32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
+            //typedef typename Tsor::value_type value_type;
+            std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
             ans.resize( input.shape() );
 
             for ( auto idx : range( grad.size() ) )
