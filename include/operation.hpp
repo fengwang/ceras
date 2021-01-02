@@ -542,8 +542,8 @@ namespace ceras
 
             debug_print( "img2col_forward: output_row=", output_row, ", output_col=", output_col, ", output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
-            //output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
-            output_col_mat.resize( {BS, output_column_matrix_row, output_row*output_col} );
+            output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
+            //output_col_mat.resize( {BS, output_column_matrix_row, output_row*output_col} );
 
             debug_print( "img2col_forward: outptu_col_mat resize with output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
@@ -570,12 +570,28 @@ namespace ceras
                                 std::int64_t const im_col_idx = w * stride_col - padding_col + w_offset * dilation_col;
                                 std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
                                 std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w; // TODO: check
-                                //std::int64_t const col_idx = bs * output_row * output_col * kernel_row * kernel_col * CH + ( c * output_row + h ) * output_col + w; // TODO: check
                                 index_record[col_idx] = static_cast<std::uint32_t>((im_row_idx<0 || im_row_idx>=static_cast<std::int64_t>(R) || im_col_idx<0 || im_col_idx>=static_cast<std::int64_t>(C)) ? 0xffffffff : im_idx);
                             }
                         }
                     }
                 }
+                // re-arrange [bs, new_R, new_C] --> [new_R, new_c*bs]
+                {
+                    std::vector<std::uint32_t> re_arranged_index;
+                    re_arranged_index.resize( index_record.size() );
+
+                    view_3d<std::uint32_t> re_arranged_mat{ re_arranged_index.data(), output_column_matrix_row, BS, output_row*output_col };
+                    view_3d<std::uint32_t> index_record_mat{ index_record.data(), BS, output_column_matrix_row, output_row*output_col };
+
+                    for ( auto bs : range( BS ) )
+                        for ( auto r : range( output_column_matrix_row ) )
+                            for ( auto c : range( output_row*output_col ) )
+                                re_arranged_mat[r][bs][c] = index_record_mat[bs][r][c];
+
+                    // overwrite index record
+                    std::copy( re_arranged_index.begin(), re_arranged_index.end(), index_record.begin() );
+                }
+
             }
 
             // fill-in

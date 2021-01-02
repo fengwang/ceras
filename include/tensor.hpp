@@ -478,17 +478,48 @@ namespace ceras
         if ( 1 == rhs.ndim() )
             return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ) );
 
-        typedef typename Tsor::value_type value_type;
-        auto const& lhs_shape = lhs.shape();
-        auto const& rhs_shape = rhs.shape();
+        better_assert( 2 == rhs.ndim(), "expecting rhs tensor has 2 dimensions, but got ", rhs.ndim() );
 
-        view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
-        view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
-        auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
-        Tsor ans{ std::vector<std::size_t>{ {row, col} } };
-        view_2d<value_type> z{ ans.data(), row, col };
-        gemm( x, y, z );
-        return ans;
+        if ( 2 == lhs.ndim() )
+        {
+            typedef typename Tsor::value_type value_type;
+            auto const& lhs_shape = lhs.shape();
+            auto const& rhs_shape = rhs.shape();
+
+            view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
+            view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
+            auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
+            Tsor ans{ std::vector<std::size_t>{ {row, col} } };
+            view_2d<value_type> z{ ans.data(), row, col };
+            gemm( x, y, z );
+            return ans;
+        }
+
+        if ( 3 == lhs.ndim() )
+        {
+            typedef typename Tsor::value_type value_type;
+            auto const& lhs_shape = lhs.shape();
+            auto const [batch_size, r, c] = std::make_tuple( lhs_shape[0], lhs_shape[1], lhs_shape[2] );
+            auto const& rhs_shape = rhs.shape();
+            auto const [_r, _c] = std::make_tuple( rhs_shape[0], rhs_shape[1]  );
+
+            better_assert( c == _r, "expecting dimension match, but last dim of lhs is ", c, ", and first dim of rhs is ", _r );
+
+            Tsor ans{ std::vector<std::size_t>{ {batch_size, r, _c} } };
+            view_2d<value_type> const y{ rhs.data(), _r, _c };
+            for ( auto bs : range( batch_size ) )
+            {
+                view_2d<value_type> const x{ lhs.data()+bs*r*c, r, c };
+                view_2d<value_type> z{ ans.data()+r*_c, r, _c };
+                gemm( x, y, z );
+            }
+
+            return ans;
+        }
+
+        better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
+
+        return Tsor{};
     }
 
     template< Tensor Tsor >
