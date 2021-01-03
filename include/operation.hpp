@@ -448,49 +448,33 @@ namespace ceras
         };
     }
 
-    auto inline reshape( std::vector<std::size_t> const& new_shape ) noexcept
+    // include_batch_flag:
+    //
+    //  true: considering the batch size at the first dim
+    //      - for an input of (1, 3, 4), expecting an incoming expression of shape like [BS, 12, 1 1]
+    //      - expected output of shape [BS, 1, 3, 4]
+    //  false: do not consider the batch size
+    //      - for an input of (1, 3, 4), expecting an incoming expression of shape like [12, 1]
+    //      - expected output of shape [1, 3, 4]
+    auto inline reshape( std::vector<std::size_t> const& new_shape, bool include_batch_flag=true ) noexcept
     {
-        return [new_shape]<Expression Ex>( Ex const& ex ) noexcept
+        return [new_shape, include_batch_flag]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
-                [new_shape]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                [new_shape, include_batch_flag]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    if constexpr(debug_mode)
+                    std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    std::size_t const total_size = tsor.size();
+                    std::size_t const batch_size = total_size / new_size;
+                    better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, got ",  batch_size*new_size, " but total input size is ", total_size );
+
+                    if ( !include_batch_flag )
                     {
-                        std::cout << "reshape operator with input tensor of old shape ";
-                        std::vector<std::size_t> shape = tsor.shape();
-                        std::copy( shape.begin(), shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
-                        std::cout << std::endl;
-
-                        std::cout << "and the new_shape is\n";
-                        std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
-                        std::cout << std::endl;
-                    }
-
-                    std::size_t const new_size_per_batch = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
-                    std::vector<std::size_t> const& old_shape = tsor.shape();
-
-                    if ( tsor.size() == new_size_per_batch )
-                    {
-                        if (old_shape[0] != 1 )
-                        {
-                            Tsor ans{ tsor };
-                            ans.reshape( new_shape );
-                            if constexpr(debug_mode)
-                            {
-                                std::cout << "> Got the new_shape ";
-                                std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
-                                std::cout << std::endl;
-                            }
-                            return ans;
-                        }
-                    }
-
-                    std::size_t const batch_size = old_shape[0];
-                    {
-                        debug_print( "batch_size is ", batch_size, ", and new_size_per_batch is ", new_size_per_batch );
-                        better_assert( batch_size * new_size_per_batch == tsor.size(), "size mismatch for reshape operator, got ",  batch_size*new_size_per_batch, " but input is ", tsor.size() );
+                        better_assert( batch_size == 1, "expecting batch size of 1 while not including batch, but got ", batch_size );
+                        Tsor ans{tsor};
+                        ans.reshape( new_shape );
+                        return ans;
                     }
 
                     std::vector<std::size_t> batched_new_shape;
@@ -498,13 +482,6 @@ namespace ceras
                         batched_new_shape.resize( 1 + new_shape.size() );
                         batched_new_shape[0] = batch_size;
                         std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
-
-                        if constexpr(debug_mode)
-                        {
-                            std::cout << "> Got batched new shape of ";
-                            std::copy( batched_new_shape.begin(), batched_new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
-                            std::cout << std::endl;
-                        }
                     }
 
                     Tsor ans{ tsor };
@@ -810,7 +787,8 @@ namespace ceras
                 std::cout << "evaluation of img2col result:\n" << col_mat << std::endl;
             }
 
-            auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
+            //auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
+            auto rhs_ex_flatten = reshape({channel, row_kernel*col_kernel}, false)( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             if constexpr(debug_mode)
             {
                 std::cout << "debug rhs_ex_flatten" << std::endl;
