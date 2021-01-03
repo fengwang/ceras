@@ -126,7 +126,13 @@ namespace ceras
         constexpr self_type& operator = ( self_type && ) noexcept = default;
 
         constexpr std::vector< std::size_t > const& shape() const noexcept { return shape_; }
-        constexpr std::size_t size() const noexcept { return (*vector_).size() - memory_offset_; }
+
+        constexpr std::size_t size() const noexcept
+        {
+            if ( !vector_ )
+                return 0;
+            return (*vector_).size() - memory_offset_;
+        }
 
         constexpr self_type& resize( std::vector< std::size_t > const& new_shape )
         {
@@ -495,6 +501,7 @@ namespace ceras
             return ans;
         }
 
+        /*
         if ( 3 == lhs.ndim() )
         {
             typedef typename Tsor::value_type value_type;
@@ -516,7 +523,9 @@ namespace ceras
 
             return ans;
         }
+        */
 
+        debug_print( "operator * called, lhs tensor is:\n", lhs );
         better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
 
         return Tsor{};

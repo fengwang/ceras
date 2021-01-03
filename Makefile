@@ -89,6 +89,10 @@ transpose: test/transpose.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_transpose.o test/transpose.cc
 	$(LINK) -o $(BIN_DIR)/test_transpose $(OBJECTS_DIR)/test_transpose.o $(LFLAGS)
 
+conv2d: test/conv2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_conv2d.o test/conv2d.cc
+	$(LINK) -o $(BIN_DIR)/test_conv2d $(OBJECTS_DIR)/test_conv2d.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

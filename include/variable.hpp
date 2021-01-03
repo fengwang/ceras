@@ -48,7 +48,7 @@ namespace ceras
 
         std::vector<std::size_t> shape() const noexcept
         {
-            return data_.shape();
+            return (*data_).shape();
         }
     };//struct variable
 
