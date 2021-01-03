@@ -196,17 +196,11 @@ namespace ceras
                                         {
                                             Tsor ans = grad.deep_copy();
                                             while( input.ndim() < ans.ndim() )
-                                            {
                                                 ans = sum( ans, 0 );
-                                            }
                                             auto const& shape = input.shape();
                                             for ( auto axis : range( input.ndim() ) )
-                                            {
                                                 if ( shape[axis] == 1 )
-                                                {
                                                     ans = sum( ans, axis, true );
-                                                }
-                                            }
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
@@ -673,7 +667,7 @@ namespace ceras
             //debug_print( "img2col_forward end with output_col_mat:\n", output_col_mat );
         };
 
-        auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
+        auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad, Tsor& ans ) noexcept
         {
             typedef typename Tsor::value_type value_type;
             ans.resize( input.shape() );
