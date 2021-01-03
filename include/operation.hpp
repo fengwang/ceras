@@ -497,6 +497,82 @@ namespace ceras
         )( ex );
     }
 
+    template <Expression Ex>
+    auto constexpr identity( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept
+            {
+                return tsor;
+            },
+            []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+            {
+                return grad;
+            }
+        )( ex );
+    }
+
+    auto constexpr swap_axes( std::size_t axis_1, std::size_t axis_2 ) noexcept
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                {
+                    return tsor;//TODO: fix
+                },
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                {
+                    return grad;//TODO: fix
+                }
+            )( ex );
+        };
+    }
+
+    template< Expression Ex >
+    auto constexpr transpose( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+
+                std::vector<std::size_t> const shape = tsor.shape();
+                auto const[row, col] = std::make_tuple( shape[0], shape[1] );
+                view_2d<value_type> v_in{ tsor.data(), row, col };
+
+                Tsor ans{ {col, row} }; // TODO: optimize it out with shared_ptr
+                view_2d<value_type> v_out{ ans.data(), col, row };
+
+                for ( auto r : range( row ) )
+                    for ( auto c : range( col ) )
+                        v_out[c][r] = v_in[r][c];
+
+                return ans;
+            },
+            []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+
+                std::vector<std::size_t> const shape = grad.shape();
+                auto const[row, col] = std::make_tuple( shape[0], shape[1] );
+                view_2d<value_type> v_in{ grad.data(), row, col };
+
+                Tsor back_ans{ {col, row} }; // TODO: optimize it out with shared_ptr
+                view_2d<value_type> v_out{ back_ans.data(), col, row };
+
+                for ( auto r : range( row ) )
+                    for ( auto c : range( col ) )
+                        v_out[c][r] = v_in[r][c];
+
+                return back_ans;
+            }
+        )( ex );
+    }
+
     auto inline img2col( std::size_t const row_kernel, std::size_t col_kernel=-1,
                          std::size_t const row_padding=0, std::size_t col_padding=0,
                          std::size_t const row_stride=1, std::size_t const col_stride=1,
@@ -666,12 +742,12 @@ namespace ceras
 
             // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex );
-            //auto rhs_ex_flatten = flatten( rhs_ex );
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             auto flatten_output = rhs_ex_flatten * lhs_ex_as_col; // [NC, BS * new_row * new_col]
+            auto tr_output = transpose( flatten_output ); // [BS*new_row*new_col, NC]
             std::size_t const new_row = 1;//TODO: fixme
             std::size_t const new_col = 1;//TODO: fixme
-            auto ans = reshape({new_row, new_col, new_channel})( flatten_output );
+            auto ans = reshape({new_row, new_col, new_channel})( tr_output );
             return ans;
 
         };
