@@ -789,8 +789,8 @@ namespace ceras
                 std::cout << "evaluation of img2col result:\n" << col_mat << std::endl;
             }
 
-            //auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
-            auto rhs_ex_flatten = reshape({channel, row_kernel*col_kernel}, false)( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
+            auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
+            //auto rhs_ex_flatten = reshape({channel, row_kernel*col_kernel}, false)( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             if constexpr(debug_mode)
             {
                 std::cout << "debug rhs_ex_flatten" << std::endl;

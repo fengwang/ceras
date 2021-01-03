@@ -50,11 +50,35 @@ void test_44_same()
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
 }
 
+void test_44_22()
+{
+    std::cout << color::rize( "test_44_22", "Red" ) << std::endl;
+    auto a = ceras::linspace<double>( 1.0, 16.0, 16 );
+    a.reshape( {4, 4} );
+    std::cout << "a created with:\n" << a << std::endl;
+    a.reshape( {1, 4, 4, 1} );
+
+    auto b = ceras::tensor<double>{ {2, 2, 2}, {1, 2, 3, 4, -4, -3, -2, -1} };
+    std::cout << "b created with:\n" << b << std::endl;
+    b.reshape( {2, 2, 2, 1} );
+
+    auto va = ceras::variable<double>{ a };
+    auto vb = ceras::variable<double>{ b };
+    auto cab = ceras::conv2d(4, 4)( va, vb );
+
+    ceras::session<double> s;
+
+    auto ans = s.run( cab );
+    std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
+}
+
 int main()
 {
     test_44();
 
     test_44_same();
+
+    test_44_22();
 
     return 0;
 }
