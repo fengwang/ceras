@@ -538,6 +538,8 @@ namespace ceras
         (
             []<Tensor Tsor>( Tsor const& tsor ) noexcept
             {
+                better_assert( tsor.ndim() == 2, "Expecting 2D tensor, but got dimensions ", tsor.ndim() );
+
                 typedef typename Tsor::value_type value_type;
 
                 std::vector<std::size_t> const shape = tsor.shape();
@@ -740,8 +742,7 @@ namespace ceras
                 col_padding = col_kernel - 1;
             }
 
-            // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
-            auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex );
+            auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
             auto flatten_output = rhs_ex_flatten * lhs_ex_as_col; // [NC, BS * new_row * new_col]
             auto tr_output = transpose( flatten_output ); // [BS*new_row*new_col, NC]
@@ -749,7 +750,6 @@ namespace ceras
             std::size_t const new_col = 1;//TODO: fixme
             auto ans = reshape({new_row, new_col, new_channel})( tr_output );
             return ans;
-
         };
     }
 
