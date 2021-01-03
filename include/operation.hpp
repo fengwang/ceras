@@ -504,15 +504,6 @@ namespace ceras
     {
         if ( col_kernel == (std::size_t)-1 ) col_kernel = row_kernel;
 
-        debug_print( "calling img2col with row_kernel=", row_kernel );
-        debug_print( "col_kernel=", col_kernel );
-        debug_print( "row_padding=", row_padding );
-        debug_print( "col_padding=", col_padding );
-        debug_print( "row_stride=", row_stride );
-        debug_print( "col_stride=", col_stride );
-        debug_print( "row_dilation=", row_dilation );
-        debug_print( "col_dilation=", col_dilation );
-
         std::shared_ptr<std::vector<std::uint32_t>> s_index_record = std::make_shared<std::vector<std::uint32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto img2col_forward = [s_index_record]<Tensor Tsor>
@@ -549,7 +540,6 @@ namespace ceras
             if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
                 debug_print( "index_record has not yet been filled, trying to fill it!" );
-                //index_record.resize( {output_column_matrix_row * output_column_matrix_col,} );
                 index_record.resize( output_column_matrix_row * output_column_matrix_col );
 
                 for ( auto bs : range( BS ) )
@@ -587,11 +577,9 @@ namespace ceras
                         for ( auto r : range( output_column_matrix_row ) )
                             for ( auto c : range( output_row*output_col ) )
                                 re_arranged_mat[r][bs][c] = index_record_mat[bs][r][c];
-
                     // overwrite index record
                     std::copy( re_arranged_index.begin(), re_arranged_index.end(), index_record.begin() );
                 }
-
             }
 
             // fill-in
@@ -632,17 +620,17 @@ namespace ceras
                     Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
                     //Tsor output;
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
-                    return output;
+                    return Tsor{output};
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
-                    std::any& back_grad_cache_tsor;
+                    std::any& back_grad_cache_tsor = *back_grad_cache;
                     if ( !back_grad_cache_tsor.has_value() )
                         back_grad_cache_tsor = Tsor{};
                     Tsor& back_grad = std::any_cast<Tsor&>( back_grad_cache_tsor );
                     //Tsor back_grad;
                     img2col_backward( input, output, grad, back_grad );
-                    return back_grad;
+                    return Tsor{back_grad};
                 }
             )( ex );
         };
@@ -663,16 +651,6 @@ namespace ceras
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
 
-            /*
-                o = [i + 2*p - k - (k-1)*(d-1)]/s + 1, in which
-
-                o = output
-                i = input
-                p = padding
-                k = kernel_size
-                s = stride
-                d = dilation
-            */
             std::size_t row_padding = 0;
             std::size_t col_padding = 0;
             if ( padding == "same" )
@@ -690,7 +668,7 @@ namespace ceras
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex );
             //auto rhs_ex_flatten = flatten( rhs_ex );
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
-            auto flatten_output = rhs_ex_flatten * lhs_ex_as_col;
+            auto flatten_output = rhs_ex_flatten * lhs_ex_as_col; // [NC, BS * new_row * new_col]
             std::size_t const new_row = 1;//TODO: fixme
             std::size_t const new_col = 1;//TODO: fixme
             auto ans = reshape({new_row, new_col, new_channel})( flatten_output );
