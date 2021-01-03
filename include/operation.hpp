@@ -738,7 +738,7 @@ namespace ceras
     }
 
     auto inline conv2d( std::size_t row_input, std::size_t col_input,
-            std::size_t const row_stride=1, std::size_t const col_stride=1, std::size_t const row_dilation=1, std::size_t const col_dilation=1, std::string const& padding="same" ) noexcept
+            std::size_t const row_stride=1, std::size_t const col_stride=1, std::size_t const row_dilation=1, std::size_t const col_dilation=1, std::string const& padding="valid" ) noexcept
     {
         // lhs_ex is for one 4D tensor of [BS, R, C, CH]
         // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
@@ -748,14 +748,6 @@ namespace ceras
         //
         return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
         {
-            if constexpr(debug_mode)
-            {
-                session<double> s;
-                auto lhs = s.run( lhs_ex );
-                std::cout << "evaluation of lhs expression for conv2d, the result is\n" << lhs << std::endl;
-            }
-
-
             std::vector<std::size_t> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
@@ -764,8 +756,14 @@ namespace ceras
             std::size_t col_padding = 0;
             if ( padding == "same" )
             {
-                row_padding = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride) >> 1;
-                col_padding = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride) >> 1;
+                std::size_t const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
+                better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total );
+                std::size_t const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
+                better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
+                row_padding = row_padding_total >> 1;
+                col_padding = col_padding_total >> 1;
+                //row_padding = static_cast<std::size_t>(std::ceil( (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride) / 2.0 ));
+                //col_padding = static_cast<std::size_t>(std::ceil( (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride) / 2.0 ));
             }
             if ( padding == "transposed" )
             {
@@ -773,7 +771,7 @@ namespace ceras
                 col_padding = col_kernel - 1;
             }
 
-            debug_print( "conv2d created with row_padding ", row_padding, " and col_padding ", col_padding, ", while padding is ", padding );
+            //debug_print( "conv2d created with row_padding ", row_padding, " and col_padding ", col_padding, ", while padding is ", padding );
 
             std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
             std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
@@ -782,51 +780,18 @@ namespace ceras
 
             // TODO: check dimension
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
-            if constexpr(debug_mode)
-            {
-                session<double> s;
-                auto col_mat = s.run( lhs_ex_as_col );
-                std::cout << "evaluation of img2col result:\n" << col_mat << std::endl;
-            }
 
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
-            //auto rhs_ex_flatten = reshape({channel, row_kernel*col_kernel}, false)( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
-            if constexpr(debug_mode)
-            {
-                std::cout << "debug rhs_ex_flatten" << std::endl;
-                session<double> s;
-                auto result = s.run( rhs_ex_flatten );
-                std::cout << "evaluation of rhs_ex_flatten result:\n" << result << std::endl;
-            }
 
             auto flatten_output = rhs_ex_flatten * lhs_ex_as_col; // [NC, BS * new_row * new_col]
-            if constexpr(debug_mode)
-            {
-                session<double> s;
-                auto result = s.run( flatten_output );
-                std::cout << "evaluation of flatten_output result:\n" << result << std::endl;
-            }
 
             auto tr_output = transpose( flatten_output ); // [BS*new_row*new_col, NC]
-            if constexpr(debug_mode)
-            {
-                session<double> s;
-                auto result = s.run( tr_output );
-                std::cout << "evaluation of tr_output result:\n" << result << std::endl;
-            }
 
             auto ans = reshape({row_output, col_output, new_channel})( tr_output );
-            if constexpr(debug_mode)
-            {
-                session<double> s;
-                auto result = s.run( ans );
-                std::cout << "evaluation of reshape ans result:\n" << result << std::endl;
-            }
+
             return ans;
         };
     }
-
-
 
 }//namespace ceras
 
