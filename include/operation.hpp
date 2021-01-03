@@ -448,16 +448,8 @@ namespace ceras
         };
     }
 
-    //auto constexpr reshape( std::vector<std::size_t> const& new_shape ) noexcept
     auto inline reshape( std::vector<std::size_t> const& new_shape ) noexcept
     {
-        if constexpr(debug_mode)
-        {
-            std::cout << "reshape operator constructed with new shape of ";
-            std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
-            std::cout << std::endl;
-        }
-
         return [new_shape]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
@@ -466,10 +458,11 @@ namespace ceras
                 {
                     if constexpr(debug_mode)
                     {
-                        std::cout << "reshape operator with input tensor of ";
+                        std::cout << "reshape operator with input tensor of old shape ";
                         std::vector<std::size_t> shape = tsor.shape();
                         std::copy( shape.begin(), shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
                         std::cout << std::endl;
+
                         std::cout << "and the new_shape is\n";
                         std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
                         std::cout << std::endl;
@@ -484,13 +477,18 @@ namespace ceras
                         {
                             Tsor ans{ tsor };
                             ans.reshape( new_shape );
+                            if constexpr(debug_mode)
+                            {
+                                std::cout << "> Got the new_shape ";
+                                std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
+                                std::cout << std::endl;
+                            }
                             return ans;
                         }
                     }
 
                     std::size_t const batch_size = old_shape[0];
                     {
-                        //std::size_t const new_size_per_batch = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
                         debug_print( "batch_size is ", batch_size, ", and new_size_per_batch is ", new_size_per_batch );
                         better_assert( batch_size * new_size_per_batch == tsor.size(), "size mismatch for reshape operator, got ",  batch_size*new_size_per_batch, " but input is ", tsor.size() );
                     }
@@ -500,6 +498,13 @@ namespace ceras
                         batched_new_shape.resize( 1 + new_shape.size() );
                         batched_new_shape[0] = batch_size;
                         std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
+
+                        if constexpr(debug_mode)
+                        {
+                            std::cout << "> Got batched new shape of ";
+                            std::copy( batched_new_shape.begin(), batched_new_shape.end(), std::ostream_iterator<std::size_t>{ std::cout, " " } );
+                            std::cout << std::endl;
+                        }
                     }
 
                     Tsor ans{ tsor };
@@ -628,7 +633,7 @@ namespace ceras
             std::size_t dilation_row, std::size_t dilation_col
         ) noexcept
         {
-            debug_print( "img2col_forward start with input_img:\n", input_img );
+            //debug_print( "img2col_forward start with input_img:\n", input_img );
 
             //debug_print( "img2col_forward with kernel_row=", kernel_row, ", kernel_col=", kernel_col, ", stride_row=", stride_row, ", stride_col=", stride_col, ", dilation_row=", dilation_row, ", dilation_col=", dilation_col );
 
@@ -704,7 +709,7 @@ namespace ceras
                 output_col_mat[idx] = (index == 0xffffffff) ? value_type{0} : input_img[index];
             }
 
-            debug_print( "img2col_forward end with output_col_mat:\n", output_col_mat );
+            //debug_print( "img2col_forward end with output_col_mat:\n", output_col_mat );
         };
 
         auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
@@ -731,14 +736,14 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
-                    debug_print( "img2col forward action get input tensor:\n", tsor );
+                    //debug_print( "img2col forward action get input tensor:\n", tsor );
                     std::any& output_cache_tsor = *output_cache;
                     if ( !output_cache_tsor.has_value() )
                         output_cache_tsor = Tsor{};
                     Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
                     //Tsor output;
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
-                    debug_print( "img2col forward action procuces output tensor:\n", output );
+                    //debug_print( "img2col forward action procuces output tensor:\n", output );
                     return Tsor{output};
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
@@ -794,7 +799,7 @@ namespace ceras
             std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
             std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
 
-            debug_print( "conv2d generated row_output ", row_output, ", and col_output ", col_output );
+            //debug_print( "conv2d generated row_output ", row_output, ", and col_output ", col_output );
 
             // TODO: check dimension
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
