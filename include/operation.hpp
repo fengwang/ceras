@@ -537,13 +537,12 @@ namespace ceras
 
             std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
             std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
-            std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH; // TODO: check here
-            std::size_t const output_column_matrix_col = BS * output_row * output_col; // TODO: check here
+            std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH;
+            std::size_t const output_column_matrix_col = BS * output_row * output_col;
 
             debug_print( "img2col_forward: output_row=", output_row, ", output_col=", output_col, ", output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
             output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
-            //output_col_mat.resize( {BS, output_column_matrix_row, output_row*output_col} );
 
             debug_print( "img2col_forward: outptu_col_mat resize with output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
@@ -568,8 +567,8 @@ namespace ceras
                             for ( auto w : range( output_col ) )
                             {
                                 std::int64_t const im_col_idx = w * stride_col - padding_col + w_offset * dilation_col;
-                                std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im; // TODO: check
-                                std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w; // TODO: check
+                                std::int64_t const im_idx = im_offset+( im_row_idx * C + im_col_idx ) * CH + c_im;
+                                std::int64_t const col_idx = col_offset+( c * output_row + h ) * output_col + w;
                                 index_record[col_idx] = static_cast<std::uint32_t>((im_row_idx<0 || im_row_idx>=static_cast<std::int64_t>(R) || im_col_idx<0 || im_col_idx>=static_cast<std::int64_t>(C)) ? 0xffffffff : im_idx);
                             }
                         }
@@ -604,10 +603,11 @@ namespace ceras
 
         auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad, Tsor& ans ) noexcept
         {
-            //typedef typename Tsor::value_type value_type;
-            std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
+            typedef typename Tsor::value_type value_type;
             ans.resize( input.shape() );
+            std::fill( ans.begin(), ans.end(), value_type{0} );
 
+            std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
             for ( auto idx : range( grad.size() ) )
             {
                 auto const index = index_record[idx];
@@ -615,6 +615,8 @@ namespace ceras
                     ans[index] += grad[idx];
             }
         };
+
+        //TODO: using std::shared_ptr<std::any> to cache the output and back_grad, for optimization
 
         return [ row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation, img2col_forward, img2col_backward ]<Expression Ex>( Ex const& ex ) noexcept
         {
