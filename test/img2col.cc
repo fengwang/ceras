@@ -132,7 +132,7 @@ int main()
 {
     using namespace ceras;
 
-#if 0
+#if 1
     test_55_33();
     test_3320_33();
 

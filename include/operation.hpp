@@ -549,7 +549,8 @@ namespace ceras
             if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
                 debug_print( "index_record has not yet been filled, trying to fill it!" );
-                index_record.resize( {output_column_matrix_row * output_column_matrix_col,} );
+                //index_record.resize( {output_column_matrix_row * output_column_matrix_col,} );
+                index_record.resize( output_column_matrix_row * output_column_matrix_col );
 
                 for ( auto bs : range( BS ) )
                 {
