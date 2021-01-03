@@ -490,7 +490,9 @@ namespace ceras
                 },
                 []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
-                    return grad.reshape( input.shape() );
+                    Tsor ans{ grad };
+                    ans.reshape( input.shape() );
+                    return ans;
                 }
             )( ex );
         };
@@ -528,24 +530,6 @@ namespace ceras
                 return grad;
             }
         )( ex );
-    }
-
-    auto constexpr swap_axes( std::size_t axis_1, std::size_t axis_2 ) noexcept
-    {
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
-        {
-            return make_unary_operator
-            (
-                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
-                {
-                    return tsor;//TODO: fix
-                },
-                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
-                {
-                    return grad;//TODO: fix
-                }
-            )( ex );
-        };
     }
 
     template< Expression Ex >
@@ -762,8 +746,6 @@ namespace ceras
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
                 row_padding = row_padding_total >> 1;
                 col_padding = col_padding_total >> 1;
-                //row_padding = static_cast<std::size_t>(std::ceil( (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride) / 2.0 ));
-                //col_padding = static_cast<std::size_t>(std::ceil( (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride) / 2.0 ));
             }
             if ( padding == "transposed" )
             {
@@ -771,14 +753,9 @@ namespace ceras
                 col_padding = col_kernel - 1;
             }
 
-            //debug_print( "conv2d created with row_padding ", row_padding, " and col_padding ", col_padding, ", while padding is ", padding );
-
             std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
             std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
 
-            //debug_print( "conv2d generated row_output ", row_output, ", and col_output ", col_output );
-
-            // TODO: check dimension
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
 
             auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]

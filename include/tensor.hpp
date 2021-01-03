@@ -137,8 +137,6 @@ namespace ceras
         constexpr self_type& resize( std::vector< std::size_t > const& new_shape )
         {
             std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            debug_print( "calling tensor::resize with new size ", new_size );
-            debug_print( "while the old size is ", (*this).size() );
             if( (*this).size() != new_size )
             {
                 (*vector_).resize(new_size);
@@ -525,7 +523,6 @@ namespace ceras
         }
         */
 
-        debug_print( "operator * called, lhs tensor is:\n", lhs );
         better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
 
         return Tsor{};
