@@ -1,10 +1,12 @@
 #include "../include/ceras.hpp"
 #include "../include/utils/debug.hpp"
+#include "../include/utils/color.hpp"
 #include <cmath>
 #include <iostream>
 
 void test_44()
 {
+    std::cout << color::rize( "test_44", "Red" ) << std::endl;
     auto a = ceras::linspace<double>( 1.0, 16.0, 16 );
     a.reshape( {4, 4} );
     std::cout << "a created with:\n" << a << std::endl;
@@ -20,9 +22,29 @@ void test_44()
 
     ceras::session<double> s;
 
-    //auto sva = s.run( va );
-    //std::cout << "va is\n" << sva << std::endl;
+    auto ans = s.run( cab );
+    std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
+}
 
+void test_44_same()
+{
+    std::cout << color::rize( "test_44_same", "Red" ) << std::endl;
+
+    auto a = ceras::linspace<double>( 1.0, 16.0, 16 );
+    a.reshape( {4, 4} );
+    std::cout << "a created with:\n" << a << std::endl;
+    a.reshape( {1, 4, 4, 1} );
+
+    auto b = ceras::tensor<double>{ {3, 3}, {1, 1, 1, 0, 0, 0, -1, -1, -1,} };
+
+    std::cout << "b created with:\n" << b << std::endl;
+    b.reshape( {1, 3, 3, 1} );
+
+    auto va = ceras::variable<double>{ a };
+    auto vb = ceras::variable<double>{ b };
+    auto cab = ceras::conv2d(4, 4, 1, 1, 1, 1, "same")( va, vb );
+
+    ceras::session<double> s;
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -31,6 +53,8 @@ void test_44()
 int main()
 {
     test_44();
+
+    test_44_same();
 
     return 0;
 }

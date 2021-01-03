@@ -773,6 +773,8 @@ namespace ceras
                 col_padding = col_kernel - 1;
             }
 
+            debug_print( "conv2d created with row_padding ", row_padding, " and col_padding ", col_padding, ", while padding is ", padding );
+
             std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
             std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
 
