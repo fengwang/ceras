@@ -617,21 +617,30 @@ namespace ceras
             }
         };
 
-        //TODO: using std::shared_ptr<std::any> to cache the output and back_grad, for optimization
+        std::shared_ptr<std::any> output_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> back_grad_cache = std::make_shared<std::any>();
 
-        return [ row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation, img2col_forward, img2col_backward ]<Expression Ex>( Ex const& ex ) noexcept
+        return [row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation, img2col_forward, img2col_backward, output_cache, back_grad_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
                 [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
-                    Tsor output;
+                    std::any& output_cache_tsor = *output_cache;
+                    if ( !output_cache_tsor.has_value() )
+                        output_cache_tsor = Tsor{};
+                    Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
+                    //Tsor output;
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
                     return output;
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
-                    Tsor back_grad;
+                    std::any& back_grad_cache_tsor;
+                    if ( !back_grad_cache_tsor.has_value() )
+                        back_grad_cache_tsor = Tsor{};
+                    Tsor& back_grad = std::any_cast<Tsor&>( back_grad_cache_tsor );
+                    //Tsor back_grad;
                     img2col_backward( input, output, grad, back_grad );
                     return back_grad;
                 }
