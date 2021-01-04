@@ -116,8 +116,37 @@ void test_55_33_same()
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
 }
 
+void test_55_33_same_back()
+{
+    std::cout << color::rize( "test_55_33_valid", "Red" ) << std::endl;
+    auto a = ceras::linspace<double>( 1.0, 25.0, 25 );
+    a.reshape( {5, 5} );
+    std::cout << "a created with:\n" << a << std::endl;
+    a.reshape( {1, 5, 5, 1} );
+
+    //auto b = ceras::tensor<double>{ {3, 3}, {1, 2, 3, 4, 5, 6, 7, 8, 9} };
+    auto b = ceras::ones<double>( {3, 3} );
+    std::cout << "b created with:\n" << b << std::endl;
+    b.reshape( {1, 3, 3, 1} );
+
+    auto va = ceras::variable<double>{ a };
+    auto vb = ceras::variable<double>{ b };
+    auto cab = ceras::conv2d(5, 5, 1, 1, 1, 1, "same")( va, vb );
+
+    ceras::session<double> s;
+
+    auto ans = s.run( cab );
+    std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
+
+    auto grad = ceras::ones<double>( {1, 5, 5, 1} );
+    cab.backward( grad );
+
+    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+}
+
 int main()
 {
+#if 1
     test_44();
 
     test_44_same();
@@ -127,6 +156,9 @@ int main()
     test_55_33();
 
     test_55_33_same();
+#endif
+
+    test_55_33_same_back();
 
     return 0;
 }
