@@ -782,8 +782,8 @@ Tsor& output = std::any_cast<Tsor&>(output_cache_tsor)
                     // first run, initialize mask
                     if ( !mask_.has_value() )
                     {
+                        Tsor const random_tensor = random<T>( input.shape() );
                         Tsor mask__{ input.shape() };
-                        Tsor const random_tensor = random( input.shape() );
                         for ( auto idx : range( input.size() ) )
                             if ( random_tensor[ idx ] > factor )
                                 mask__[ idx ] = 1;
@@ -793,7 +793,7 @@ Tsor& output = std::any_cast<Tsor&>(output_cache_tsor)
                     Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
                     Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
                     for ( auto idx : range( input.size() ) )
-                        ans[idx] *= mask__[idx] / factor;
+                        ans[idx] *= mask__[idx] / (T{1} - factor);
                     return ans;
                 },
                 [factor, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
