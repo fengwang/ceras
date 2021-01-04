@@ -5,7 +5,7 @@
 
 CXX           = g++
 OP            = -O0  -pg -DDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra $(OP)
+CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
 LFLAGS        = $(OP) -pg -O0
 
 LINK          = $(CXX)
@@ -108,6 +108,10 @@ overload: test/overload.cc
 drop_out: test/drop_out.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_drop_out.o test/drop_out.cc
 	$(LINK) -o $(BIN_DIR)/test_drop_out $(OBJECTS_DIR)/test_drop_out.o $(LFLAGS)
+
+max_pooling_2d: test/max_pooling_2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_max_pooling_2d.o test/max_pooling_2d.cc
+	$(LINK) -o $(BIN_DIR)/test_max_pooling_2d $(OBJECTS_DIR)/test_max_pooling_2d.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin

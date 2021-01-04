@@ -758,12 +758,7 @@ namespace ceras
             return ans;
         };
     }
-/*
-std::any& output_cache_tsor = *output_cache;
-if ( !output_cache_tsor.has_value() )
-    output_cache_tsor = Tsor{};
-Tsor& output = std::any_cast<Tsor&>(output_cache_tsor)
-*/
+
     template< typename T > requires std::floating_point<T>
     auto drop_out( T const factor ) noexcept
     {
@@ -808,6 +803,86 @@ Tsor& output = std::any_cast<Tsor&>(output_cache_tsor)
         };
     }
 
+
+    // comment: maybe using function 'reduce' to reduce the cod complexity? at a price of performance?
+    auto max_pooling_2d( std::size_t stride ) noexcept
+    {
+        better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
+
+        std::shared_ptr<std::any> mask = std::make_shared<std::any>();
+
+        return [stride, mask]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [stride, mask]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
+                {
+                    typedef typename Tsor::value_type value_type;
+                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                    std::any& mask_ = *mask;
+                    // first run, initialize mask
+                    if ( !mask_.has_value() )
+                        mask_ = Tsor{ input.shape() };
+
+                    Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
+
+                    std::vector<std::size_t> shape = input.shape();
+                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                    Tsor input_ = input;
+                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                    Tsor ans{ {batch_size, row/stride, col/stride, channel} }; //TODO: cache this tensor with captured shared_ptr
+                    view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
+
+                    for ( auto bs : range(batch_size) )
+                        for ( auto r : range(row/stride) ) // row for t1
+                            for ( auto c : range(col/stride) ) // col for t1
+                                for ( auto ch : range(channel) )
+                                {
+                                    std::size_t current_row_max = r * stride;
+                                    std::size_t current_col_max = c * stride;
+                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
+                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
+                                        {
+                                            if ( ts[bs][_r][_c][ch] > ts[bs][current_row_max][current_col_max][ch] )
+                                            {
+                                                current_row_max = _r;
+                                                current_col_max = _c;
+                                            }
+                                        }
+                                    tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
+                                    t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
+                                }
+                    return ans;
+                },
+                [stride, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    std::vector<std::size_t> const& shape = input.shape();
+                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
+                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                    Tsor ans = Tsor{ input.shape() }; // TODO: cache this
+                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                    Tsor grad_ = grad;
+                    view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
+
+                    for ( auto bs : range( batch_size ) )
+                        for ( auto r : range( row ) )
+                            for ( auto c : range( col ) )
+                                for ( auto ch : range( channel ) )
+                                    if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
+                                        ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
+                    return ans;
+                }
+            )( ex );
+        };
+    }
 
 
 }//namespace ceras
