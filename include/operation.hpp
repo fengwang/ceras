@@ -588,10 +588,6 @@ namespace ceras
             std::size_t dilation_row, std::size_t dilation_col
         ) noexcept
         {
-            //debug_print( "img2col_forward start with input_img:\n", input_img );
-
-            //debug_print( "img2col_forward with kernel_row=", kernel_row, ", kernel_col=", kernel_col, ", stride_row=", stride_row, ", stride_col=", stride_col, ", dilation_row=", dilation_row, ", dilation_col=", dilation_col );
-
             typedef typename Tsor::value_type value_type;
             std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
@@ -599,22 +595,15 @@ namespace ceras
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
             auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
 
-            //debug_print( "img2col_forward: Bs=", BS, " R=", R, " C=", C, " CH=", CH );
-
             std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
             std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
             std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH;
             std::size_t const output_column_matrix_col = BS * output_row * output_col;
 
-            //debug_print( "img2col_forward: output_row=", output_row, ", output_col=", output_col, ", output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
-
             output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
-
-            //debug_print( "img2col_forward: outptu_col_mat resize with output_column_matrix_row=", output_column_matrix_row, ", output_column_matrix_col=", output_column_matrix_col );
 
             if ( index_record.size() != output_column_matrix_row * output_column_matrix_col ) // first-run?
             {
-                //debug_print( "index_record has not yet been filled, trying to fill it!" );
                 index_record.resize( output_column_matrix_row * output_column_matrix_col );
 
                 for ( auto bs : range( BS ) )
@@ -664,7 +653,6 @@ namespace ceras
                 output_col_mat[idx] = (index == 0xffffffff) ? value_type{0} : input_img[index];
             }
 
-            //debug_print( "img2col_forward end with output_col_mat:\n", output_col_mat );
         };
 
         auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad, Tsor& ans ) noexcept
@@ -691,14 +679,12 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
-                    //debug_print( "img2col forward action get input tensor:\n", tsor );
                     std::any& output_cache_tsor = *output_cache;
                     if ( !output_cache_tsor.has_value() )
                         output_cache_tsor = Tsor{};
                     Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
                     //Tsor output;
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
-                    //debug_print( "img2col forward action procuces output tensor:\n", output );
                     return Tsor{output};
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
@@ -715,8 +701,13 @@ namespace ceras
         };
     }
 
-    auto inline conv2d( std::size_t row_input, std::size_t col_input,
-            std::size_t const row_stride=1, std::size_t const col_stride=1, std::size_t const row_dilation=1, std::size_t const col_dilation=1, std::string const& padding="valid" ) noexcept
+    auto inline conv2d
+    (
+        std::size_t row_input, std::size_t col_input,
+        std::size_t const row_stride=1, std::size_t const col_stride=1,
+        std::size_t const row_dilation=1, std::size_t const col_dilation=1,
+        std::string const& padding="valid"
+    ) noexcept
     {
         // lhs_ex is for one 4D tensor of [BS, R, C, CH]
         // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
@@ -729,6 +720,7 @@ namespace ceras
             std::vector<std::size_t> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+            //TODO: optimization in case of small kernels of (1, 1), (3, 3)
 
             std::size_t row_padding = 0;
             std::size_t col_padding = 0;
@@ -740,11 +732,6 @@ namespace ceras
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
                 row_padding = row_padding_total >> 1;
                 col_padding = col_padding_total >> 1;
-            }
-            if ( padding == "transposed" )
-            {
-                row_padding = row_kernel - 1;
-                col_padding = col_kernel - 1;
             }
 
             std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;

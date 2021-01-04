@@ -127,6 +127,31 @@ void test_2442_22_s2()
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
 
+void test_55_33_back()
+{
+    auto a = ceras::linspace<double>( 1.0, 32.0, 32 );
+    std::cout << "a created with:\n" << a << std::endl;
+    a.reshape( {1, 4, 4, 2} );
+
+    auto va = ceras::variable<double>{ a };
+    auto col_va = ceras::img2col(3,3)( va );
+
+    ceras::session<double> s;
+    auto col_im = s.run( col_va );
+    std::cout << "after col2img:\n" << col_im << std::endl;
+
+    {
+        auto col_im = s.run( col_va );
+        std::cout << "(2nd round) after col2img:\n" << col_im << std::endl;
+    }
+
+    auto grad = ceras::ones<double>({18, 4});
+    col_va.backward( grad  );
+
+    std::cout << "After backward, the gradient for va is \n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+
+}
+
 
 int main()
 {
@@ -144,7 +169,6 @@ int main()
 
     std::cout << ">---------------<" << std::endl;
     test_2332_33();
-#endif
 
     std::cout << "Test Stride" << std::endl;
     test_1441_22_s2();
@@ -152,6 +176,9 @@ int main()
     test_1442_22_s2();
 
     test_2442_22_s2();
+#endif
+
+    test_55_33_back();
 
     return 0;
 }
