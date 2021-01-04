@@ -225,6 +225,11 @@ namespace ceras
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
+                                        // !!important!!
+                                        //
+                                        // TODO: optimization in case Lhs Expression and/or Rhs Expression is a Variable. In that case, backward propagation is not necessary
+                                        //       using 'utils/overload'
+                                        //
                                         better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
                                         // left branch <-- grad * rhs^T
                                         auto const& g_shape = grad.shape();
@@ -499,13 +504,16 @@ namespace ceras
         (
             []<Tensor Tsor>( Tsor const& tsor ) noexcept
             {
+                better_assert( tsor.ndim() > 1, "Expecting dimension of incoming tensor to be greater than 1, but got ", tsor.ndim() );
                 std::size_t const batch_size = *(tsor.shape().begin());
-                std::size_t const dim = tsor.size() / batch_size;
-                return tsor.reshape( {batch_size, dim} );
+                std::size_t const rem = tsor.size() / batch_size;
+                Tsor ans = tsor;
+                return ans.reshape( {batch_size, rem} );
             },
             []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
             {
-                return grad.reshape( input.shape() );
+                Tsor ans = grad;
+                return ans.reshape( input.shape() );
             }
         )( ex );
     }
@@ -750,6 +758,57 @@ namespace ceras
             return ans;
         };
     }
+/*
+std::any& output_cache_tsor = *output_cache;
+if ( !output_cache_tsor.has_value() )
+    output_cache_tsor = Tsor{};
+Tsor& output = std::any_cast<Tsor&>(output_cache_tsor)
+*/
+    template< typename T > requires std::floating_point<T>
+    auto drop_out( T const factor ) noexcept
+    {
+        better_assert( factor < T{1}, "Expecting drop out rate less than 1, but got factor = ", factor );
+        better_assert( factor > T{0}, "Expecting drop out rate greater than 0, but got factor = ", factor );
+
+        std::shared_ptr<std::any> mask = std::make_shared<std::any>();
+
+        return [factor, mask]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [factor, mask]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    std::any& mask_ = *mask;
+                    // first run, initialize mask
+                    if ( !mask_.has_value() )
+                    {
+                        Tsor mask__{ input.shape() };
+                        Tsor const random_tensor = random( input.shape() );
+                        for ( auto idx : range( input.size() ) )
+                            if ( random_tensor[ idx ] > factor )
+                                mask__[ idx ] = 1;
+                        mask_ = mask__; // initialize
+                    }
+
+                    Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
+                    Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
+                    for ( auto idx : range( input.size() ) )
+                        ans[idx] *= mask__[idx] / factor;
+                    return ans;
+                },
+                [factor, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
+                    Tsor ans = grad.deep_copy();
+                    for ( auto idx : range( grad.size() ) )
+                        ans[idx] *= mask__[idx];
+                    return ans;
+                }
+            )( ex );
+        };
+    }
+
+
 
 }//namespace ceras
 

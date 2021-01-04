@@ -627,7 +627,8 @@ namespace ceras
     }
 
     template< typename T, typename A=default_allocator<T> >
-    tensor<T,A> randn( std::initializer_list<std::size_t> shape, T mean=T{0}, T stddev=T{1} )
+    //tensor<T,A> randn( std::initializer_list<std::size_t> shape, T mean=T{0}, T stddev=T{1} )
+    tensor<T,A> randn( std::vector<std::size_t> const& shape, T mean=T{0}, T stddev=T{1} )
     {
         std::normal_distribution<T> distribution( mean, stddev );
         tensor<T,A> ans{ shape };
@@ -636,7 +637,8 @@ namespace ceras
     }
 
     template< typename T, typename A=default_allocator<T> >
-    tensor<T,A> random( std::initializer_list<std::size_t> shape, T min=T{0}, T max=T{1} )
+    //tensor<T,A> random( std::initializer_list<std::size_t> shape, T min=T{0}, T max=T{1} )
+    tensor<T,A> random( std::vector<std::size_t> const& shape, T min=T{0}, T max=T{1} )
     {
         std::uniform_real_distribution<T> distribution( min, max );
         tensor<T,A> ans{ shape };

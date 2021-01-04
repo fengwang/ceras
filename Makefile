@@ -97,6 +97,14 @@ reshape: test/reshape.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_reshape.o test/reshape.cc
 	$(LINK) -o $(BIN_DIR)/test_reshape $(OBJECTS_DIR)/test_reshape.o $(LFLAGS)
 
+flatten: test/flatten.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_flatten.o test/flatten.cc
+	$(LINK) -o $(BIN_DIR)/test_flatten $(OBJECTS_DIR)/test_flatten.o $(LFLAGS)
+
+overload: test/overload.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_overload.o test/overload.cc
+	$(LINK) -o $(BIN_DIR)/test_overload $(OBJECTS_DIR)/test_overload.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
