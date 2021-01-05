@@ -1,12 +1,13 @@
-#CXX           = clang++
+CXX           = clang++
 #OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
-#CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
-#LFLAGS        = $(OP) -pthread
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
+CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
+LFLAGS        = $(OP) -pthread
 
-CXX           = g++
-OP            = -O0  -pg -DDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
-LFLAGS        = $(OP) -pg -O0
+#CXX           = g++
+#OP            = -O0  -pg -DDEBUG
+#CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
+#LFLAGS        = $(OP) -pg -O0
 
 LINK          = $(CXX)
 
@@ -113,6 +114,9 @@ max_pooling_2d: test/max_pooling_2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_max_pooling_2d.o test/max_pooling_2d.cc
 	$(LINK) -o $(BIN_DIR)/test_max_pooling_2d $(OBJECTS_DIR)/test_max_pooling_2d.o $(LFLAGS)
 
+mnist_conv2d: test/mnist_conv2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d.o test/mnist_conv2d.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d $(OBJECTS_DIR)/test_mnist_conv2d.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
