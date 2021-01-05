@@ -50,11 +50,37 @@ void test_2()
 
 
 
+void test_3()
+{
+    std::cout << color::rize( "test_3: in case not learning", "Red" ) << std::endl;
+
+    auto a = ceras::linspace<double>( 1.0, 12.0, 12 );
+    a.reshape( {3, 4} );
+    std::cout << "a created with:\n" << a << std::endl;
+
+    auto va = ceras::variable<double>{ a };
+    auto ta = ceras::drop_out( 0.5 )( va );
+
+    ceras::session<double> s;
+    ceras::learning_phase = 0;
+    auto ans = s.run( ta );
+    std::cout << "after drop_out (0.5):\n" << ans << std::endl;
+
+
+    auto grad = ceras::ones<double>( {3, 4} );
+    std::cout << "gradient generated as:\n" << grad << std::endl;
+    ta.backward( grad );
+
+    auto new_g = *(va.gradient_);
+    std::cout << "propageated gradient:\n" << new_g << std::endl;
+}
+
 
 int main()
 {
     test_1();
     test_2();
+    test_3();
 
     return 0;
 }

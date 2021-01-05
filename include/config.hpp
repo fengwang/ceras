@@ -1,15 +1,24 @@
 #ifndef FBXYAXRPGSNHIXESHOGNYHPVEWWVSRSRJLQPIRIFENBGNMGFLJNMWXDNQLHKOAGBNYGBJRLBD
 #define FBXYAXRPGSNHIXESHOGNYHPVEWWVSRSRJLQPIRIFENBGNMGFLJNMWXDNQLHKOAGBNYGBJRLBD
 
-#ifdef NDEBUG
-    constexpr unsigned long debug_mode = 0;
-#else
-    constexpr unsigned long debug_mode = 1;
-#endif
+namespace ceras
+{
+    #ifdef NDEBUG
+        inline constexpr unsigned long debug_mode = 0;
+    #else
+        inline constexpr unsigned long debug_mode = 1;
+    #endif
 
+    inline constexpr double eps = 1.0e-8;
 
-constexpr double eps = 1.0e-8;
-
+    //
+    // some layers, such as batch normalization and drop out, behave differently during the training and the testing time
+    //
+    // 1 for learning
+    // 0 for prediction/test
+    //
+    inline int learning_phase = 1;
+}
 
 #endif//FBXYAXRPGSNHIXESHOGNYHPVEWWVSRSRJLQPIRIFENBGNMGFLJNMWXDNQLHKOAGBNYGBJRLBD
 

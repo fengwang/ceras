@@ -9,7 +9,7 @@ namespace private_namespace
     template< typename... Args >
     void print_assertion(std::ostream& out, Args&&... args)
     {
-        if constexpr( debug_mode )
+        if constexpr( ceras::debug_mode )
         {
             out.precision( 20 );
             (out << ... << args) << std::endl;

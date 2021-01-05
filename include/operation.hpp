@@ -6,7 +6,7 @@
 #include "./variable.hpp"
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
-#include "./session.hpp"
+#include "./config.hpp"
 
 namespace ceras
 {
@@ -773,6 +773,9 @@ namespace ceras
             (
                 [factor, mask]<Tensor Tsor>( Tsor const& input ) noexcept
                 {
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                        return input;
+
                     std::any& mask_ = *mask;
                     // first run, initialize mask
                     if ( !mask_.has_value() )
@@ -791,8 +794,11 @@ namespace ceras
                         ans[idx] *= mask__[idx] / (T{1} - factor);
                     return ans;
                 },
-                [factor, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                [factor, mask]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
                 {
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                        return grad;
+
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
                     Tsor ans = grad.deep_copy();
                     for ( auto idx : range( grad.size() ) )
