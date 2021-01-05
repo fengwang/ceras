@@ -3,9 +3,9 @@
 
 #include "./config.hpp"
 
-#include <array>
 #include <algorithm>
 #include <any>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <compare>

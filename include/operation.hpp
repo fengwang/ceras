@@ -7,6 +7,7 @@
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
 #include "./config.hpp"
+#include "./utils/context_cast.hpp"
 
 namespace ceras
 {
@@ -101,8 +102,8 @@ namespace ceras
         }
 
         // update gradient
-        template< typename T, typename A >
-        void backward( tensor<T,A> const& grad )
+        template< Tensor Tsor>
+        void backward( Tsor const& grad )
         {
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
             backward_wrapper{}( op_ )( current_gradient );
@@ -175,7 +176,6 @@ namespace ceras
     template< typename T >
     concept Operator = is_operator_v<T>;
 
-
     template< typename T >
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T>;
 
@@ -225,12 +225,7 @@ namespace ceras
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        // !!important!!
-                                        //
-                                        // TODO: optimization in case Lhs Expression and/or Rhs Expression is a Variable. In that case, backward propagation is not necessary
-                                        //       using 'utils/overload'
-                                        //
-                                        better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
+                                        //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
                                         // left branch <-- grad * rhs^T
                                         auto const& g_shape = grad.shape();
                                         auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
@@ -238,13 +233,13 @@ namespace ceras
                                         Tsor lhs_grad{ lhs_input.shape() };
                                         gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
-                                        better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
+                                        //better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
 
                                         // right branch <-- lhs^T * grad
                                         Tsor rhs_grad{ rhs_input.shape() };
                                         gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
-                                        better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
 
+                                        //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
 
                                         return std::make_tuple( lhs_grad, rhs_grad );
                                      }
@@ -535,11 +530,13 @@ namespace ceras
     }
 
     template< Expression Ex >
-    auto constexpr transpose( Ex const& ex ) noexcept
+    auto transpose( Ex const& ex ) noexcept
     {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
         return make_unary_operator
         (
-            []<Tensor Tsor>( Tsor const& tsor ) noexcept
+            [forward_cache]<Tensor Tsor>( Tsor const& tsor ) noexcept
             {
                 better_assert( tsor.ndim() == 2, "Expecting 2D tensor, but got dimensions ", tsor.ndim() );
 
@@ -549,7 +546,8 @@ namespace ceras
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ tsor.data(), row, col };
 
-                Tsor ans{ {col, row} }; // TODO: optimize it out with shared_ptr
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( {col, row} );
                 view_2d<value_type> v_out{ ans.data(), col, row };
 
                 for ( auto r : range( row ) )
@@ -558,7 +556,7 @@ namespace ceras
 
                 return ans;
             },
-            []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+            [backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
             {
                 typedef typename Tsor::value_type value_type;
 
@@ -566,7 +564,10 @@ namespace ceras
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ grad.data(), row, col };
 
-                Tsor back_ans{ {col, row} }; // TODO: optimize it out with shared_ptr
+                //Tsor back_ans{ {col, row} }; // TODO: optimize it out with shared_ptr
+                Tsor& back_ans = context_cast<Tsor>( backward_cache );
+                back_ans.resize( {col, row} );
+
                 view_2d<value_type> v_out{ back_ans.data(), col, row };
 
                 for ( auto r : range( row ) )
@@ -686,21 +687,28 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
+                    /*
                     std::any& output_cache_tsor = *output_cache;
                     if ( !output_cache_tsor.has_value() )
                         output_cache_tsor = Tsor{};
                     Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
                     //Tsor output;
+                    */
+                    Tsor& output = context_cast<Tsor>( output_cache );
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
                     return Tsor{output};
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
+                    /*
                     std::any& back_grad_cache_tsor = *back_grad_cache;
                     if ( !back_grad_cache_tsor.has_value() )
                         back_grad_cache_tsor = Tsor{};
+                    better_assert(back_grad_cache_tsor.has_value(), "back_grad_cache_tsor is empty.");
                     Tsor& back_grad = std::any_cast<Tsor&>( back_grad_cache_tsor );
                     //Tsor back_grad;
+                    */
+                    Tsor& back_grad = context_cast<Tsor>( back_grad_cache );
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
                 }
@@ -764,12 +772,14 @@ namespace ceras
         better_assert( factor > T{0}, "Expecting drop out rate greater than 0, but got factor = ", factor );
 
         std::shared_ptr<std::any> mask = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return [factor, mask]<Expression Ex>( Ex const& ex ) noexcept
+        return [factor, mask, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
-                [factor, mask]<Tensor Tsor>( Tsor const& input ) noexcept
+                [factor, mask, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
 
@@ -789,18 +799,26 @@ namespace ceras
                     }
 
                     Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
-                    Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
+
+                    //Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.deep_copy( input );
+
                     for ( auto idx : range( input.size() ) )
                         ans[idx] *= mask__[idx] / (value_type{1} - factor);
                     return ans;
                 },
-                [mask]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                [mask, backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
                 {
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
                         return grad;
 
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
-                    Tsor ans = grad.deep_copy();
+
+                    //Tsor ans = grad.deep_copy();
+                    Tsor& ans = context_cast<Tsor>( backward_cache );
+                    ans.deep_copy( grad );
+
                     for ( auto idx : range( grad.size() ) )
                         ans[idx] *= mask__[idx];
                     return ans;

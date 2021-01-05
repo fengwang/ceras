@@ -173,7 +173,7 @@ void test_55_33_same_back_s2()
 
 int main()
 {
-#if 0
+#if 1
     test_44();
 
     test_44_same();
