@@ -396,9 +396,6 @@ namespace ceras
         auto const [y_row, y_col] = y.shape();
         auto const [a_row, a_col] = ans.shape();
 
-        debug_print( "Calling gemm with x of shape ", x_row, "x", x_col );
-        debug_print( "Calling gemm with y of shape ", y_row, "x", y_col );
-
         better_assert( x_row == a_row );
         better_assert( y_col == a_col );
         better_assert( x_col == y_row, "Expecting x_row == y_col, but x_col = ", x_col, ", and y_row = ", y_row );

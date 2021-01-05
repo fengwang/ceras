@@ -466,16 +466,6 @@ namespace ceras
                     std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
                     std::size_t const total_size = tsor.size();
                     std::size_t const batch_size = total_size / new_size;
-                    if constexpr(debug_mode)
-                    {
-                        std::cout << "forward operation of reshape, input shape is:";
-                        std::copy( tsor.shape().begin(), tsor.shape().end(), std::ostream_iterator<std::size_t>( std::cout, " " ) );
-                        std::cout << std::endl;
-
-                        std::cout << "target shape is:";
-                        std::copy( new_shape.begin(), new_shape.end(), std::ostream_iterator<std::size_t>( std::cout, " " ) );
-                        std::cout << std::endl;
-                    }
                     better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, got ",  batch_size*new_size, " but total input size is ", total_size );
 
                     if ( !include_batch_flag )
@@ -491,16 +481,6 @@ namespace ceras
                         batched_new_shape.resize( 1 + new_shape.size() );
                         batched_new_shape[0] = batch_size;
                         std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
-                    }
-
-                    if constexpr( debug_mode )
-                    {
-                        std::cout << "reshape got input of shape: ";
-                        std::copy( tsor.shape().begin(), tsor.shape().end(), std::ostream_iterator<std::size_t>( std::cout, " " ) );
-                        std::cout << std::endl;
-                        std::cout << "reshape produced output of shape: ";
-                        std::copy( batched_new_shape.begin(), batched_new_shape.end(), std::ostream_iterator<std::size_t>( std::cout, " " ) );
-                        std::cout << std::endl;
                     }
 
                     Tsor ans{ tsor };
@@ -576,8 +556,6 @@ namespace ceras
                     for ( auto c : range( col ) )
                         v_out[c][r] = v_in[r][c];
 
-                debug_print( "transpose forward: ", row, "x", col, " -> ", col, "x", row );
-
                 return ans;
             },
             []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
@@ -618,8 +596,6 @@ namespace ceras
             std::size_t dilation_row, std::size_t dilation_col
         ) noexcept
         {
-            debug_print( "img2col constructing with row_kernel=", kernel_row, ", col_kernel=", kernel_col, ", row_padding=", padding_row, ", col_padding=", padding_col );
-
             typedef typename Tsor::value_type value_type;
             std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
@@ -684,8 +660,6 @@ namespace ceras
                 auto const index = index_record[idx];
                 output_col_mat[idx] = (index == 0xffffffff) ? value_type{0} : input_img[index];
             }
-
-            debug_print( "img2col forward produced output matrix of shape: ", output_column_matrix_row, "x", output_column_matrix_col );
         };
 
         auto img2col_backward = [s_index_record]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad, Tsor& ans ) noexcept
@@ -754,8 +728,6 @@ namespace ceras
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
             //TODO: optimization in case of small kernels of (1, 1), (3, 3)
-            debug_print( "conv2d working with kernel of shape: ", new_channel, "x", row_kernel, "x", col_kernel, "x", channel );
-
             std::size_t row_padding = 0;
             std::size_t col_padding = 0;
             if ( padding == "same" )
@@ -779,7 +751,6 @@ namespace ceras
 
             auto tr_output = transpose( flatten_output ); // [BS*new_row*new_col, NC]
 
-            debug_print( "conv2d expecting output of ", row_output, ", ", col_output, ", ", new_channel  );
             auto ans = reshape({row_output, col_output, new_channel})( tr_output );
 
             return ans;
@@ -890,8 +861,6 @@ namespace ceras
                                     tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
                                     t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
                                 }
-                    debug_print( "max_pooling_2d produced output of shape ", batch_size, "x", row/stride, "x", col/stride, "x", channel );
-
                     return ans;
                 },
                 [stride, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
