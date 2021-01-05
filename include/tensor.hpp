@@ -474,8 +474,43 @@ namespace ceras
     }
 
     template< Tensor Tsor >
+    void multiply( Tsor const& lhs, Tsor const& rhs, Tsor& ans ) noexcept
+    {
+        if ( 1 == lhs.ndim() )
+            return multiply( reshape( lhs, {1UL, lhs.size()} ), rhs, ans );
+
+        if ( 1 == rhs.ndim() )
+            return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ), ans );
+
+        better_assert( 2 == rhs.ndim(), "expecting rhs tensor has 2 dimensions, but got ", rhs.ndim() );
+
+        if ( 2 == lhs.ndim() )
+        {
+            typedef typename Tsor::value_type value_type;
+            auto const& lhs_shape = lhs.shape();
+            auto const& rhs_shape = rhs.shape();
+
+            view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
+            view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
+            auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
+            //Tsor ans{ std::vector<std::size_t>{ {row, col} } };
+            ans.resize( {row, col} );
+            view_2d<value_type> z{ ans.data(), row, col };
+            gemm( x, y, z );
+            //return ans;
+            return;
+        }
+        better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
+    }
+
+    template< Tensor Tsor >
     Tsor multiply( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
+        Tsor ans;
+        multiply( lhs, rhs, ans );
+        return ans;
+
+#if 0
         if ( 1 == lhs.ndim() )
             return multiply( reshape( lhs, {1UL, lhs.size()} ), rhs );
 
@@ -526,6 +561,7 @@ namespace ceras
         better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
 
         return Tsor{};
+#endif
     }
 
     template< Tensor Tsor >

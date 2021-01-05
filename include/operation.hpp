@@ -215,35 +215,49 @@ namespace ceras
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-                                     {
-                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
-                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
-                                        return multiply( lhs_tensor, rhs_tensor );
-                                     },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
-                                     {
-                                        //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
-                                        // left branch <-- grad * rhs^T
-                                        auto const& g_shape = grad.shape();
-                                        auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
-                                        auto const k = *(lhs_input.shape().rbegin()); // 13
-                                        Tsor lhs_grad{ lhs_input.shape() };
-                                        gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [forward_cache]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+               //better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
+               //better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
 
-                                        //better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
+               return multiply( lhs_tensor, rhs_tensor );
+               //
+               //Tsor& ans = context_cast<Tsor>( forward_cache );
+               //multiply( lhs_tensor, rhs_tensor, ans );
+               //return ans;
+            },
+            [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+            {
+               //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
+               // left branch <-- grad * rhs^T
+               auto const& g_shape = grad.shape();
+               auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
+               auto const k = *(lhs_input.shape().rbegin()); // 13
 
-                                        // right branch <-- lhs^T * grad
-                                        Tsor rhs_grad{ rhs_input.shape() };
-                                        gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
+               Tsor lhs_grad{ lhs_input.shape() };
+               //Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
+               //lhs_grad.resize( lhs_input.shape() );
 
-                                        //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
+               gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
-                                        return std::make_tuple( lhs_grad, rhs_grad );
-                                     }
-                )( lhs_ex, rhs_ex );
+               //better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
+
+               // right branch <-- lhs^T * grad
+               Tsor rhs_grad{ rhs_input.shape() };
+               gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
+
+               //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
+
+               return std::make_tuple( lhs_grad, rhs_grad );
+            }
+        )( lhs_ex, rhs_ex );
     }
 
 
@@ -834,22 +848,29 @@ namespace ceras
         better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
 
         std::shared_ptr<std::any> mask = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return [stride, mask]<Expression Ex>( Ex const& ex ) noexcept
+        return [stride, mask, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
-                [stride, mask]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
+                [stride, mask, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
                 {
                     typedef typename Tsor::value_type value_type;
                     better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
 
+                    /*
                     std::any& mask_ = *mask;
                     // first run, initialize mask
                     if ( !mask_.has_value() )
                         mask_ = Tsor{ input.shape() };
 
                     Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
+                    */
+                    Tsor& mask__ = context_cast<Tsor>( mask );
+                    mask__.resize( input.shape() );
+
 
                     std::vector<std::size_t> shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
@@ -857,7 +878,11 @@ namespace ceras
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
                     view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
 
-                    Tsor ans{ {batch_size, row/stride, col/stride, channel} }; //TODO: cache this tensor with captured shared_ptr
+                    //Tsor ans{ {batch_size, row/stride, col/stride, channel} }; //TODO: cache this tensor with captured shared_ptr
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( {batch_size, row/stride, col/stride, channel} );
+
                     view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
 
                     for ( auto bs : range(batch_size) )
@@ -881,7 +906,7 @@ namespace ceras
                                 }
                     return ans;
                 },
-                [stride, mask]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                [stride, mask, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
                     std::vector<std::size_t> const& shape = input.shape();
@@ -890,7 +915,10 @@ namespace ceras
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
                     view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
 
-                    Tsor ans = Tsor{ input.shape() }; // TODO: cache this
+                    //Tsor ans = Tsor{ input.shape() }; // TODO: cache this
+                    Tsor& ans = context_cast<Tsor>( backward_cache );
+                    ans.resize( input.shape() );
+
                     view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
 
                     Tsor grad_ = grad;
