@@ -6,6 +6,7 @@
 #include "./utils/range.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/for_each.hpp"
+#include "./utils/context_cast.hpp"
 
 namespace ceras
 {
@@ -79,11 +80,14 @@ namespace ceras
     }
 
     template <Expression Ex>
-    auto constexpr relu( Ex const& ex ) noexcept
+    auto relu( Ex const& ex ) noexcept
     {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
-                                        Tsor ans{ input.shape() };
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape()  );
+                                        //Tsor ans{ input.shape() };
                                         for ( auto idx : range( ans.size() ) ) // 1-D view of tensors input and ans
                                             ans[idx] = std::max( input[idx], typename Tsor::value_type{0} );
                                         return ans;
@@ -105,9 +109,12 @@ namespace ceras
         better_assert( factor < T{1}, "Expecting leak_relu with a factor less than 1, but got factor = ", factor );
         return [factor]<Expression Ex>( Ex const& ex ) noexcept
         {
-            return make_unary_operator( [factor]<Tensor Tsor>( Tsor const& input ) noexcept
+            std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+            return make_unary_operator( [factor, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                         {
-                                            Tsor ans{ input.shape() };
+                                            Tsor& ans = context_cast<Tsor>( forward_cache );
+                                            ans.resize( input.shape()  );
+                                            //Tsor ans{ input.shape() };
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( auto& v_out, auto v_in ){ v_out = std::max( v_in, factor*v_in ); } );
                                             return ans;
                                         },

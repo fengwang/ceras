@@ -232,6 +232,7 @@ namespace ceras
 
                return multiply( lhs_tensor, rhs_tensor );
                //
+               //debug_print( "Start forward propagation of *" );
                //Tsor& ans = context_cast<Tsor>( forward_cache );
                //multiply( lhs_tensor, rhs_tensor, ans );
                //return ans;
