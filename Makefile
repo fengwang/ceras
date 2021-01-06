@@ -122,6 +122,10 @@ average_pooling_2d: test/average_pooling_2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_average_pooling_2d.o test/average_pooling_2d.cc
 	$(LINK) -o $(BIN_DIR)/test_average_pooling_2d $(OBJECTS_DIR)/test_average_pooling_2d.o $(LFLAGS)
 
+up_sampling_2d: test/up_sampling_2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_up_sampling_2d.o test/up_sampling_2d.cc
+	$(LINK) -o $(BIN_DIR)/test_up_sampling_2d $(OBJECTS_DIR)/test_up_sampling_2d.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
