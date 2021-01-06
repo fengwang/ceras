@@ -915,6 +915,69 @@ namespace ceras
         };
     }
 
+    auto average_pooling_2d( std::size_t stride ) noexcept
+    {
+        better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [stride, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [stride, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
+                {
+                    typedef typename Tsor::value_type value_type;
+                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                    std::vector<std::size_t> shape = input.shape();
+                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                    Tsor input_ = input;
+                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( {batch_size, row/stride, col/stride, channel} );
+                    std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                    view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
+
+                    value_type const factor = value_type{1} / static_cast<value_type>(stride*stride);
+                    for ( auto bs : range(batch_size) )
+                        for ( auto r : range(row/stride) ) // row for t1
+                            for ( auto c : range(col/stride) ) // col for t1
+                                for ( auto ch : range(channel) )
+                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
+                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
+                                            t1[bs][r][c][ch] += ts[bs][_r][_c][c] * factor;
+                    return ans;
+                },
+                [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    std::vector<std::size_t> const& shape = input.shape();
+                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                    Tsor& ans = context_cast<Tsor>( backward_cache );
+                    ans.resize( input.shape() );
+
+                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                    Tsor grad_ = grad;
+                    view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
+
+                    value_type const factor = value_type{1} / static_cast<value_type>(stride*stride);
+                    for ( auto bs : range( batch_size ) )
+                        for ( auto r : range( row ) )
+                            for ( auto c : range( col ) )
+                                for ( auto ch : range( channel ) )
+                                    ta[bs][r][c][ch] = factor * tg[bs][r/stride][c/stride][ch];
+                    return ans;
+                }
+            )( ex );
+        };
+    }
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM

@@ -118,6 +118,10 @@ mnist_conv2d: test/mnist_conv2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d.o test/mnist_conv2d.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d $(OBJECTS_DIR)/test_mnist_conv2d.o $(LFLAGS)
 
+average_pooling_2d: test/average_pooling_2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_average_pooling_2d.o test/average_pooling_2d.cc
+	$(LINK) -o $(BIN_DIR)/test_average_pooling_2d $(OBJECTS_DIR)/test_average_pooling_2d.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
