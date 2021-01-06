@@ -217,12 +217,15 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        //
+        // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
+        //
+        //std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        //std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        //std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
         return make_binary_operator
         (
-            [forward_cache]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
             {
                //better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
                //better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
@@ -233,7 +236,7 @@ namespace ceras
                //multiply( lhs_tensor, rhs_tensor, ans );
                //return ans;
             },
-            [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+            []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
             {
                //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
                // left branch <-- grad * rhs^T
@@ -702,27 +705,12 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const & tsor ) noexcept
                 {
-                    /*
-                    std::any& output_cache_tsor = *output_cache;
-                    if ( !output_cache_tsor.has_value() )
-                        output_cache_tsor = Tsor{};
-                    Tsor& output = std::any_cast<Tsor&>(output_cache_tsor);
-                    //Tsor output;
-                    */
                     Tsor& output = context_cast<Tsor>( output_cache );
                     img2col_forward( tsor, output, row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation );
                     return Tsor{output};
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
-                    /*
-                    std::any& back_grad_cache_tsor = *back_grad_cache;
-                    if ( !back_grad_cache_tsor.has_value() )
-                        back_grad_cache_tsor = Tsor{};
-                    better_assert(back_grad_cache_tsor.has_value(), "back_grad_cache_tsor is empty.");
-                    Tsor& back_grad = std::any_cast<Tsor&>( back_grad_cache_tsor );
-                    //Tsor back_grad;
-                    */
                     Tsor& back_grad = context_cast<Tsor>( back_grad_cache );
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
@@ -861,14 +849,6 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
 
-                    /*
-                    std::any& mask_ = *mask;
-                    // first run, initialize mask
-                    if ( !mask_.has_value() )
-                        mask_ = Tsor{ input.shape() };
-
-                    Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
-                    */
                     Tsor& mask__ = context_cast<Tsor>( mask );
                     mask__.resize( input.shape() );
 
@@ -878,8 +858,6 @@ namespace ceras
                     Tsor input_ = input;
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
                     view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
-
-                    //Tsor ans{ {batch_size, row/stride, col/stride, channel} }; //TODO: cache this tensor with captured shared_ptr
 
                     Tsor& ans = context_cast<Tsor>( forward_cache );
                     ans.resize( {batch_size, row/stride, col/stride, channel} );
@@ -916,7 +894,6 @@ namespace ceras
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
                     view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
 
-                    //Tsor ans = Tsor{ input.shape() }; // TODO: cache this
                     Tsor& ans = context_cast<Tsor>( backward_cache );
                     ans.resize( input.shape() );
 
@@ -936,7 +913,6 @@ namespace ceras
             )( ex );
         };
     }
-
 
 }//namespace ceras
 
