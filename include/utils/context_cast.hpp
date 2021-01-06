@@ -24,10 +24,8 @@ namespace ceras
 #else
         if ( !instance.has_value() )
         {
-            debug_print( "context_cast:: creating new instance." );
             instance = T{};
         }
-        debug_print( "context_cast:: casting answer." );
 #endif
 
         return std::any_cast<T&>( instance );

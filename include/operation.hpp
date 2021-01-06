@@ -251,6 +251,8 @@ namespace ceras
 
                // right branch <-- lhs^T * grad
                Tsor rhs_grad{ rhs_input.shape() };
+               //Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
+               //rhs_grad.resize( rhs_input.shape() );
                gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
 
                //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
@@ -259,7 +261,6 @@ namespace ceras
             }
         )( lhs_ex, rhs_ex );
     }
-
 
     template <Expression Ex>
     auto constexpr log( Ex const& ex ) noexcept
