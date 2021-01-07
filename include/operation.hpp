@@ -770,7 +770,7 @@ namespace ceras
     }
 
     template< typename T > requires std::floating_point<T>
-    auto drop_out( T const factor ) noexcept
+    inline auto drop_out( T const factor ) noexcept
     {
         better_assert( factor < T{1}, "Expecting drop out rate less than 1, but got factor = ", factor );
         better_assert( factor > T{0}, "Expecting drop out rate greater than 0, but got factor = ", factor );
@@ -833,7 +833,7 @@ namespace ceras
 
 
     // comment: maybe using function 'reduce' to reduce the cod complexity? at a price of performance?
-    auto max_pooling_2d( std::size_t stride ) noexcept
+    inline auto max_pooling_2d( std::size_t stride ) noexcept
     {
         better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
 
@@ -915,7 +915,7 @@ namespace ceras
         };
     }
 
-    auto average_pooling_2d( std::size_t stride ) noexcept
+    inline auto average_pooling_2d( std::size_t stride ) noexcept
     {
         better_assert( stride > 1, "Expecting average_pooling_2d stride greater than 1, but got ", stride );
 
@@ -978,7 +978,7 @@ namespace ceras
         };
     }
 
-    auto up_sampling_2d( std::size_t stride ) noexcept
+    inline auto up_sampling_2d( std::size_t stride ) noexcept
     {
         better_assert( stride > 1, "Expecting up_sampling_pooling_2d stride greater than 1, but got ", stride );
 

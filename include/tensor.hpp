@@ -389,6 +389,7 @@ namespace ceras
                 }
     }
 
+
     template< typename T >  requires std::floating_point<T> // this one only for non-transposed 2d View
     void gemm( view_2d<T> const& x, view_2d<T> const& y, view_2d<T>& ans ) //note: direct copy of x and y
     {
