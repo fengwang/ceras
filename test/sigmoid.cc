@@ -18,32 +18,32 @@ TEST_CASE("sigmoid", "[sigmoid]")
     for ( auto idx : range( upper_dims ) )
         vdims.push_back( idx+1 );
 
-    for ( auto _ : range( tests ) )
+    for ( [[maybe_unused]]auto _ : range( tests ) )
     {
         for ( unsigned long dims_ = 0UL; dims_ != upper_dims; ++dims_ )
         {
             unsigned long dims = dims_ + 2;
 
-            auto _x = numeric::random<double>( {1, dims} );
-            auto tw = numeric::random<double>( {dims, dims} );
-            auto tb = numeric::random<double>( {1, 1} );
-            //auto _x = numeric::ones<double>( {1, dims} );
-            //auto tw = numeric::ones<double>( {dims, dims} );
-            //auto tb = numeric::ones<double>( {1, 1} );
+            auto _x = random<double>( {1, dims} );
+            auto tw = random<double>( {dims, dims} );
+            auto tb = random<double>( {1, 1} );
+            //auto _x = ones<double>( {1, dims} );
+            //auto tw = ones<double>( {dims, dims} );
+            //auto tb = ones<double>( {1, 1} );
 
-            auto x = place_holder<double>{};
-            auto c = place_holder<double>{};
-            auto W = variable<double>{ tw };
-            auto b = variable<double>{ tb };
+            auto x = place_holder<tensor<double>>{};
+            auto c = place_holder<tensor<double>>{};
+            auto W = variable{ tw };
+            auto b = variable{ tb };
 
             auto p = sigmoid( x * W + b );
 
-            session<double> s;
+            session<tensor<double>> s;
             s.bind( x, _x );
             auto result = s.run( p );
 
             auto result_ = _x * tw + tb;
-            result_.map( []( double x ){  return 1.0 / ( 1.0 + std::exp(-x) ); } );
+            result_.map( []( double& x ){   x =  1.0 / ( 1.0 + std::exp(-x) ); } );
 
             auto df = result - result_;
 
@@ -51,20 +51,20 @@ TEST_CASE("sigmoid", "[sigmoid]")
                 REQUIRE( std::abs( df[idx] ) < 1.0e-7 );
 
 
-            auto ground_truth = place_holder<double>{};
+            auto ground_truth = place_holder<tensor<double>>{};
             //auto loss = cross_entropy( ground_truth, p );
             //auto loss = square_loss( ground_truth, p );
             auto loss = sum_reduce( square( minus( ground_truth, p ) ) );
 
 
-            auto target = numeric::random<double>( {1, dims} );
-            //auto target = numeric::ones<double>( {1, dims} );
+            auto target = random<double>( {1, dims} );
+            //auto target = ones<double>( {1, dims} );
 
             s.bind( ground_truth, target );
 
             double learning_rate = 1.0e-14;
             double momentum = 0.0;
-            auto optimizer = gradient_descent{ loss, learning_rate, momentum };
+            auto optimizer = gradient_descent{ loss, 1, learning_rate, momentum };
 
             auto w_data = (*(W.data_)).deep_copy();
             auto b_data = (*(b.data_)).deep_copy();
@@ -106,7 +106,7 @@ TEST_CASE("sigmoid", "[sigmoid]")
 
                 for ( auto idx : range( w_g_diff.size() ) )
                 {
-                    debug_print( "DEBUG at idx ", idx,  " w_gradient is ", w_gradient[idx], " and w_g_ is ", w_g_[idx] );
+                    //debug_print( "DEBUG at idx ", idx,  " w_gradient is ", w_gradient[idx], " and w_g_ is ", w_g_[idx] );
                     REQUIRE( std::abs( w_g_diff[idx] ) < 1.0e-7 );
                 }
             }
