@@ -21,18 +21,16 @@ TEST_CASE("softmax", "[softmax]")
         {
             unsigned long dims = dims_ + 1;
 
-            auto _zeros = constant{ zeros<double>( {1, dims} ) };
-
             auto _x = random<double>( {1, dims} );
             auto tw = random<double>( {dims, dims} );
             auto tb = random<double>( {1, dims} );
 
             auto x = place_holder<double>{};
             auto c = place_holder<double>{};
-            auto W = variable<double>{ tw };
-            auto b = variable<double>{ tb };
+            auto W = constant{ tw };
+            auto b = constant{ tb };
 
-            auto p = softmax( x * W + b + _zeros ) + _zeros;
+            auto p = softmax( x * W + b );
 
             session<double> s;
             s.bind( x, _x );
