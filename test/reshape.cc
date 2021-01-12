@@ -11,10 +11,10 @@ void test_1()
     a.reshape( {3, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::reshape({2, 6}, true)( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after transpose with batch size:\n" << ans << std::endl;
 
@@ -30,10 +30,10 @@ void test_2()
     auto a = ceras::linspace<double>( 1.0, 12.0, 12 );
     a.reshape( {3, 4} );
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::reshape({2, 6})( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
 
     auto grad = ceras::random<double>( {1, 2, 6} );

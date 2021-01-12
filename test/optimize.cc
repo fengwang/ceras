@@ -25,8 +25,8 @@ int main()
         auto result = s.run( p );
         std::cout << "Result of p:\n" << result << std::endl;
 
-        auto J = negative( sum_reduce(elementwise_multiply( c, ceras::log(p) )) );
-        //auto J = cross_entropy( c, p );
+        //auto J = negative( sum_reduce(elementwise_multiply( c, ceras::log(p) )) );
+        auto J = cross_entropy( c, p );
 
         auto c_blue = tensor<double>{{1, 2}, {1.0, 0.0} };
         auto c_blues = repmat( c_blue, N, 1 );

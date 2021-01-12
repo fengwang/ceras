@@ -43,6 +43,12 @@ namespace ceras
         return mean_absolute_error( lhs_ex, rhs_ex );
     };
 
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr cross_entropy( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return negative( sum_reduce( elementwise_multiply( lhs_ex, log(rhs_ex) ) ) );
+    }
+
     // beware: do not apply softmax activation before this layer, as this loss is softmax+xentropy already
     template < Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr cross_entropy_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
