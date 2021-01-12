@@ -11,10 +11,10 @@ void test_1()
     a.reshape( {3, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.2 )( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.2):\n" << ans << std::endl;
 
@@ -32,10 +32,10 @@ void test_2()
     a.reshape( {3, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.5 )( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.5):\n" << ans << std::endl;
 
@@ -58,10 +58,10 @@ void test_3()
     a.reshape( {3, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.5 )( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     ceras::learning_phase = 0;
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.5):\n" << ans << std::endl;
