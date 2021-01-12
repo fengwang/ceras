@@ -9,6 +9,13 @@ namespace ceras
         inline constexpr unsigned long debug_mode = 1;
     #endif
 
+    #ifdef CUDA
+        inline constexpr unsigned long cuda_mode = 1;
+        inline int visible_device = 0; // using GPU 0 by default
+    #else
+        inline constexpr unsigned long cuda_mode = 0;
+    #endif
+
     inline constexpr double eps = 1.0e-8;
 
     //
