@@ -126,6 +126,11 @@ up_sampling_2d: test/up_sampling_2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_up_sampling_2d.o test/up_sampling_2d.cc
 	$(LINK) -o $(BIN_DIR)/test_up_sampling_2d $(OBJECTS_DIR)/test_up_sampling_2d.o $(LFLAGS)
 
+constant: test/constant.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_constant.o test/constant.cc
+	$(LINK) -o $(BIN_DIR)/test_constant $(OBJECTS_DIR)/test_constant.o $(LFLAGS)
+
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
