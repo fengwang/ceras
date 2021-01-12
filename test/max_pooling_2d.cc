@@ -11,10 +11,10 @@ void test_1()
     a.reshape( {1, 4, 4, 1} );
     std::cout << "a created with:\n" << ceras::squeeze(a) << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::max_pooling_2d( 2 )( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after max_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 }
@@ -27,10 +27,10 @@ void test_2()
     a.reshape( {1, 4, 4, 1} );
     std::cout << "a created with:\n" << ceras::squeeze(a) << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::max_pooling_2d( 2 )( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after max_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 
