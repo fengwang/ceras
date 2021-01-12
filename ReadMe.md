@@ -6,7 +6,7 @@
 
 **using this library**:
 
-copy the `include` directory to your working directory, the in your source code
+copy the `include` directory to your working directory, then in your source code
 
 ```cpp
 #include "ceras.hpp"
