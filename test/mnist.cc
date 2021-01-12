@@ -37,37 +37,38 @@ int main()
 
     // define computation graph, a 3-layered dense net with topology 784x256x128x10
     using namespace ceras;
-    auto input = place_holder<float>{}; // 1-D, 28x28 pixels
+    typedef tensor<float> tensor_type;
+    auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
     // 1st layer
-    auto w1 = variable<float>{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    auto b1 = variable<float>{ zeros<float>( { 1, 256 } ) };
+    auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+    auto b1 = variable{ zeros<float>( { 1, 256 } ) };
     auto l1 = relu( input * w1 + b1 );
 
     // 2nd layer
-    auto w2 = variable<float>{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    auto b2 = variable<float>{ zeros<float>( { 1, 128 } ) };
+    auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
+    auto b2 = variable{ zeros<float>( { 1, 128 } ) };
     //auto l2 = relu( l1 * w2 + b2 );
     auto l2 = sigmoid( l1 * w2 + b2 );
 
     // 3rd layer
-    auto w3 = variable<float>{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
-    auto b3 = variable<float>{ zeros<float>( { 1, 10 } ) };
+    auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
+    auto b3 = variable{ zeros<float>( { 1, 10 } ) };
     auto output = l2 * w3 + b3;
 
-    auto ground_truth = place_holder<float>{}; // 1-D, 10
+    auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
     std::size_t const batch_size = 10;
-    tensor<float> input_images{ {batch_size, 28*28} };
-    tensor<float> output_labels{ {batch_size, 10} };
+    tensor_type input_images{ {batch_size, 28*28} };
+    tensor_type output_labels{ {batch_size, 10} };
 
     std::size_t const epoch = 1;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
-    session<float> s;
+    session<tensor_type> s;
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 

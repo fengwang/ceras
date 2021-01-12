@@ -9,40 +9,42 @@
 namespace ceras
 {
 
-    template< typename T, typename A >
+    template< Tensor Tsor >
     struct session;
 
-    template< typename T, typename A >
-    std::reference_wrapper<session<T, A>> get_default_session();
+    template< Tensor Tsor >
+    std::reference_wrapper<session<Tsor>> get_default_session();
 
 
-    template< typename T, typename A = default_allocator<T> >
+    template< Tensor Tsor >
     struct variable
     {
         int id_;
-        std::shared_ptr<tensor<T, A>> data_;
-        std::shared_ptr<tensor<T, A>> gradient_;
-        std::shared_ptr<tensor<T, A>> old_gradient_;
+        std::shared_ptr<Tsor> data_;
+        std::shared_ptr<Tsor> gradient_;
+        std::shared_ptr<Tsor> old_gradient_;
 
-        variable( tensor<T, A> const& data ) :
+        variable( Tsor const& data ) :
             id_{ generate_uid() },
-            data_{ std::make_shared<tensor<T, A>>( data ) },
-            gradient_{ std::make_shared<tensor<T, A>>(data.shape()) },
-            old_gradient_{std::make_shared<tensor<T, A>>(data.shape())}
+            data_{ std::make_shared<Tsor>( data ) },
+            gradient_{ std::make_shared<Tsor>(data.shape()) },
+            old_gradient_{std::make_shared<Tsor>(data.shape())}
         { }
         variable() = delete;
 
         void backward( auto const& grad )
         {
             *gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times
-            auto& ss = get_default_session<T, A>().get();
+            // TODO:
+            auto& ss = get_default_session<Tsor>().get();
             ss.remember( *this );
         }
 
-        tensor<T, A> const forward() const
+        Tsor const forward() const
         {
+            typedef typename Tsor::value_type value_type;
             std::swap( *gradient_, *old_gradient_ );
-            (*gradient_).reset( T{0} );
+            (*gradient_).reset( value_type{0} );
             return *data_;
         }
 
@@ -55,8 +57,8 @@ namespace ceras
     template< typename T >
     struct is_variable : std::false_type {};
 
-    template< typename T, typename A >
-    struct is_variable< variable< T, A> > : std::true_type {};
+    template< Tensor Tsor >
+    struct is_variable< variable<Tsor> > : std::true_type {};
 
     template< class T >
     inline constexpr bool is_variable_v = is_variable<T>::value;

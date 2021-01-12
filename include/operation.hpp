@@ -27,8 +27,8 @@ namespace ceras
         std::reference_wrapper<T> operator()( T & t ) const noexcept { return std::ref(t); };
 
         //in case of a place holder, copy its reference, as place holder is not yet binded to a tensor already
-        template< typename T, typename A >
-        std::reference_wrapper<place_holder<T,A> const> operator()( place_holder<T, A> const& ph ) const noexcept
+        template< Tensor Tsor >
+        std::reference_wrapper<place_holder<Tsor> const> operator()( place_holder<Tsor> const& ph ) const noexcept
         {
             return std::cref( ph );
         }
@@ -39,8 +39,8 @@ namespace ceras
         template< typename T >
         auto operator() ( T& t ) const noexcept { return t.forward(); }
 
-        template< typename T, typename A >
-        auto operator() ( place_holder<T, A> const& ph ) const noexcept { return ph.forward(); }
+        template< Tensor Tsor>
+        auto operator() ( place_holder<Tsor> const& ph ) const noexcept { return ph.forward(); }
 
         template< typename T >
         auto operator() ( std::reference_wrapper<T const> t ) const noexcept { return t.get().forward(); };
@@ -60,11 +60,11 @@ namespace ceras
             };
         }
 
-        template< typename T, typename A > // here T for place holder
-        auto operator() ( std::reference_wrapper<place_holder<T,A> const> ) const noexcept { return [](auto){}; }; //for place_holder
+        template< Tensor Tsor >
+        auto operator() ( std::reference_wrapper<place_holder<Tsor> const> ) const noexcept { return [](auto){}; }; //for place_holder
 
-        template< typename T, typename A > // here T for place holder
-        auto operator() ( place_holder<T,A> ) const noexcept { return [](auto){}; }; //for place_holder
+        template< Tensor Tsor >
+        auto operator() ( place_holder<Tsor> ) const noexcept { return [](auto){}; }; //for place_holder
 
         template< typename Op > // Operation and also variable
         auto operator() ( std::reference_wrapper<Op> op ) noexcept

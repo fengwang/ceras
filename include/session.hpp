@@ -11,19 +11,18 @@
 namespace ceras
 {
 
-    template< typename T, typename A=default_allocator<T> >
+    template< Tensor Tsor >
     struct session
     {
-        typedef tensor<T, A> tensor_type;
-        typedef place_holder<T, A> place_holder_type;
-        typedef variable<T, A> variable_type;
+        typedef place_holder<Tsor> place_holder_type;
+        typedef variable<Tsor> variable_type;
 
         std::vector<std::reference_wrapper<place_holder_type>> place_holders_;
         std::map<int, std::reference_wrapper<variable_type>> variables_;
 
         session()
         {
-            singleton<session<T,A>*>::instance() = this;
+            singleton<session<Tsor>*>::instance() = this;
         }
 
         session( session const& ) = delete;
@@ -31,12 +30,12 @@ namespace ceras
         session& operator=( session const& ) = delete;
         session& operator=( session&& ) = delete;
 
-        void rebind( place_holder_type& p_holder, tensor_type const& value )
+        void rebind( place_holder_type& p_holder, Tsor const& value )
         {
             p_holder.bind( value );
         }
 
-        void bind( place_holder_type& p_holder, tensor_type const& value )
+        void bind( place_holder_type& p_holder, Tsor const& value )
         {
             p_holder.bind( value );
             place_holders_.emplace_back( std::ref( p_holder ) );
@@ -61,14 +60,14 @@ namespace ceras
             place_holders_.clear();
             variables_.clear();
 
-            singleton<session<T,A>*>::instance() = nullptr;
+            singleton<session<Tsor>*>::instance() = nullptr;
         }
     };
 
-    template< typename T, typename A >
-    std::reference_wrapper<session<T,A>> get_default_session()
+    template< Tensor Tsor >
+    std::reference_wrapper<session<Tsor>> get_default_session()
     {
-        auto p_session = singleton<session<T,A>*>::instance();
+        auto p_session = singleton<session<Tsor>*>::instance();
         return std::ref(*p_session);
     }
 

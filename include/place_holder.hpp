@@ -9,24 +9,24 @@
 namespace ceras
 {
 
-    template< typename T, typename A=default_allocator<T> >
+    template< Tensor Tsor >
     struct place_holder
     {
-        std::shared_ptr<tensor<T, A>> data_;
+        std::shared_ptr<Tsor> data_;
 
         place_holder() { }
 
         ~place_holder() { }
 
-        tensor<T, A> const forward() const
+        Tsor const forward() const
         {
             better_assert( data_, "This place holder does not hold a data!" );
             return *data_;
         }
 
-        void bind( tensor<T, A> const& data )
+        void bind( Tsor const& data )
         {
-            data_ = std::make_shared<tensor<T, A>>(data);
+            data_ = std::make_shared<Tsor>(data);
         }
 
         void reset()
@@ -42,8 +42,8 @@ namespace ceras
     template< typename T >
     struct is_place_holder : std::false_type {};
 
-    template< typename T, typename A >
-    struct is_place_holder< place_holder< T, A> > : std::true_type {};
+    template< Tensor Tsor >
+    struct is_place_holder< place_holder< Tsor > > : std::true_type {};
 
     template< class T >
     inline constexpr bool is_place_holder_v = is_place_holder<T>::value;

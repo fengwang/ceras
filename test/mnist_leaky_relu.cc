@@ -36,24 +36,25 @@ int main()
 
 
     using namespace ceras;
-    auto input = place_holder<double>{}; // 1-D, 28x28 pixels
+    typedef tensor<double> tensor_type;
+    auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
     // 1st layer
-    auto w1 = variable<double>{ randn<double>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    auto b1 = variable<double>{ zeros<double>( { 1, 256 } ) };
+    auto w1 = variable{ randn<double>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+    auto b1 = variable{ zeros<double>( { 1, 256 } ) };
     auto l1 = leaky_relu(0.1)( input * w1 + b1 );
 
     // 2nd layer
-    auto w2 = variable<double>{ randn<double>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    auto b2 = variable<double>{ zeros<double>( { 1, 128 } ) };
+    auto w2 = variable{ randn<double>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
+    auto b2 = variable{ zeros<double>( { 1, 128 } ) };
     auto l2 = leaky_relu(0.1)( l1 * w2 + b2 );
 
     // 3rd layer
-    auto w3 = variable<double>{ randn<double>( {128, 10}, 0.0, 1.0/35.8 ) };
-    auto b3 = variable<double>{ zeros<double>( { 1, 10 } ) };
+    auto w3 = variable{ randn<double>( {128, 10}, 0.0, 1.0/35.8 ) };
+    auto b3 = variable{ zeros<double>( { 1, 10 } ) };
     auto output = l2 * w3 + b3;
 
-    auto ground_truth = place_holder<double>{}; // 1-D, 10
+    auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
@@ -65,7 +66,7 @@ int main()
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
-    session<double> s;
+    session<tensor_type> s;
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 

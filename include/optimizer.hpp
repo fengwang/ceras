@@ -22,6 +22,7 @@ namespace ceras
     template< typename Loss, typename T >
     struct gradient_descent
     {
+        typedef tensor< T > tensor_type;
         Loss& loss_;
         T learning_rate_;
         T momentum_;
@@ -34,9 +35,9 @@ namespace ceras
         void forward()
         {
             // update the gradient in the loss
-            loss_.backward( ones<T>({1,}) );
+            loss_.backward( ones<T>( {1, } ) );
             //update variables
-            auto& ss = get_default_session<T,default_allocator<T>>().get();
+            auto& ss = get_default_session<tensor_type>().get();
             for ( auto [id, v] : ss.variables_ )
             {
                 *(v.get().data_) -= learning_rate_ * (*(v.get().gradient_)) * (1.0-momentum_);
