@@ -6,39 +6,39 @@ int main()
 
     {
         std::cerr << "Test Case of Opimizer " << 1 << std::endl;
-        auto x = place_holder<double>{};
-        auto c = place_holder<double>{};
-        auto W = variable<double>{ numeric::tensor<double>{ {2, 2}, {1.0, -1.0, 1.0, -1.0} } };
-        auto b = variable<double>{ numeric::tensor<double>{{1,2}, {0.0, 0.0} } };
+        auto x = place_holder<tensor<double>>{};
+        auto c = place_holder<tensor<double>>{};
+        auto W = variable{ tensor<double>{ {2, 2}, {1.0, -1.0, 1.0, -1.0} } };
+        auto b = variable{ tensor<double>{{1,2}, {0.0, 0.0} } };
 
         auto p = softmax( x * W + b );
 
         unsigned long const N = 512;
-        auto blues = numeric::randn<double>( {N, 2} ) - 2.0 * numeric::ones<double>( {N, 2} );
-        auto reds = numeric::randn<double>( {N, 2} ) + 2.0 * numeric::ones<double>( {N, 2} );
-        auto _x = numeric::concatenate( blues, reds, 0 );
+        auto blues = randn<double>( {N, 2} ) - 2.0 * ones<double>( {N, 2} );
+        auto reds = randn<double>( {N, 2} ) + 2.0 * ones<double>( {N, 2} );
+        auto _x = concatenate( blues, reds, 0 );
 
         //std::cout << "X is\n" << _x << std::endl;
 
-        session<double> s;
+        session<tensor<double>> s;
         s.bind( x, _x );
         auto result = s.run( p );
         std::cout << "Result of p:\n" << result << std::endl;
 
-        //auto J = negative( sum_reduce(elementwise_multiply( c, ceras::log(p) )) );
-        auto J = cross_entropy( c, p );
+        auto J = negative( sum_reduce(elementwise_multiply( c, ceras::log(p) )) );
+        //auto J = cross_entropy( c, p );
 
-        auto c_blue = numeric::tensor<double>{{1, 2}, {1.0, 0.0} };
-        auto c_blues = numeric::repmat( c_blue, N, 1 );
-        auto c_red = numeric::tensor<double>{{1, 2}, {0.0, 1.0} };
-        auto c_reds = numeric::repmat( c_red, N, 1 );
-        auto _c = numeric::concatenate( c_blues, c_reds, 0 );
+        auto c_blue = tensor<double>{{1, 2}, {1.0, 0.0} };
+        auto c_blues = repmat( c_blue, N, 1 );
+        auto c_red = tensor<double>{{1, 2}, {0.0, 1.0} };
+        auto c_reds = repmat( c_red, N, 1 );
+        auto _c = concatenate( c_blues, c_reds, 0 );
 
         s.bind( c, _c );
         //auto J_result = s.run( J );
         //std::cout << "Result of J:\n" << J_result << std::endl;
         double const learning_rate = 1.0e-3;
-        auto optimizer = gradient_descent{ J, learning_rate };
+        auto optimizer = gradient_descent{ J, 1, learning_rate };
 
         auto const iterations = 32UL;
         for ( auto idx = 0UL; idx != iterations; ++idx )
