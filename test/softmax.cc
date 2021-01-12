@@ -25,14 +25,14 @@ TEST_CASE("softmax", "[softmax]")
             auto tw = random<double>( {dims, dims} );
             auto tb = random<double>( {1, dims} );
 
-            auto x = place_holder<double>{};
-            auto c = place_holder<double>{};
-            auto W = variable<double>{ tw };
-            auto b = variable<double>{ tb };
+            auto x = place_holder<tensor<double>>{};
+            auto c = place_holder<tensor<double>>{};
+            auto W = variable{ tw };
+            auto b = variable{ tb };
 
             auto p = softmax( x * W + b );
 
-            session<double> s;
+            session<tensor<double>> s;
             s.bind( x, _x );
             auto result = s.run( p );
 

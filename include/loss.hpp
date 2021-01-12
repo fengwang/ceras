@@ -8,7 +8,7 @@ namespace ceras
 {
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr squared_Loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr squared_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return sum_reduce( square( minus(lhs_ex, rhs_ex)) );
     }

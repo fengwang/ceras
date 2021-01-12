@@ -28,25 +28,25 @@ clang++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofa
 ```cpp
 // define computation graph, a 3-layered dense net with topology 784x256x128x10
 using namespace ceras;
-auto input = place_holder<float>{}; // 1-D, 28x28 pixels
+auto input = place_holder<tensor<float>>?gI{}; // 1-D, 28x28 pixels
 
 // 1st layer
-auto w1 = variable<float>{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-auto b1 = variable<float>{ zeros<float>( { 1, 256 } ) };
+auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+auto b1 = variable{ zeros<float>( { 1, 256 } ) };
 auto l1 = relu( input * w1 + b1 );
 
 // 2nd layer
-auto w2 = variable<float>{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-auto b2 = variable<float>{ zeros<float>( { 1, 128 } ) };
+auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
+auto b2 = variable{ zeros<float>( { 1, 128 } ) };
 //auto l2 = relu( l1 * w2 + b2 );
 auto l2 = sigmoid( l1 * w2 + b2 );
 
 // 3rd layer
-auto w3 = variable<float>{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
-auto b3 = variable<float>{ zeros<float>( { 1, 10 } ) };
+auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
+auto b3 = variable{ zeros<float>( { 1, 10 } ) };
 auto output = l2 * w3 + b3;
 
-auto ground_truth = place_holder<float>{}; // 1-D, 10
+auto ground_truth = place_holder<tensor<float>>?gI{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
@@ -65,7 +65,7 @@ std::size_t const iteration_per_epoch = 60000/batch_size;
 
 ```cpp
 // creating session
-session<float> s;
+session<tensor<float>> s;
 s.bind( input, input_images );
 s.bind( ground_truth, output_labels );
 ```
@@ -110,28 +110,28 @@ for ( auto i : range( tests ) )
 
 ```cpp
 using namespace ceras;
-auto input = place_holder<float>{}; // 1-D, 28x28 pixels
+auto input = place_holder<tensor<float>>?gI{}; // 1-D, 28x28 pixels
 
 auto l0 = reshape( {28, 28, 1} )( input );
 
-auto k1 = variable<float>{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
+auto k1 = variable{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
 auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
 
 auto l2 = max_pooling_2d( 2 ) ( l1 ); // 13, 13, 32
 
-auto k2 = variable<float>{ randn<float>( {64, 3, 3, 32}, 0.0, 10.0/std::sqrt(64.0*3*3*1) ) };
+auto k2 = variable{ randn<float>( {64, 3, 3, 32}, 0.0, 10.0/std::sqrt(64.0*3*3*1) ) };
 auto l3 = relu( conv2d(13, 13, 1, 1, 1, 1, "valid")( l2, k2 ) ); // 11, 11, 64
 
 auto l4 = max_pooling_2d( 2 )( l3 ); //5, 5, 64
 auto l5 = drop_out(0.5)( flatten( l4 ) );
 
-auto w6 = variable<float>{ randn<float>( {5*5*64, 10}, 0.0, 10.0/std::sqrt(7.0*7*64*10) ) };
-auto b6 = variable<float>{ zeros<float>( {1, 10} ) };
+auto w6 = variable{ randn<float>( {5*5*64, 10}, 0.0, 10.0/std::sqrt(7.0*7*64*10) ) };
+auto b6 = variable{ zeros<float>( {1, 10} ) };
 
 auto l6 = l5 * w6 + b6;
 auto output = l6;
 
-auto ground_truth = place_holder<float>{}; // 1-D, 10
+auto ground_truth = place_holder<tensor<float>>?gI{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 

@@ -9,10 +9,10 @@ void test_44()
     a.reshape( {4, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::transpose( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after transpose:\n" << ans << std::endl;
 }
@@ -23,10 +23,10 @@ void test_44_back()
     auto a = ceras::linspace<double>( 1.0, 12.0, 12 );
     a.reshape( {4, 3} );
 
-    auto va = ceras::variable<double>{ a };
+    auto va = ceras::variable{ a };
     auto ta = ceras::transpose( va );
 
-    ceras::session<double> s;
+    ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
 
     auto grad = ceras::random<double>( {3, 4} );

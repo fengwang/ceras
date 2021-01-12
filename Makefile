@@ -50,11 +50,6 @@ xor: test/xor.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_xor.o test/xor.cc
 	$(LINK) -o $(BIN_DIR)/test_xor $(OBJECTS_DIR)/test_xor.o $(LFLAGS)
 
-xor_se: test/xor_se.cc
-	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_xor_se.o test/xor_se.cc
-	$(LINK) -o $(BIN_DIR)/test_xor_se $(OBJECTS_DIR)/test_xor_se.o $(LFLAGS)
-
-
 sigmoid: test/sigmoid.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_sigmoid.o test/sigmoid.cc
 	$(LINK) -o $(BIN_DIR)/test_sigmoid $(OBJECTS_DIR)/test_sigmoid.o $(LFLAGS)

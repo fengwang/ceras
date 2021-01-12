@@ -17,19 +17,19 @@ int main()
     constexpr unsigned long cat = 10;
 
     using namespace ceras;
-    auto input = place_holder<double>{};
+    auto input = place_holder<tensor<double>>{};
 
     // 1st layer
-    auto w1 = variable<double>{ ones<double>( {dim*dim, 16} ) };
-    auto b1 = variable<double>{ zeros<double>( { 1, 16 } ) };
+    auto w1 = variable{ ones<double>( {dim*dim, 16} ) };
+    auto b1 = variable{ zeros<double>( { 1, 16 } ) };
     auto l1 = relu( input * w1 + b1 );
 
     // 3rd layer
-    auto w3 = variable<double>{ ones<double>( {16, cat} ) };
-    auto b3 = variable<double>{ zeros<double>( { 1, cat } ) };
+    auto w3 = variable{ ones<double>( {16, cat} ) };
+    auto b3 = variable{ zeros<double>( { 1, cat } ) };
     auto output = softmax(l1 * w3 + b3);
 
-    auto ground_truth = place_holder<double>{}; // 1-D, 10
+    auto ground_truth = place_holder<tensor<double>>{}; // 1-D, 10
     auto loss = cross_entropy( ground_truth, output );
     //auto loss = cross_entropy_error( ground_truth, output );
 
@@ -51,7 +51,7 @@ int main()
     std::size_t const iteration_per_epoch = 1;
 
     // creating session
-    session<double> s;
+    session<tensor<double>> s;
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 
