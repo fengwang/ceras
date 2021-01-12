@@ -28,7 +28,7 @@ clang++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofa
 ```cpp
 // define computation graph, a 3-layered dense net with topology 784x256x128x10
 using namespace ceras;
-auto input = place_holder<tensor<float>>?gI{}; // 1-D, 28x28 pixels
+auto input = place_holder<tensor<float>>{}; // 1-D, 28x28 pixels
 
 // 1st layer
 auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
@@ -46,7 +46,7 @@ auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
 auto b3 = variable{ zeros<float>( { 1, 10 } ) };
 auto output = l2 * w3 + b3;
 
-auto ground_truth = place_holder<tensor<float>>?gI{}; // 1-D, 10
+auto ground_truth = place_holder<tensor<float>>{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
@@ -110,7 +110,7 @@ for ( auto i : range( tests ) )
 
 ```cpp
 using namespace ceras;
-auto input = place_holder<tensor<float>>?gI{}; // 1-D, 28x28 pixels
+auto input = place_holder<tensor<float>>{}; // 1-D, 28x28 pixels
 
 auto l0 = reshape( {28, 28, 1} )( input );
 
@@ -131,7 +131,7 @@ auto b6 = variable{ zeros<float>( {1, 10} ) };
 auto l6 = l5 * w6 + b6;
 auto output = l6;
 
-auto ground_truth = place_holder<tensor<float>>?gI{}; // 1-D, 10
+auto ground_truth = place_holder<tensor<float>>{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
