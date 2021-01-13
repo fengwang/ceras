@@ -9,6 +9,7 @@
 #include "./utils/debug.hpp"
 #include "./config.hpp"
 #include "./utils/context_cast.hpp"
+#include "./utils/for_each.hpp"
 
 namespace ceras
 {
@@ -1042,6 +1043,92 @@ namespace ceras
             )( ex );
         };
     }
+
+
+    template< typename T > requires std::floating_point<T>
+    inline auto batch_normalization( T const momentum=0.98 ) noexcept
+    {
+        better_assert( momentum < T{1}, "Expecting batch_normalization momentem less than 1, but got momentum = ", momentum );
+        better_assert( momentum > T{0}, "Expecting batch_normalization momentem greater than 0, but got momentum = ", momentum );
+
+        std::shared_ptr<std::any> mask = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        std::shared_ptr<std::any> gamma_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> beta_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> overall_var_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> overall_ave_cache = std::make_shared<std::any>();
+
+        std::shared_ptr<std::any> sample_ave_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> sample_std_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    better_assert( input.shape().size() >= 2, "Expecting the input tensor has more than 2 dimensions, but got ", input.shape().size() );
+
+                    typedef typename Tsor::value_type value_type;
+                    std::vector<std::size_t> const shape{ input.shape().begin(), input.shape().begin()+input.shape().size()-1 };
+                    std::size_t const calculation_strides = *(input.shape().rbegin());
+
+                    // initialize gamma, beta, var, ave
+                    Tsor& gamma = context_cast<Tsor>( gamma_cache, random(shape, value_type{0.9}, value_type{1.1}) );
+                    Tsor& beta = context_cast<Tsor>( beta_cache, random(shape, value_type{-0.1}, value_type{0.1}) );
+                    Tsor& overall_ave = context_cast<Tsor>( overall_ave_cache, zeros(shape) );
+                    Tsor& overall_var = context_cast<Tsor>( overall_var_cache, ones(shape) );
+                    Tsor& sample_ave = context_cast<Tsor>( sample_ave_cache, zeros(shape) );
+                    Tsor& sample_std = context_cast<Tsor>( sample_std_cache, zeros(shape) );
+
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                    {
+
+                    }
+
+                    std::any& mask_ = *mask;
+                    // first run, initialize mask
+                    if ( !mask_.has_value() )
+                    {
+                        Tsor const random_tensor = random<value_type>( input.shape() );
+                        Tsor mask__{ input.shape() };
+                        for ( auto idx : range( input.size() ) )
+                            if ( random_tensor[ idx ] > momentum )
+                                mask__[ idx ] = 1;
+                        mask_ = mask__; // initialize
+                    }
+
+                    Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
+
+                    //Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.deep_copy( input );
+
+                    for ( auto idx : range( input.size() ) )
+                        ans[idx] *= mask__[idx] / (value_type{1} - momentum);
+                    return ans;
+                },
+                [mask, backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                        return grad;
+
+                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
+
+                    //Tsor ans = grad.deep_copy();
+                    Tsor& ans = context_cast<Tsor>( backward_cache );
+                    ans.deep_copy( grad );
+
+                    for ( auto idx : range( grad.size() ) )
+                        ans[idx] *= mask__[idx];
+                    return ans;
+                }
+            )( ex );
+        };
+    }
+
 
 
 }//namespace ceras

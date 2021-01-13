@@ -674,13 +674,18 @@ namespace ceras
     }
 
     template< typename T, typename A=default_allocator<T> >
-    //tensor<T,A> random( std::initializer_list<std::size_t> shape, T min=T{0}, T max=T{1} )
     tensor<T,A> random( std::vector<std::size_t> const& shape, T min=T{0}, T max=T{1} )
     {
         std::uniform_real_distribution<T> distribution( min, max );
         tensor<T,A> ans{ shape };
         std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(generator); } );
         return ans;
+    }
+
+    template< Tensor Tsor >
+    Tsor random_like( Tsor const& tsor, typename Tsor::value_type min = 0, typename Tsor::value_type max = 1 )
+    {
+        return random<typename Tsor::value_type, typename Tsor::allocator>( tsor.shape(), min, max );
     }
 
     // Glorot, Xavier, and Yoshua Bengio. “Understanding the Difficulty of Training Deep Feedforward Neural Networks.” In Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics, 249–256, 2010.
