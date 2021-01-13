@@ -1055,89 +1055,102 @@ namespace ceras
         };
     }
 
+    template< typename T > requires std::floating_point<T>
+    inline auto normalization( T const momentum=0.98 ) noexcept
+    {
+        std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return make_unary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& input ) noexcept
+            {
+                better_assert( input.ndim() > 1, "normalization requires input dimension at least 2, got ", input.ndim() );
+
+                typedef typename Tsor::value_type value_type;
+                typedef typename Tsor::allocator allocator;
+
+                std::vector<std::size_t> const& shape = input.shape();
+                std::size_t const batch_size = shape[0];
+                std::vector<std::size_t> new_shape{ shape.begin()+1, shape.end() };
+
+                // TODO: pure prediction case
+
+                //calculate E
+                Tsor& average = context_cast<Tsor&>( average_cache, zeros<value_type, allocator>(new_shape) );
+                {
+                    std::fill( average.begin(), average.end(), value_type{0} );
+                    std::size_t const stride = average.size();
+                    for ( auto idx : range( batch_size ) )
+                        for ( auto jdx : range( stride ) )
+                            average[jdx] += input[idx*stride+jdx];
+                    average /= static_cast<value_type>(batch_size);
+                }
+
+                //calculate Var
+                Tsor& variance = context_cast<Tsor&>( variance_cache, zeros<value_type, allocator>(new_shape) );
+                {
+                    std::fill( variance.begin(), variance.end(), value_type{0} );
+                    std::size_t const stride = average.size();
+                    for ( auto idx : range( batch_size ) )
+                        for ( auto jdx : range( stride ) )
+                            variance[jdx] += std::pow( input[idx*stride+jdx] - average[jdx], 2 );
+                    variance /= static_cast<value_type>(batch_size);
+                }
+
+                // construct ans
+                //Tsor ans = input.deep_copy();
+                Tsor& ans = context_cast<Tsor&>( forward_cache, zeros_like( input ) );
+                {
+                    std::size_t const stride = average.size();
+                    for ( auto idx : range( batch_size ) )
+                        for ( auto jdx : range( stride ) )
+                            ans[idx*stride+jdx] =  (ans[idx*stride+jdx] - average[jdx]) / std::sqrt(variance[jdx]+eps);
+                }
+
+                // update global average and global variance
+                {
+                    Tsor& global_average = context_cast<Tsor&>( global_average_cache, zeros_like( input ) );
+                    Tsor& global_variance = context_cast<Tsor&>( global_variance_cache, ones_like( input ) );
+                    for ( auto idx : range( input.size() ) )
+                    {
+                        global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
+                        global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
+                    }
+                }
+
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& variance = context_extract<Tsor&>( variance_cache );
+
+                std::vector<std::size_t> const& shape = input.shape();
+                std::size_t const batch_size = shape[0];
+                std::size_t const stride = average.size();
+
+                //Tsor ans{ input.shape() };
+                Tsor& ans = context_cast<Tsor&>( backward_cache, zeros_like( input ) );
+                for ( auto idx : range( batch_size ) )
+                    for ( auto jdx : range( stride ) )
+                        ans[idx*stride+jdx] = grad[idx*stride+jdx] / std::sqrt(variance[jdx]+eps);
+                return ans;
+            }
+        )( ex );
+    }
+
 
     template< typename T > requires std::floating_point<T>
     inline auto batch_normalization( T const momentum=0.98 ) noexcept
     {
-        better_assert( momentum < T{1}, "Expecting batch_normalization momentem less than 1, but got momentum = ", momentum );
-        better_assert( momentum > T{0}, "Expecting batch_normalization momentem greater than 0, but got momentum = ", momentum );
-
-        std::shared_ptr<std::any> mask = std::make_shared<std::any>();
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-
-        std::shared_ptr<std::any> gamma_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> beta_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> overall_var_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> overall_ave_cache = std::make_shared<std::any>();
-
-        std::shared_ptr<std::any> sample_ave_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> sample_std_cache = std::make_shared<std::any>();
-
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& gamma, Va const& beta ) noexcept
         {
-            return make_unary_operator
-            (
-                [=]<Tensor Tsor>( Tsor const& input ) noexcept
-                {
-                    better_assert( input.shape().size() >= 2, "Expecting the input tensor has more than 2 dimensions, but got ", input.shape().size() );
-
-                    typedef typename Tsor::value_type value_type;
-                    typedef typename Tsor::allocator allocator;
-                    std::vector<std::size_t> const shape{ input.shape().begin(), input.shape().begin()+input.shape().size()-1 };
-                    std::size_t const calculation_strides = *(input.shape().rbegin());
-
-                    // initialize gamma, beta, var, ave
-                    Tsor& gamma = context_cast<Tsor>( gamma_cache, random<value_type, allocator>(shape, value_type{0.9}, value_type{1.1}) );
-                    Tsor& beta = context_cast<Tsor>( beta_cache, random<value_type, allocator>(shape, value_type{-0.1}, value_type{0.1}) );
-                    Tsor& overall_ave = context_cast<Tsor>( overall_ave_cache, zeros<value_type, allocator>(shape) );
-                    Tsor& overall_var = context_cast<Tsor>( overall_var_cache, ones<value_type, allocator>(shape) );
-                    Tsor& sample_ave = context_cast<Tsor>( sample_ave_cache, zeros<value_type, allocator>(shape) );
-                    Tsor& sample_std = context_cast<Tsor>( sample_std_cache, zeros<value_type, allocator>(shape) );
-
-                    if ( learning_phase == 0 ) // defined in 'config.hpp'
-                    {
-
-                    }
-
-                    std::any& mask_ = *mask;
-                    // first run, initialize mask
-                    if ( !mask_.has_value() )
-                    {
-                        Tsor const random_tensor = random<value_type>( input.shape() );
-                        Tsor mask__{ input.shape() };
-                        for ( auto idx : range( input.size() ) )
-                            if ( random_tensor[ idx ] > momentum )
-                                mask__[ idx ] = 1;
-                        mask_ = mask__; // initialize
-                    }
-
-                    Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
-
-                    //Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.deep_copy( input );
-
-                    for ( auto idx : range( input.size() ) )
-                        ans[idx] *= mask__[idx] / (value_type{1} - momentum);
-                    return ans;
-                },
-                [mask, backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
-                {
-                    if ( learning_phase == 0 ) // defined in 'config.hpp'
-                        return grad;
-
-                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
-
-                    //Tsor ans = grad.deep_copy();
-                    Tsor& ans = context_cast<Tsor>( backward_cache );
-                    ans.deep_copy( grad );
-
-                    for ( auto idx : range( grad.size() ) )
-                        ans[idx] *= mask__[idx];
-                    return ans;
-                }
-            )( ex );
+            return elementwise_product( normalization(momentum), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
         };
     }
 
