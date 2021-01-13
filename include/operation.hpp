@@ -305,18 +305,29 @@ namespace ceras
     };
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr elementwise_multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr elementwise_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
-                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator elementwise_multiply: lhs_tensor contains Nan!" );
-                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator elementwise_multiply: rhs_tensor contains Nan!" );
                                         return elementwise_product( lhs_tensor, rhs_tensor );
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        better_assert( !has_nan( grad ), "input gradient for operator elementwise_multiply contains NaN!" );
-                                        return std::make_tuple( elementwise_product(grad, rhs_input), elementwise_product(grad, lhs_input) );
+                                        //
+                                        auto const& grad_fun = [&grad]( auto const& input, auto const& other_input )
+                                        {
+                                            //Tsor ans = grad.deep_copy();
+                                            Tsor ans = elementwise_product( grad, other_input );
+                                            while( input.ndim() < ans.ndim() )
+                                                ans = sum( ans, 0 );
+                                            auto const& shape = input.shape();
+                                            for ( auto axis : range( input.ndim() ) )
+                                                if ( shape[axis] == 1 )
+                                                    ans = sum( ans, axis, true );
+                                            return ans;
+                                            //return elementwise_product(ans, input);
+                                        };
+                                        return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
                                      }
                 )( lhs_ex, rhs_ex );
     };
@@ -1072,16 +1083,17 @@ namespace ceras
                     better_assert( input.shape().size() >= 2, "Expecting the input tensor has more than 2 dimensions, but got ", input.shape().size() );
 
                     typedef typename Tsor::value_type value_type;
+                    typedef typename Tsor::allocator allocator;
                     std::vector<std::size_t> const shape{ input.shape().begin(), input.shape().begin()+input.shape().size()-1 };
                     std::size_t const calculation_strides = *(input.shape().rbegin());
 
                     // initialize gamma, beta, var, ave
-                    Tsor& gamma = context_cast<Tsor>( gamma_cache, random(shape, value_type{0.9}, value_type{1.1}) );
-                    Tsor& beta = context_cast<Tsor>( beta_cache, random(shape, value_type{-0.1}, value_type{0.1}) );
-                    Tsor& overall_ave = context_cast<Tsor>( overall_ave_cache, zeros(shape) );
-                    Tsor& overall_var = context_cast<Tsor>( overall_var_cache, ones(shape) );
-                    Tsor& sample_ave = context_cast<Tsor>( sample_ave_cache, zeros(shape) );
-                    Tsor& sample_std = context_cast<Tsor>( sample_std_cache, zeros(shape) );
+                    Tsor& gamma = context_cast<Tsor>( gamma_cache, random<value_type, allocator>(shape, value_type{0.9}, value_type{1.1}) );
+                    Tsor& beta = context_cast<Tsor>( beta_cache, random<value_type, allocator>(shape, value_type{-0.1}, value_type{0.1}) );
+                    Tsor& overall_ave = context_cast<Tsor>( overall_ave_cache, zeros<value_type, allocator>(shape) );
+                    Tsor& overall_var = context_cast<Tsor>( overall_var_cache, ones<value_type, allocator>(shape) );
+                    Tsor& sample_ave = context_cast<Tsor>( sample_ave_cache, zeros<value_type, allocator>(shape) );
+                    Tsor& sample_std = context_cast<Tsor>( sample_std_cache, zeros<value_type, allocator>(shape) );
 
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
                     {

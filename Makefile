@@ -126,6 +126,10 @@ constant: test/constant.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_constant.o test/constant.cc
 	$(LINK) -o $(BIN_DIR)/test_constant $(OBJECTS_DIR)/test_constant.o $(LFLAGS)
 
+elementwise_multiply: test/elementwise_multiply.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_elementwise_multiply.o test/elementwise_multiply.cc
+	$(LINK) -o $(BIN_DIR)/test_elementwise_multiply $(OBJECTS_DIR)/test_elementwise_multiply.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

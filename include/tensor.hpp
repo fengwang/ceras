@@ -571,6 +571,30 @@ namespace ceras
         return multiply( lhs, rhs );
     }
 
+
+    // caution: only valid for channel last case
+    template< Tensor Tsor >
+    Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
+    {
+        std::size_t const l_size = lhs.size();
+        std::size_t const r_size = rhs.size();
+        if ( l_size < r_size ) return elementwise_product(rhs, lhs);
+
+        std::size_t const repeats = l_size / r_size;
+        better_assert( (r_size * repeats) == l_size, "Dimension is not match!" );
+
+        Tsor ans = lhs.deep_copy();
+        for ( auto idx : range( repeats ) )
+            for ( auto jdx : range( r_size ) )
+            {
+                ans[idx*r_size+jdx] *= rhs[jdx];
+                //ans[idx*r_size+jdx] *= rhs[jdx];
+            }
+
+        return ans;
+    }
+
+    /*
     template< Tensor Tsor >
     Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
@@ -582,6 +606,7 @@ namespace ceras
         for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x*y; } );
         return ans;
     }
+    */
 
     template< Tensor Tsor >
     Tsor hadamard_product( Tsor const& lhs, Tsor const& rhs ) noexcept
