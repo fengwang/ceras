@@ -130,6 +130,10 @@ elementwise_multiply: test/elementwise_multiply.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_elementwise_multiply.o test/elementwise_multiply.cc
 	$(LINK) -o $(BIN_DIR)/test_elementwise_multiply $(OBJECTS_DIR)/test_elementwise_multiply.o $(LFLAGS)
 
+normalization: test/normalization.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_normalization.o test/normalization.cc
+	$(LINK) -o $(BIN_DIR)/test_normalization $(OBJECTS_DIR)/test_normalization.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

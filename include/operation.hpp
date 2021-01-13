@@ -1055,7 +1055,7 @@ namespace ceras
         };
     }
 
-    template< typename T > requires std::floating_point<T>
+    template< typename T=double > requires std::floating_point<T>
     inline auto normalization( T const momentum=0.98 ) noexcept
     {
         std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
@@ -1085,10 +1085,10 @@ namespace ceras
                     // case of prediction phase
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
                     {
-                        Tsor& global_average = context_extract<Tsor&>( global_average_cache );
-                        Tsor& global_variance = context_extract<Tsor&>( global_variance_cache );
+                        Tsor& global_average = context_extract<Tsor>( global_average_cache );
+                        Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
 
-                        Tsor& ans = context_cast<Tsor&>( forward_cache, zeros_like( input ) );
+                        Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
                         view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
                         {
                             for ( auto r : range( batch_size ) )
@@ -1101,7 +1101,7 @@ namespace ceras
                     // training phase below
 
                     //calculate E
-                    Tsor& average = context_cast<Tsor&>( average_cache, zeros<value_type, allocator>(new_shape) );
+                    Tsor& average = context_cast<Tsor>( average_cache, zeros<value_type, allocator>(new_shape) );
                     {
                         std::fill( average.begin(), average.end(), value_type{0} );
                         for ( auto r : range( batch_size ) )
@@ -1111,7 +1111,7 @@ namespace ceras
                     }
 
                     //calculate Var
-                    Tsor& variance = context_cast<Tsor&>( variance_cache, zeros<value_type, allocator>(new_shape) );
+                    Tsor& variance = context_cast<Tsor>( variance_cache, zeros<value_type, allocator>(new_shape) );
                     {
                         std::fill( variance.begin(), variance.end(), value_type{0} );
                         for ( auto r : range( batch_size ) )
@@ -1120,7 +1120,7 @@ namespace ceras
                         variance /= static_cast<value_type>(batch_size);
                     }
 
-                    Tsor& ans = context_cast<Tsor&>( forward_cache, zeros_like( input ) );
+                    Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
                     view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
                     {
                         for ( auto r : range( batch_size ) )
@@ -1130,8 +1130,8 @@ namespace ceras
 
                     // update global average and global variance
                     {
-                        Tsor& global_average = context_cast<Tsor&>( global_average_cache, zeros_like( average ) );
-                        Tsor& global_variance = context_cast<Tsor&>( global_variance_cache, ones_like( variance ) );
+                        Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
+                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
                         for ( auto idx : range( global_average.size() ) )
                         {
                             global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
@@ -1144,14 +1144,14 @@ namespace ceras
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
-                    Tsor& variance = context_extract<Tsor&>( variance_cache );
+                    Tsor& variance = context_extract<Tsor>( variance_cache );
 
                     std::vector<std::size_t> const& shape = input.shape();
                     std::size_t const batch_size = shape[0];
                     std::size_t const rest_dim = variance.size();
 
                     //Tsor ans{ input.shape() };
-                    Tsor& ans = context_cast<Tsor&>( backward_cache, zeros_like( input ) );
+                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
                     view_2d<value_type> ans_{ans.data(), batch_size, rest_dim};
                     for ( auto r : range( batch_size ) )
                         for ( auto c : range( rest_dim ) )
