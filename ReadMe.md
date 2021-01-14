@@ -33,7 +33,14 @@ auto input = place_holder<tensor<float>>{}; // 1-D, 28x28 pixels
 // 1st layer
 auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
 auto b1 = variable{ zeros<float>( { 1, 256 } ) };
+
 auto l1 = relu( input * w1 + b1 );
+/* alternatively with BN
+auto l1_1 = input * w1 + b1;
+auto gamma = variable{ ones<float>( {1, 256} ) };
+auto beta = variable{ zeros<float>( {1, 256} ) };
+auto l1 = relu( batch_normalization(0.95)( l1_1, gamma, beta ) );
+*/
 
 // 2nd layer
 auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
