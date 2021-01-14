@@ -1088,7 +1088,16 @@ namespace ceras
                         Tsor& global_average = context_extract<Tsor>( global_average_cache );
                         Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
 
+                        if ( 0 )
+                        {
+                            savetxt( "/tmp/bn_average.txt", global_average );
+                            savetxt( "/tmp/bn_variance.txt", global_variance );
+                            better_assert( false, "Break!" );
+                        }
+
                         Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
+                        ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
+
                         view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
                         {
                             for ( auto r : range( batch_size ) )
@@ -1098,8 +1107,11 @@ namespace ceras
                         return ans;
                     }
 
-                    if ( batch_size < 32 )
+                    //if ( batch_size < 32 )
+                    if ( batch_size < 8 )
+                    {
                         debug_print( "Normalization warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <Failure-Prone>" );
+                    }
 
                     // training phase below
 
@@ -1124,6 +1136,7 @@ namespace ceras
                     }
 
                     Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
+                    ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
                     view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
                     {
                         for ( auto r : range( batch_size ) )
@@ -1134,11 +1147,18 @@ namespace ceras
                     // update global average and global variance
                     {
                         Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
-                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
+                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
+                        //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
                         for ( auto idx : range( global_average.size() ) )
                         {
                             global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
                             global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
+                        }
+
+                        if ( 0 )
+                        {
+                            savetxt( "/tmp/current_average.txt", average );
+                            savetxt( "/tmp/current_variance.txt", variance );
                         }
                     }
 

@@ -40,40 +40,36 @@ int main()
     typedef tensor<float> tensor_type;
     auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
-    auto l0 = reshape( {28, 28, 1} )( input );
+    // 1st layer
+    auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+    auto b1 = variable{ zeros<float>( { 1, 256 } ) };
 
-    auto k1 = variable{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
-    //auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
-    //
-    auto c = conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 );
-    auto gamma = variable{ ones<float>( {26, 26, 32} ) };
-    auto beta = variable{ zeros<float>({26, 26, 32} ) };
-    auto l_bn = batch_normalization( 0.95 )( c, gamma, beta );
-    auto l1 = relu( l_bn );
+    auto l1_1 = input * w1 + b1;
+    auto gamma = variable{ ones<float>( {1, 256} ) };
+    auto beta = variable{ zeros<float>( {1, 256} ) };
+    auto l1 = relu( batch_normalization(0.95)( l1_1, gamma, beta ) );
+    //auto l1 = relu( input * w1 + b1 );
 
-    auto l2 = max_pooling_2d( 2 ) ( l1 ); // 13, 13, 32
+    // 2nd layer
+    auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
+    auto b2 = variable{ zeros<float>( { 1, 128 } ) };
+    //auto l2 = relu( l1 * w2 + b2 );
+    auto l2 = sigmoid( l1 * w2 + b2 );
 
-    auto k2 = variable{ randn<float>( {64, 3, 3, 32}, 0.0, 10.0/std::sqrt(64.0*3*3*1) ) };
-    auto l3 = relu( conv2d(13, 13, 1, 1, 1, 1, "valid")( l2, k2 ) ); // 11, 11, 64
-
-    auto l4 = max_pooling_2d( 2 )( l3 ); //5, 5, 64
-    auto l5 = drop_out(0.5)( flatten( l4 ) );
-
-    auto w6 = variable{ randn<float>( {5*5*64, 10}, 0.0, 10.0/std::sqrt(7.0*7*64*10) ) };
-    auto b6 = variable{ zeros<float>( {1, 10} ) };
-
-    auto l6 = l5 * w6 + b6;
-    auto output = l6;
+    // 3rd layer
+    auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
+    auto b3 = variable{ zeros<float>( { 1, 10 } ) };
+    auto output = l2 * w3 + b3;
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
-    std::size_t const batch_size = 50;
-    tensor<float> input_images{ {batch_size, 28*28} };
-    tensor<float> output_labels{ {batch_size, 10} };
+    std::size_t const batch_size = 10;
+    tensor_type input_images{ {batch_size, 28*28} };
+    tensor_type output_labels{ {batch_size, 10} };
 
-    std::size_t const epoch = 1;
+    std::size_t const epoch = 2;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
@@ -82,11 +78,10 @@ int main()
     s.bind( ground_truth, output_labels );
 
     // proceed training
-    float learning_rate = 1.0e-3f;
+    float learning_rate = 1.0e-1f;
     auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
 
-    ceras::learning_phase = 1;
-
+    learning_phase = 1;
     for ( auto e : range( epoch ) )
     {
 
@@ -118,6 +113,7 @@ int main()
 
     std::cout << std::endl;
 
+    learning_phase = 0;
 
     unsigned long const new_batch_size = 1;
 
@@ -126,9 +122,7 @@ int main()
     std::size_t const testing_iterations = 10000 / new_batch_size;
 
     tensor<float> new_input_images{ {new_batch_size, 28 * 28} };
-    s.bind( input, new_input_images );
-
-    ceras::learning_phase = 0;
+    s.rebind( input, new_input_images );
 
     unsigned long errors = 0;
 
@@ -141,7 +135,7 @@ int main()
 
         auto prediction = s.run( output );
         prediction.reshape( {prediction.size(), } );
-        std::size_t const predicted_number = std::max_element( prediction.begin(), prediction.end() ) - prediction.begin();
+        std::size_t const predicted_number = std::distance( prediction.begin(), std::max_element( prediction.begin(), prediction.end() ) );
 
         std::size_t const label_offset = 8 + i * new_batch_size * 1;
         std::size_t const ground_truth = testing_labels[label_offset];

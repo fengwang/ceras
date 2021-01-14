@@ -137,6 +137,7 @@ int main()
         {
             errors += 1;
             std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth << std::endl;
+            std::cout << "Prediction size is:" << std::distance( prediction.begin(), prediction.end() ) << std::endl;
         }
 
     }
