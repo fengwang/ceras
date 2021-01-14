@@ -1082,7 +1082,7 @@ namespace ceras
                     view_2d<value_type> input_{ input.data(), batch_size, rest_dim };
                     std::vector<std::size_t> new_shape{ shape.begin()+1, shape.end() };
 
-                    // case of prediction phase
+                    // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
                     {
                         Tsor& global_average = context_extract<Tsor>( global_average_cache );
@@ -1097,6 +1097,9 @@ namespace ceras
                         }
                         return ans;
                     }
+
+                    if ( batch_size < 32 )
+                        debug_print( "Normalization warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <Failure-Prone>" );
 
                     // training phase below
 
@@ -1153,9 +1156,10 @@ namespace ceras
                     //Tsor ans{ input.shape() };
                     Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
                     view_2d<value_type> ans_{ans.data(), batch_size, rest_dim};
+                    view_2d<value_type> grad_{grad.data(), batch_size, rest_dim};
                     for ( auto r : range( batch_size ) )
                         for ( auto c : range( rest_dim ) )
-                            ans_[r][c] = grad[r][c] / std::sqrt( variance[c] + eps );
+                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
                     return ans;
                 }
             )( ex );

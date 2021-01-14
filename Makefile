@@ -134,6 +134,10 @@ normalization: test/normalization.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_normalization.o test/normalization.cc
 	$(LINK) -o $(BIN_DIR)/test_normalization $(OBJECTS_DIR)/test_normalization.o $(LFLAGS)
 
+mnist_bn: test/mnist_bn.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_bn.o test/mnist_bn.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_bn $(OBJECTS_DIR)/test_mnist_bn.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
