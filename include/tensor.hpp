@@ -984,6 +984,25 @@ namespace ceras
         return reduce( ts, axis, value_type{0}, []( auto const& a, auto const& b ){ return a+b; }, keepdims ) / static_cast<value_type>( _shape[axis] );
     }
 
+    template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
+    Tsor variance( Tsor const& ts, std::size_t axis, bool keepdims=false ) noexcept
+    {
+        //std::cerr << "variance input got:\n" << ts << std::endl;
+        Tsor x = mean( ts, axis, true );
+        //std::cerr << "variance got:\n" << x << std::endl;
+        x = x - ts;
+        for_each( x.begin(), x.end(), [](auto& v){ v *= v; } );
+        return mean( x, axis, keepdims );
+    }
+
+    template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
+    Tsor standard_deviation( Tsor const& ts, std::size_t axis, bool keepdims=false ) noexcept
+    {
+        Tsor x = variance( ts, axis, keepdims );
+        for_each( x.begin(), x.end(), [](auto& v){ v = std::sqrt(v); } );
+        return x;
+    }
+
     template <Tensor Tsor>
     Tsor max( Tsor const& ts, std::size_t axis, bool keepdims=false ) noexcept
     {

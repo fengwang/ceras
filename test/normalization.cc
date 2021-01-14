@@ -17,8 +17,10 @@ void test_1()
     auto ans = s.run( nx );
 
     auto m_ans = mean( ans, 0 );
+    auto v_ans = variance( ans, 0 );
 
     std::cout << "normalization, mean of ans is :\n" << m_ans << std::endl;
+    std::cout << "normalization, variance of ans is :\n" << v_ans << std::endl;
 }
 
 int main()
