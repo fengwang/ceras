@@ -1088,13 +1088,6 @@ namespace ceras
                         Tsor& global_average = context_extract<Tsor>( global_average_cache );
                         Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
 
-                        if ( 0 )
-                        {
-                            savetxt( "/tmp/bn_average.txt", global_average );
-                            savetxt( "/tmp/bn_variance.txt", global_variance );
-                            better_assert( false, "Break!" );
-                        }
-
                         Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
                         ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
 
@@ -1153,12 +1146,6 @@ namespace ceras
                         {
                             global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
                             global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
-                        }
-
-                        if ( 0 )
-                        {
-                            savetxt( "/tmp/current_average.txt", average );
-                            savetxt( "/tmp/current_variance.txt", variance );
                         }
                     }
 
