@@ -4,6 +4,7 @@
 #include "../includes.hpp"
 #include "../config.hpp"
 #include "../utils/singleton.hpp"
+#include "../utils/debug.hpp"
 
 extern "C"
 {
@@ -558,7 +559,8 @@ extern "C"
         CUBLAS_STATUS_LICENSE_ERROR   = 16
     } cublasStatus_t;
 
-    CUresult cuGetErrorString( CUresult error, const char** pStr );
+    //CUresult cuGetErrorString( CUresult error, const char** pStr );
+    const char* cudaGetErrorString ( CUresult error );
 
     int printf( const char* __restrict, ... );
 
@@ -571,8 +573,7 @@ extern "C"
 #define cuda_assert( fn ) do { \
   CUresult status = (fn); \
   if ( CUDA_SUCCESS != status ) { \
-    const char* errstr; \
-    cuGetErrorString(status, &errstr); \
+    char const* errstr = cudaGetErrorString(status); \
     printf("CUDA Driver Failure (line %d of file %s):\n\t%s returned 0x%x (%s)\n", __LINE__, __FILE__, #fn, status, errstr); \
     exit(EXIT_FAILURE); \
   } \
@@ -732,6 +733,43 @@ namespace ceras
     {
         cudaFree( reinterpret_cast<void*>( ptr ) );
     }
+
+    struct cuda_memory_cache
+    {
+        void* data_;
+        std::size_t size_;
+
+        cuda_memory_cache(): data_{ nullptr }, size_{ 0 } {}
+
+        template< typename T >
+        void reserve( std::size_t length )
+        {
+            std::size_t const new_size = length * sizeof( T ); // size in bytes
+            if ( size_ >= new_size )
+                return;
+
+            if ( size_ > 0 )
+                deallocate( data_ );
+
+            data_ = allocate<T>( length );
+            size_ = new_size;
+
+            debug_print( "cuda_memory_cache reserves ", length, " elements, from ", static_cast<float*>(data_),  " to ", static_cast<float*>(data_)+length );
+        }
+
+        template< typename T >
+        T* data()
+        {
+            return reinterpret_cast<T*>( data_ );
+        }
+
+        ~cuda_memory_cache()
+        {
+            if ( size_ > 0 )
+                deallocate( data_ );
+        }
+
+    };
 }//namespace ceras
 
 
@@ -789,35 +827,58 @@ namespace ceras
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     template< typename T > requires std::floating_point<T>
-    void cubals_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
+    void cuda_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
+        debug_print( "calling cuda_gemm with A=", A, ", B=", B, ", C=", C, ", m=", m, ", n=", n, ", k=", k, ", b_transposed=", b_transposed, ", a_transposed=", a_transposed );
+
+        T* A_ = const_cast<T*>( A );
+        T* B_ = const_cast<T*>( B );
+        T* C_ = const_cast<T*>( C );
+
         cublas_handle& handle = singleton<cublas_handle>::instance();
         cublasHandle_t hd = handle.handle_;
 
-        cublasOperation_t const trans_a = a_transposed ? CUBLAS_OP_N : CUBLAS_OP_T; // we are doing it in fortran view with cublas
-        cublasOperation_t const trans_b = b_transposed ? CUBLAS_OP_N : CUBLAS_OP_T;
+        cublasOperation_t const trans_a = a_transposed ? CUBLAS_OP_T : CUBLAS_OP_N; // we are doing it in fortran view with cublas
+        cublasOperation_t const trans_b = b_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
         std::size_t const ld_a = a_transposed ? m : n;
         std::size_t const ld_b = b_transposed ? n : k;
-        std::size_t const ld_c = k;
-        std::size_t const row_c = k;
-        std::size_t const col_c = m;
+        std::size_t const ld_c = m;
+        std::size_t const row_c = m;
+        std::size_t const col_c = k;
         std::size_t const other_dim = n;
 
-        T alpha = 1;
-        T beta = 0;
+        T alpha = 1.0;
+        T beta = 0.0;
+
+        cuda_memory_cache& cache = singleton<cuda_memory_cache>::instance();
+        cache.reserve<T>( m*n + n*k + m*k ); // total memory
+        T* a = cache.data<T>();
+        host_to_device_n( A, m*n, a );
+        T* b = a + m*n;
+        host_to_device_n( B, n*k, b );
+        T* c = b + n*k;
+        host_to_device_n( C, m*k, c );
+
+        debug_print("gemm is ready with hd=", hd, ", trans_a=", trans_a, ", trans_b=", trans_b, ", row_c=", row_c, ", col_c=", col_c, ", other_dim=", other_dim, ", alpha=", alpha,
+                ", b=", b, ", ld_b=", ld_b, ", a=", a, ", ld_a=", ld_a, ", beta=", beta, ", c=", c, ", ldc=", ld_c );
 
         if constexpr( std::is_same_v<T, float> )
         {
-            cublas_assert( cublasSgemm( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, B, ld_b, A, ld_a, &beta, C, ld_c ) );
+            cublas_assert( cublasSgemm_v2( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, b, ld_b, a, ld_a, &beta, c, ld_c ) );
         }
         else if constexpr( std::is_same_v<T, double> )
         {
-            cublas_assert( cublasDgemm( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, B, ld_b, A, ld_a, &beta, C, ld_c ) );
+            cublas_assert( cublasDgemm_v2( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, b, ld_b, a, ld_a, &beta, c, ld_c ) );
         }
         else
         {
             better_assert( false, "only float and double are supported for cubals_gemm" );
         }
+
+        // device -> host
+        device_to_host_n( a, m*n, A_ );
+        device_to_host_n( b, n*k, B_ );
+        host_to_device_n( c, m*k, C_ );
     }
 
 }

@@ -1,15 +1,16 @@
-CXX           = clang++
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
+CXX           = g++
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 #OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
-LFLAGS        = $(OP) -pthread
+#CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
+CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 $(OP)
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
 #CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
 #LFLAGS        = $(OP) -pg -O0
 
-LINK          = $(CXX)
+LINK          = $(CXX) $(LFLAGS)
 
 ####### Output directory
 OBJECTS_DIR   = ./obj
