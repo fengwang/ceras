@@ -368,26 +368,33 @@ namespace ceras
     {
         static_assert( std::is_floating_point_v<T>, "T is not a floating point type." );
 
-        auto a_view = view_2d{ A, m, n, a_transposed };
-        auto b_view = view_2d{ B, n, k, b_transposed };
-        auto c_view = view_2d{ C, m, k };
+        if constexpr( cuda_mode )
+        {
+            cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+        }
+        else
+        {
+            auto a_view = view_2d{ A, m, n, a_transposed };
+            auto b_view = view_2d{ B, n, k, b_transposed };
+            auto c_view = view_2d{ C, m, k };
 
-        std::fill_n( C, m*k, T{0} );
+            std::fill_n( C, m*k, T{0} );
 
-        // TODO: move if-else outside loops
-        for ( auto r = 0UL; r != m; ++r )
-            for ( auto c = 0UL; c != k; ++c )
-                for ( auto idx = 0UL; idx != n; ++idx )
-                {
-                    if ( a_transposed == false && b_transposed == false )
-                        c_view[r][c] += a_view[r][idx] * b_view[idx][c];
-                    else if ( a_transposed == false && b_transposed == true )
-                        c_view[r][c] += a_view[r][idx] * b_view[c][idx];
-                    else if ( a_transposed == true && b_transposed == false )
-                        c_view[r][c] += a_view[idx][r] * b_view[idx][c];
-                    else
-                        c_view[r][c] += a_view[idx][r] * b_view[c][idx];
-                }
+            // TODO: move if-else outside loops
+            for ( auto r = 0UL; r != m; ++r )
+                for ( auto c = 0UL; c != k; ++c )
+                    for ( auto idx = 0UL; idx != n; ++idx )
+                    {
+                        if ( a_transposed == false && b_transposed == false )
+                            c_view[r][c] += a_view[r][idx] * b_view[idx][c];
+                        else if ( a_transposed == false && b_transposed == true )
+                            c_view[r][c] += a_view[r][idx] * b_view[c][idx];
+                        else if ( a_transposed == true && b_transposed == false )
+                            c_view[r][c] += a_view[idx][r] * b_view[idx][c];
+                        else
+                            c_view[r][c] += a_view[idx][r] * b_view[c][idx];
+                    }
+        }
     }
 
     template< typename T >  requires std::floating_point<T> // this one only for non-transposed 2d View
