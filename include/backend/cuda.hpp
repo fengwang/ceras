@@ -3,18 +3,10 @@
 
 #include "../includes.hpp"
 #include "../config.hpp"
+#include "../utils/singleton.hpp"
 
 extern "C"
 {
-
-    enum cudaMemcpyKind
-    {
-        cudaMemcpyHostToHost = 0,
-        cudaMemcpyHostToDevice = 1,
-        cudaMemcpyDeviceToHost = 2,
-        cudaMemcpyDeviceToDevice = 3,
-        cudaMemcpyDefault = 4
-    };
 
     /**
         Error codes
@@ -662,15 +654,27 @@ struct cublas_result_assert
 
 #define cublas_assert(result) cublas_result_assert()(result, __FILE__, __LINE__)
 
-extern "C" CUresult cudaMemcpy ( void* dst, const void* src, size_t count, cudaMemcpyKind kind );
+extern "C"
+{
+    enum cudaMemcpyKind
+    {
+        cudaMemcpyHostToHost = 0,
+        cudaMemcpyHostToDevice = 1,
+        cudaMemcpyDeviceToHost = 2,
+        cudaMemcpyDeviceToDevice = 3,
+        cudaMemcpyDefault = 4
+    };
 
-namespace cuda
+    CUresult cudaMemcpy ( void* dst, const void* src, size_t count, cudaMemcpyKind kind );
+}
+
+namespace ceras
 {
 
     template<typename Type>
     void host_to_device( const Type* hst, Type* dev )
     {
-        cuda_assert( cuMemcpy( reinterpret_cast<void*>( dev ), reinterpret_cast<const void*>( hst ), sizeof( Type ), cudaMemcpyHostToDevice ) );
+        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( dev ), reinterpret_cast<const void*>( hst ), sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
     template<typename Type>
@@ -686,11 +690,10 @@ namespace cuda
         host_to_device_n( hst_begin, length, dev_begin );
     }
 
-
     template<typename Type>
     void device_to_host( const Type* dev, Type* hst )
     {
-        cuda_assert( cuMemcpy( reinterpret_cast<void*>( hst ), reinterpret_cast<const void*>( dev ), sizeof( Type ), cudaMemcpyDeviceToHost ) );
+        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( hst ), reinterpret_cast<const void*>( dev ), sizeof( Type ), cudaMemcpyDeviceToHost ) );
     }
 
     template<typename Type>
@@ -706,12 +709,15 @@ namespace cuda
         device_to_host_n( dev_begin, length, hst_begin );
     }
 
-}//namespace cuda
+}//namespace ceras
 
-extern "C" CUresult cudaMalloc ( void** devPtr, size_t size );
-extern "C" CUresult cudaFree ( void* devPtr )
+extern "C"
+{
+    CUresult cudaMalloc ( void** devPtr, size_t size );
+    CUresult cudaFree ( void* devPtr );
+}
 
-namespace cuda
+namespace ceras
 {
     template< typename T >
     T* allocate( unsigned long n )
@@ -726,13 +732,26 @@ namespace cuda
     {
         cudaFree( reinterpret_cast<void*>( ptr ) );
     }
-}//namespace cuda
+}//namespace ceras
 
 
 extern "C"
 {
+
+    CUresult cudaSetDevice( int );
+    CUresult cudaGetDevice( int* );
+
     struct cublasContext;
     typedef struct cublasContext* cublasHandle_t;
+
+    typedef enum
+    {
+        CUBLAS_OP_N=0,
+        CUBLAS_OP_T=1,
+        CUBLAS_OP_C=2,
+        CUBLAS_OP_HERMITAN=2, /* synonym if CUBLAS_OP_C */
+        CUBLAS_OP_CONJG=3     /* conjugate, placeholder - not supported in the current release */
+    } cublasOperation_t;
 
     cublasStatus_t cublasCreate_v2 ( cublasHandle_t* handle );
     cublasStatus_t cublasDestroy_v2 ( cublasHandle_t handle );
@@ -742,57 +761,66 @@ extern "C"
                                    int m, int n, int k, const double* alpha, const double* A, int lda, const double* B, int ldb, const double* beta, double* C, int ldc );
 }
 
-namespace cuda
+namespace ceras
 {
+
+    // cublas_handle& ch = singleton<cublas_handle>::instance();
+    //
     struct cublas_handle
     {
-        struct _cublas_handle
+        cublasHandle_t handle_;
+        cublas_handle()
         {
-            cublasHandle_t handle_;
-
-            _cublas_handle
-            {
-                int current_id;
-                cuda_assert( cudaGetDevice(&current_id) );
-                if ( current_id != visible_device ) // visible_device is defined in config.hpp
-                    cuda_assert( cudaSetDevice( visible_device ) );
-
-                cublas_assert( cublasCreate_v2( &handle_ ) );
-            }
-
-            ~_cublas_handle()
-            {
-                cublas_assert( cublasDestroy_v2( handle_ ) );
-            }
-        };
-
-        _cublas_handle* handle_;
-
-        cublas_handle() : handle_{ nullptr }
+            int current_id;
+            cuda_assert( cudaGetDevice(&current_id) );
+            if ( current_id != visible_device ) // visible_device is defined in config.hpp
+                cuda_assert( cudaSetDevice( visible_device ) );
+            cublas_assert( cublasCreate_v2( &handle_ ) );
+        }
 
         ~cublas_handle()
         {
-            if ( handle_ )
-                delete handle_;
+            if constexpr( cuda_mode )
+                cublas_assert( cublasDestroy_v2( handle_ ) );
         }
+    };//cublas_handle_delegate
 
-        cublasHandle_t get_handle()
+
+    // C <= A * B
+    // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
+    template< typename T > requires std::floating_point<T>
+    void cubals_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
+    {
+        cublas_handle& handle = singleton<cublas_handle>::instance();
+        cublasHandle_t hd = handle.handle_;
+
+        cublasOperation_t const trans_a = a_transposed ? CUBLAS_OP_N : CUBLAS_OP_T; // we are doing it in fortran view with cublas
+        cublasOperation_t const trans_b = b_transposed ? CUBLAS_OP_N : CUBLAS_OP_T;
+        std::size_t const ld_a = a_transposed ? m : n;
+        std::size_t const ld_b = b_transposed ? n : k;
+        std::size_t const ld_c = k;
+        std::size_t const row_c = k;
+        std::size_t const col_c = m;
+        std::size_t const other_dim = n;
+
+        T alpha = 1;
+        T beta = 0;
+
+        if constexpr( std::is_same_v<T, float> )
         {
-            if ( handle_ == nullptr )
-                handle_ = new _cublas_handle;
-            return (*handle_).handle_;
+            cublas_assert( cublasSgemm( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, B, ld_b, A, ld_a, &beta, C, ld_c ) );
+        }
+        else if constexpr( std::is_same_v<T, double> )
+        {
+            cublas_assert( cublasDgemm( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, B, ld_b, A, ld_a, &beta, C, ld_c ) );
+        }
+        else
+        {
+            better_assert( false, "only float and double are supported for cubals_gemm" );
         }
     }
+
 }
-
-
-
-
-
-
-
-
-
 
 #endif//HLUDCUYMXCGREGWXHAVFNPYCNJLENNKSIOVPKKRXDUBYCAEMYBOKVKWODFGLJOUYYLQEDWSTB
 

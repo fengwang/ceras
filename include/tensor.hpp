@@ -8,6 +8,7 @@
 #include "./utils/for_each.hpp"
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
+#include "./backend/cuda.hpp"
 
 namespace ceras
 {
