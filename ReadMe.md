@@ -142,7 +142,6 @@ auto ground_truth = place_holder<tensor<float>>{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
-
 ## License
 
 + AGPLv3
@@ -152,13 +151,5 @@ auto loss = cross_entropy_loss( ground_truth, output );
 ## Acknowledgements
 
 + [Tensorflow 1](https://www.tensorflow.org/)
-+ [TensorSlow](https://www.deepideas.net/deep-learning-from-scratch-vi-tensorflow/)
-
-
-
-
-
-
-
-
++ [TensorSlow](https://github.com/danielsabinasz/TensorSlow)
 
