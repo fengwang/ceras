@@ -3,6 +3,7 @@
 
 #include "../includes.hpp"
 
+// TODO: incase of cuda enabled, using cudaHostAlloc/cudaFreeHost to allocate/deallocate memory
 namespace ceras
 {
 

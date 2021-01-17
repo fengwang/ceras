@@ -119,6 +119,10 @@ mnist_conv2d: test/mnist_conv2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d.o test/mnist_conv2d.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d $(OBJECTS_DIR)/test_mnist_conv2d.o $(LFLAGS)
 
+tensor_mm: test/tensor_mm.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tensor_mm.o test/tensor_mm.cc
+	$(LINK) -o $(BIN_DIR)/test_tensor_mm $(OBJECTS_DIR)/test_tensor_mm.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

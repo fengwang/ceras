@@ -564,6 +564,8 @@ extern "C"
 
     int printf( const char* __restrict, ... );
 
+    CUresult cudaGetLastError ( void );
+
 }
 
 
@@ -583,6 +585,11 @@ extern "C"
 #ifdef cublas_assert
 #undef cublas_assert
 #endif
+
+inline void cuda_no_error_so_far()
+{
+    cuda_assert( cudaGetLastError() );
+}
 
 struct cublas_result_assert
 {
@@ -681,6 +688,8 @@ namespace ceras
     template<typename Type>
     void host_to_device_n( const Type* hst_begin, std::size_t length, Type* dev_begin )
     {
+        debug_print( "host_to_device_n with from hst_begin: ", hst_begin, ", length: ", length*sizeof(Type), " bytes, to dev_begin: ", dev_begin, " the last position is ", dev_begin + length );
+        cuda_no_error_so_far();
         cuda_assert( cudaMemcpy( reinterpret_cast<void*>( dev_begin ), reinterpret_cast<const void*>( hst_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
@@ -744,9 +753,13 @@ namespace ceras
         template< typename T >
         void reserve( std::size_t length )
         {
-            std::size_t const new_size = length * sizeof( T ); // size in bytes
+            std::size_t new_size = length * sizeof( T ); // size in bytes
             if ( size_ >= new_size )
                 return;
+
+            //enlarge...
+            //new_size += 1024 + (new_size >> 1);
+            new_size += 1048576 + (new_size >> 1);
 
             if ( size_ > 0 )
                 deallocate( data_ );
@@ -754,7 +767,7 @@ namespace ceras
             data_ = allocate<T>( length );
             size_ = new_size;
 
-            debug_print( "cuda_memory_cache reserves ", length, " elements, from ", static_cast<float*>(data_),  " to ", static_cast<float*>(data_)+length );
+            debug_print( "cuda_memory_cache reserves ", size_, " bytes, from ", static_cast<float*>(data_),  " to ", static_cast<float*>(data_)+(size_/sizeof(T)) );
         }
 
         template< typename T >
@@ -778,6 +791,7 @@ extern "C"
 
     CUresult cudaSetDevice( int );
     CUresult cudaGetDevice( int* );
+    CUresult cudaDeviceSynchronize ( void );
 
     struct cublasContext;
     typedef struct cublasContext* cublasHandle_t;
@@ -823,6 +837,23 @@ namespace ceras
         }
     };//cublas_handle_delegate
 
+    void caffe_gpu_gemm_float(cublasHandle_t handle, const cublasOperation_t TransA, const cublasOperation_t TransB, const int M, const int N, const int K, const float alpha, const float* A, const float* B, const float beta, float* C)
+    {
+        int lda = (TransA == CUBLAS_OP_N) ? K : M;
+        int ldb = (TransB == CUBLAS_OP_N) ? N : K;
+        cublasOperation_t cuTransA = (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+        cublasOperation_t cuTransB = (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+        cublas_assert(cublasSgemm_v2(handle, cuTransB, cuTransA, N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+    }
+
+    void caffe_gpu_gemm_double(cublasHandle_t handle, const cublasOperation_t TransA, const cublasOperation_t TransB, const int M, const int N, const int K, const double alpha, const double* A, const double* B, const double beta, double* C)
+    {
+        int lda = (TransA == CUBLAS_OP_N) ? K : M;
+        int ldb = (TransB == CUBLAS_OP_N) ? N : K;
+        cublasOperation_t cuTransA = (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+        cublasOperation_t cuTransB = (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+        cublas_assert(cublasDgemm_v2(handle, cuTransB, cuTransA, N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+    }
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
@@ -830,22 +861,8 @@ namespace ceras
     void cuda_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
         debug_print( "calling cuda_gemm with A=", A, ", B=", B, ", C=", C, ", m=", m, ", n=", n, ", k=", k, ", b_transposed=", b_transposed, ", a_transposed=", a_transposed );
-
-        T* A_ = const_cast<T*>( A );
-        T* B_ = const_cast<T*>( B );
-        T* C_ = const_cast<T*>( C );
-
         cublas_handle& handle = singleton<cublas_handle>::instance();
         cublasHandle_t hd = handle.handle_;
-
-        cublasOperation_t const trans_a = a_transposed ? CUBLAS_OP_T : CUBLAS_OP_N; // we are doing it in fortran view with cublas
-        cublasOperation_t const trans_b = b_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
-        std::size_t const ld_a = a_transposed ? m : n;
-        std::size_t const ld_b = b_transposed ? n : k;
-        std::size_t const ld_c = m;
-        std::size_t const row_c = m;
-        std::size_t const col_c = k;
-        std::size_t const other_dim = n;
 
         T alpha = 1.0;
         T beta = 0.0;
@@ -859,29 +876,70 @@ namespace ceras
         T* c = b + n*k;
         host_to_device_n( C, m*k, c );
 
-        debug_print("gemm is ready with hd=", hd, ", trans_a=", trans_a, ", trans_b=", trans_b, ", row_c=", row_c, ", col_c=", col_c, ", other_dim=", other_dim, ", alpha=", alpha,
-                ", b=", b, ", ld_b=", ld_b, ", a=", a, ", ld_a=", ld_a, ", beta=", beta, ", c=", c, ", ldc=", ld_c );
+        T* result_ptr = c;
+        T* first_ptr = b;
+        T* second_ptr = a;
+        int row_of_c = m;
+        int col_of_c = k;
+        int common_dimension = n;
+
+        int ld_of_first_ptr = b_transposed ? n : k;
+        int ld_of_second_ptr = a_transposed ? m : n;
+        int ld_of_result_ptr = k;
+
+        cublasOperation_t first_transposed = b_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+        cublasOperation_t second_transposed = a_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
 
         if constexpr( std::is_same_v<T, float> )
         {
-            cublas_assert( cublasSgemm_v2( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, b, ld_b, a, ld_a, &beta, c, ld_c ) );
+            // C = A B, where C[m][k], A[m][n], B[n][k]
+            // in fortran view, this is C^T[k][m] = B^T[k][n] A^T[n][m]
+            // ldc of C and C^T is k, ldb of B and B^T is k, lda of A and A^T is n
+            // row of C[m][k]is m, col of C[m][k] is k, the common dimmension is n
+            cublas_assert( cublasSgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
         }
         else if constexpr( std::is_same_v<T, double> )
         {
-            cublas_assert( cublasDgemm_v2( hd, trans_a, trans_b, row_c, col_c, other_dim, &alpha, b, ld_b, a, ld_a, &beta, c, ld_c ) );
+            cublas_assert( cublasDgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
         }
         else
         {
-            better_assert( false, "only float and double are supported for cubals_gemm" );
+            better_assert( false, "gemm only supports float and double!" );
         }
 
         // device -> host
-        device_to_host_n( a, m*n, A_ );
-        device_to_host_n( b, n*k, B_ );
-        host_to_device_n( c, m*k, C_ );
+        device_to_host_n( c, m*k,  C );
     }
 
 }
+
+/*
+template <>
+void caffe_gpu_gemm<float>(const cublasOperation_t TransA, const cublasOperation_t TransB, const int M, const int N, const int K, const float alpha, const float* A, const float* B, const float beta, float* C) {
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CUBLAS_OP_N) ? K : M;
+  int ldb = (TransB == CUBLAS_OP_N) ? N : K;
+  cublasOperation_t cuTransA = (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB = (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  CUBLAS_CHECK(cublasSgemm_v2(Caffe::cublas_handle(), cuTransB, cuTransA, N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+}
+
+template <>
+void caffe_gpu_gemm<double>(const cublasOperation_t TransA,
+    const cublasOperation_t TransB, const int M, const int N, const int K,
+    const double alpha, const double* A, const double* B, const double beta,
+    double* C) {
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CUBLAS_OP_N) ? K : M;
+  int ldb = (TransB == CUBLAS_OP_N) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  CUBLAS_CHECK(cublasDgemm_v2(Caffe::cublas_handle(), cuTransB, cuTransA,
+      N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+}
+*/
 
 #endif//HLUDCUYMXCGREGWXHAVFNPYCNJLENNKSIOVPKKRXDUBYCAEMYBOKVKWODFGLJOUYYLQEDWSTB
 

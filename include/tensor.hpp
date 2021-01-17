@@ -392,7 +392,8 @@ namespace ceras
                     }
         };
 
-        if ( m * n * k < 1024 )
+        //if ( m * n * k < 1024*1024 )
+        if ( m * n * k < 1 )
         {
             cpu_implementation();
             return;
