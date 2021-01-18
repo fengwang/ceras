@@ -159,4 +159,5 @@ auto loss = cross_entropy_loss( ground_truth, output );
 
 + [Tensorflow 1](https://www.tensorflow.org/)
 + [TensorSlow](https://github.com/danielsabinasz/TensorSlow)
++ [Caffe](https://github.com/BVLC/caffe)
 

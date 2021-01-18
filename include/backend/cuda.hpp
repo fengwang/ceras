@@ -825,24 +825,6 @@ namespace ceras
         }
     };//cublas_handle_delegate
 
-    void caffe_gpu_gemm_float(cublasHandle_t handle, const cublasOperation_t TransA, const cublasOperation_t TransB, const int M, const int N, const int K, const float alpha, const float* A, const float* B, const float beta, float* C)
-    {
-        int lda = (TransA == CUBLAS_OP_N) ? K : M;
-        int ldb = (TransB == CUBLAS_OP_N) ? N : K;
-        cublasOperation_t cuTransA = (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
-        cublasOperation_t cuTransB = (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
-        cublas_assert(cublasSgemm_v2(handle, cuTransB, cuTransA, N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
-    }
-
-    void caffe_gpu_gemm_double(cublasHandle_t handle, const cublasOperation_t TransA, const cublasOperation_t TransB, const int M, const int N, const int K, const double alpha, const double* A, const double* B, const double beta, double* C)
-    {
-        int lda = (TransA == CUBLAS_OP_N) ? K : M;
-        int ldb = (TransB == CUBLAS_OP_N) ? N : K;
-        cublasOperation_t cuTransA = (TransA == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
-        cublasOperation_t cuTransB = (TransB == CUBLAS_OP_N) ? CUBLAS_OP_N : CUBLAS_OP_T;
-        cublas_assert(cublasDgemm_v2(handle, cuTransB, cuTransA, N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
-    }
-
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     template< typename T > requires std::floating_point<T>
