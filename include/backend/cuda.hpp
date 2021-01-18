@@ -673,53 +673,38 @@ extern "C"
         cudaMemcpyDefault = 4
     };
 
+    //cudaMemcpy ( void* dst, const void* src, size_t count, cudaMemcpyKind kind )
     CUresult cudaMemcpy ( void* dst, const void* src, size_t count, cudaMemcpyKind kind );
 }
 
 namespace ceras
 {
 
-    /*
     template<typename Type>
-    void host_to_device( const Type* hst, Type* dev )
+    void host_to_device_n( const Type* host_begin, std::size_t length, Type* device_begin )
     {
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( dev ), reinterpret_cast<const void*>( hst ), sizeof( Type ), cudaMemcpyHostToDevice ) );
-    }
-    */
-
-    template<typename Type>
-    void host_to_device_n( const Type* hst_begin, std::size_t length, Type* dev_begin )
-    {
-        debug_print( "host_to_device_n with from hst_begin: ", hst_begin, ", length: ", length*sizeof(Type), " bytes, to dev_begin: ", dev_begin, " the last position is ", dev_begin + length );
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( dev_begin ), reinterpret_cast<const void*>( hst_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
+        //debug_print( "host_to_device_n with from host_begin: ", host_begin, ", length: ", length*sizeof(Type), " bytes, to device_begin: ", device_begin, " the last position is ", device_begin + length );
+        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( device_begin ), reinterpret_cast<const void*>( host_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
     template<typename Type>
-    void host_to_device( const Type* hst_begin, const Type* hst_end, Type* dev_begin )
+    void host_to_device( const Type* host_begin, const Type* host_end, Type* device_begin )
     {
-        std::size_t length = std::distance( hst_begin, hst_end );
-        host_to_device_n( hst_begin, length, dev_begin );
-    }
-
-    /*
-    template<typename Type>
-    void device_to_host( const Type* dev, Type* hst )
-    {
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( hst ), reinterpret_cast<const void*>( dev ), sizeof( Type ), cudaMemcpyDeviceToHost ) );
-    }
-    */
-
-    template<typename Type>
-    void device_to_host_n( const Type* dev_begin, std::size_t length, Type* hst_begin )
-    {
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( hst_begin ), reinterpret_cast<const void*>( dev_begin ), length * sizeof( Type ), cudaMemcpyDeviceToHost ) );
+        std::size_t length = std::distance( host_begin, host_end );
+        host_to_device_n( host_begin, length, device_begin );
     }
 
     template<typename Type>
-    void device_to_host( const Type* dev_begin, const Type* dev_end, Type* hst_begin )
+    void device_to_host_n( const Type* device_begin, std::size_t length, Type* host_begin )
     {
-        std::size_t length = std::distance( dev_begin, dev_end );
-        device_to_host_n( dev_begin, length, hst_begin );
+        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( host_begin ), reinterpret_cast<const void*>( device_begin ), length * sizeof( Type ), cudaMemcpyDeviceToHost ) );
+    }
+
+    template<typename Type>
+    void device_to_host( const Type* device_begin, const Type* device_end, Type* host_begin )
+    {
+        std::size_t length = std::distance( device_begin, device_end );
+        device_to_host_n( device_begin, length, host_begin );
     }
 
 }//namespace ceras
@@ -761,8 +746,8 @@ namespace ceras
                 return;
 
             //enlarge...
-            //new_size += 1024 + (new_size >> 1);
-            new_size += 1048576 + (new_size >> 1); // 1M + 1.5x
+            //new_size += 1048576 + (new_size >> 1); // 1M + 1.5x
+            new_size = (1 + (new_size >> 20)) << 20;
 
             if ( size_ > 0 )
                 deallocate( data_ );
@@ -783,6 +768,8 @@ namespace ceras
         {
             if ( size_ > 0 )
                 deallocate( data_ );
+            size_ = 0;
+            data_ = nullptr;
         }
 
     };

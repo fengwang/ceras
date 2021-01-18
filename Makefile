@@ -127,6 +127,10 @@ constant: test/constant.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_constant.o test/constant.cc
 	$(LINK) -o $(BIN_DIR)/test_constant $(OBJECTS_DIR)/test_constant.o $(LFLAGS)
 
+cuda_memcpy: test/cuda_memcpy.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_cuda_memcpy.o test/cuda_memcpy.cc
+	$(LINK) -o $(BIN_DIR)/test_cuda_memcpy $(OBJECTS_DIR)/test_cuda_memcpy.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
