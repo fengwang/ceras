@@ -722,12 +722,14 @@ namespace ceras
     {
         T* ans;
         cudaMalloc( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
+        debug_print( "allocating ", n*sizeof(T), " bytes of cuda memory at ", ans );
         return ans;
     }
 
     template< typename T >
     void deallocate( T* ptr )
     {
+        debug_print( "deallocating cuda memory at ", ptr );
         cudaFree( reinterpret_cast<void*>( ptr ) );
     }
 
@@ -748,11 +750,12 @@ namespace ceras
             //enlarge...
             //new_size += 1048576 + (new_size >> 1); // 1M + 1.5x
             new_size = (1 + (new_size >> 20)) << 20;
+            std::size_t new_length = new_size / sizeof(T);
 
             if ( size_ > 0 )
                 deallocate( data_ );
 
-            data_ = allocate<T>( length );
+            data_ = allocate<T>( new_length );
             size_ = new_size;
 
             debug_print( "cuda_memory_cache reserves ", size_, " bytes, from ", static_cast<float*>(data_),  " to ", static_cast<float*>(data_)+(size_/sizeof(T)) );
