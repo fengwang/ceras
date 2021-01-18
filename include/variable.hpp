@@ -5,6 +5,7 @@
 #include "./tensor.hpp"
 #include "./utils/id.hpp"
 #include "./utils/debug.hpp"
+#include "./config.hpp"
 
 namespace ceras
 {
@@ -42,9 +43,12 @@ namespace ceras
 
         Tsor const forward() const
         {
-            typedef typename Tsor::value_type value_type;
-            std::swap( *gradient_, *old_gradient_ );
-            (*gradient_).reset( value_type{0} );
+            if ( learning_phase == 1 )
+            {
+                typedef typename Tsor::value_type value_type;
+                std::swap( *gradient_, *old_gradient_ );
+                (*gradient_).reset( value_type{0} );
+            }
             return *data_;
         }
 

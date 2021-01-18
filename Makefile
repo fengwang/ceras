@@ -1,16 +1,16 @@
-CXX           = clang++
-CPUFLAGS      =
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG $(CPUFLAGS)
+CXX           = g++
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 #OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
-LFLAGS        = $(OP) -pthread
+#CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
+CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 $(OP)
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
 #CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
 #LFLAGS        = $(OP) -pg -O0
 
-LINK          = $(CXX)
+LINK          = $(CXX) $(LFLAGS)
 
 ####### Output directory
 OBJECTS_DIR   = ./obj
@@ -122,6 +122,10 @@ up_sampling_2d: test/up_sampling_2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_up_sampling_2d.o test/up_sampling_2d.cc
 	$(LINK) -o $(BIN_DIR)/test_up_sampling_2d $(OBJECTS_DIR)/test_up_sampling_2d.o $(LFLAGS)
 
+tensor_mm: test/tensor_mm.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tensor_mm.o test/tensor_mm.cc
+	$(LINK) -o $(BIN_DIR)/test_tensor_mm $(OBJECTS_DIR)/test_tensor_mm.o $(LFLAGS)
+
 constant: test/constant.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_constant.o test/constant.cc
 	$(LINK) -o $(BIN_DIR)/test_constant $(OBJECTS_DIR)/test_constant.o $(LFLAGS)
@@ -137,6 +141,10 @@ normalization: test/normalization.cc
 mnist_bn: test/mnist_bn.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_bn.o test/mnist_bn.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_bn $(OBJECTS_DIR)/test_mnist_bn.o $(LFLAGS)
+
+cuda_memcpy: test/cuda_memcpy.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_cuda_memcpy.o test/cuda_memcpy.cc
+	$(LINK) -o $(BIN_DIR)/test_cuda_memcpy $(OBJECTS_DIR)/test_cuda_memcpy.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin

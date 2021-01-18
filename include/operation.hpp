@@ -57,7 +57,7 @@ namespace ceras
         {
             return [&op]<Tensor Tsor>( Tsor const& grad )
             {
-                op.backward(grad);
+                if ( learning_phase == 1 ) op.backward(grad);
             };
         }
 
@@ -72,7 +72,7 @@ namespace ceras
         {
             return [op]<Tensor Tsor>(Tsor const& grad)
             {
-                op.get().backward(grad);
+                if (learning_phase == 1 ) op.get().backward(grad);
             };
         }
     };

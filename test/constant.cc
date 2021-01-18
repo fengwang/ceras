@@ -2,9 +2,27 @@
 #include "catch.hpp"
 
 #include "../include/ceras.hpp"
+#include "../include/ceras.hpp"
+#include "../include/utils/debug.hpp"
 #include <cmath>
+#include <iostream>
 
-TEST_CASE("softmax", "[softmax]")
+void test_45()
+{
+    auto a = ceras::linspace<double>( 1.0, 20.0, 20 );
+    a.reshape( {4, 5} );
+    std::cout << "a created with:\n" << a << std::endl;
+
+    auto va = ceras::constant<ceras::tensor<double>>{ a };
+    auto ta = ceras::transpose( va );
+
+    ceras::session<ceras::tensor<double>> s;
+    auto ans = s.run( ta );
+    std::cout << "after transpose:\n" << ans << std::endl;
+}
+
+
+TEST_CASE("softmax_constant", "[softmax_constant]")
 {
     using namespace ceras;
 
@@ -25,14 +43,14 @@ TEST_CASE("softmax", "[softmax]")
             auto tw = random<double>( {dims, dims} );
             auto tb = random<double>( {1, dims} );
 
-            auto x = place_holder<double>{};
-            auto c = place_holder<double>{};
+            auto x = place_holder<tensor<double>>{};
+            auto c = place_holder<tensor<double>>{};
             auto W = constant{ tw };
             auto b = constant{ tb };
 
             auto p = softmax( x * W + b );
 
-            session<double> s;
+            session<tensor<double>> s;
             s.bind( x, _x );
             auto result = s.run( p );
 
@@ -47,5 +65,6 @@ TEST_CASE("softmax", "[softmax]")
                 REQUIRE( std::abs( df[idx] ) < 1.0e-7 );
         }
     }
-}
 
+    test_45();
+}

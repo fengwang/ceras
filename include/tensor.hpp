@@ -8,6 +8,7 @@
 #include "./utils/for_each.hpp"
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
+#include "./backend/cuda.hpp"
 
 namespace ceras
 {
@@ -361,12 +362,9 @@ namespace ceras
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
-    // TODO: when m x n x k is large enough, use GPU instead
     template< typename T > requires std::floating_point<T>
-    void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
+    void gemm_cpu( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        static_assert( std::is_floating_point_v<T>, "T is not a floating point type." );
-
         auto a_view = view_2d{ A, m, n, a_transposed };
         auto b_view = view_2d{ B, n, k, b_transposed };
         auto c_view = view_2d{ C, m, k };
@@ -389,6 +387,28 @@ namespace ceras
                 }
     }
 
+    // C <= A * B
+    // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
+    template< typename T > requires std::floating_point<T>
+    void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
+    {
+        //if ( m * n * k < 1024*1024 )
+        // TODO: determin this parameter
+        if ( m * n * k < 1 )
+        {
+            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
+            return;
+        }
+
+        if constexpr( cuda_mode )
+        {
+            cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+        }
+        else
+        {
+            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
+        }
+    }
 
     template< typename T >  requires std::floating_point<T> // this one only for non-transposed 2d View
     void gemm( view_2d<T> const& x, view_2d<T> const& y, view_2d<T>& ans ) //note: direct copy of x and y

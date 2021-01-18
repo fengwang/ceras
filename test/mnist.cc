@@ -60,6 +60,7 @@ int main()
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
+    //std::size_t const batch_size = 10;
     std::size_t const batch_size = 10;
     tensor_type input_images{ {batch_size, 28*28} };
     tensor_type output_labels{ {batch_size, 10} };
