@@ -689,7 +689,7 @@ namespace ceras
     void host_to_device_n( const Type* hst_begin, std::size_t length, Type* dev_begin )
     {
         debug_print( "host_to_device_n with from hst_begin: ", hst_begin, ", length: ", length*sizeof(Type), " bytes, to dev_begin: ", dev_begin, " the last position is ", dev_begin + length );
-        cuda_no_error_so_far();
+        //cuda_no_error_so_far();
         cuda_assert( cudaMemcpy( reinterpret_cast<void*>( dev_begin ), reinterpret_cast<const void*>( hst_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
