@@ -12,6 +12,7 @@
 #include "./session.hpp"
 #include "./tensor.hpp"
 #include "./variable.hpp"
+#include "./constant.hpp"
 
 #endif//AOXWQXCBBVJUJJSDTMLRNOHUNBOARCNCRGBTAHMIKSULFJOIUGCEEGXXVRUVWTOSKPYWDJOKQ
 

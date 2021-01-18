@@ -4,6 +4,7 @@
 #include "./includes.hpp"
 #include "./place_holder.hpp"
 #include "./variable.hpp"
+#include "./constant.hpp"
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
 #include "./config.hpp"
@@ -55,7 +56,7 @@ namespace ceras
         {
             return [&op]<Tensor Tsor>( Tsor const& grad )
             {
-                op.backward(grad);
+                if ( learning_phase == 1 ) op.backward(grad);
             };
         }
 
@@ -70,7 +71,7 @@ namespace ceras
         {
             return [op]<Tensor Tsor>(Tsor const& grad)
             {
-                op.get().backward(grad);
+                if (learning_phase == 1 ) op.get().backward(grad);
             };
         }
     };
@@ -177,7 +178,7 @@ namespace ceras
     concept Operator = is_operator_v<T>;
 
     template< typename T >
-    concept Expression = Operator<T> || Variable<T> || Place_Holder<T>;
+    concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T>;
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept

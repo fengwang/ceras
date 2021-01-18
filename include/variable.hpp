@@ -5,6 +5,7 @@
 #include "./tensor.hpp"
 #include "./utils/id.hpp"
 #include "./utils/debug.hpp"
+#include "./config.hpp"
 
 namespace ceras
 {
@@ -41,8 +42,11 @@ namespace ceras
 
         tensor<T, A> const forward() const
         {
-            std::swap( *gradient_, *old_gradient_ );
-            (*gradient_).reset( T{0} );
+            if ( learning_phase == 1 )
+            {
+                std::swap( *gradient_, *old_gradient_ );
+                (*gradient_).reset( T{0} );
+            }
             return *data_;
         }
 
