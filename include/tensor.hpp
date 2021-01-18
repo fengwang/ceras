@@ -389,11 +389,11 @@ namespace ceras
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
-    // TODO: when m x n x k is large enough, use GPU instead
     template< typename T > requires std::floating_point<T>
     void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
         //if ( m * n * k < 1024*1024 )
+        // TODO: determin this parameter
         if ( m * n * k < 1 )
         {
             gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
