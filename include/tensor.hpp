@@ -405,6 +405,7 @@ namespace ceras
             }
 
             std::size_t dim = 16;
+            std::size_t increasement = 16;
 
             while ( true )
             {
@@ -414,16 +415,14 @@ namespace ceras
                 unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
                 unsigned long t_cpu = time_it( [&](){ gemm_cpu( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
 
-                //debug_print( "while dim = ", dim, " t_gpu = ", t_gpu, ", t_cpu = ", t_cpu );
+                if ( t_cpu > t_gpu ) break;
 
-                if ( t_cpu > t_gpu )
-                    break;
-
-                dim += dim;
+                dim += increasement;
             }
 
             cuda_gemm_threshold = dim * dim * dim;
-            //debug_print( "found cuda gemm threshod: ", cuda_gemm_threshold );
+
+            debug_print( "found gemm threshold ", dim );
         }
     }
 
@@ -439,11 +438,10 @@ namespace ceras
         {
             std::size_t const operations = m * n * k;
 
-            if ( operations > cuda_gemm_threshold )
-                gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
-
-            else
+            if ( operations >= cuda_gemm_threshold )
                 cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+            else
+                gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
         }
         else
         {
