@@ -362,40 +362,41 @@ namespace ceras
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
+    template< typename T > requires std::floating_point<T>
+    void gemm_cpu( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
+    {
+        auto a_view = view_2d{ A, m, n, a_transposed };
+        auto b_view = view_2d{ B, n, k, b_transposed };
+        auto c_view = view_2d{ C, m, k };
+
+        std::fill_n( C, m*k, T{0} );
+
+        // TODO: move if-else outside loops
+        for ( auto r = 0UL; r != m; ++r )
+            for ( auto c = 0UL; c != k; ++c )
+                for ( auto idx = 0UL; idx != n; ++idx )
+                {
+                    if ( a_transposed == false && b_transposed == false )
+                        c_view[r][c] += a_view[r][idx] * b_view[idx][c];
+                    else if ( a_transposed == false && b_transposed == true )
+                        c_view[r][c] += a_view[r][idx] * b_view[c][idx];
+                    else if ( a_transposed == true && b_transposed == false )
+                        c_view[r][c] += a_view[idx][r] * b_view[idx][c];
+                    else
+                        c_view[r][c] += a_view[idx][r] * b_view[c][idx];
+                }
+    }
+
+    // C <= A * B
+    // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     // TODO: when m x n x k is large enough, use GPU instead
     template< typename T > requires std::floating_point<T>
     void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        static_assert( std::is_floating_point_v<T>, "T is not a floating point type." );
-
-        auto const& cpu_implementation = [=]()
-        {
-            auto a_view = view_2d{ A, m, n, a_transposed };
-            auto b_view = view_2d{ B, n, k, b_transposed };
-            auto c_view = view_2d{ C, m, k };
-
-            std::fill_n( C, m*k, T{0} );
-
-            // TODO: move if-else outside loops
-            for ( auto r = 0UL; r != m; ++r )
-                for ( auto c = 0UL; c != k; ++c )
-                    for ( auto idx = 0UL; idx != n; ++idx )
-                    {
-                        if ( a_transposed == false && b_transposed == false )
-                            c_view[r][c] += a_view[r][idx] * b_view[idx][c];
-                        else if ( a_transposed == false && b_transposed == true )
-                            c_view[r][c] += a_view[r][idx] * b_view[c][idx];
-                        else if ( a_transposed == true && b_transposed == false )
-                            c_view[r][c] += a_view[idx][r] * b_view[idx][c];
-                        else
-                            c_view[r][c] += a_view[idx][r] * b_view[c][idx];
-                    }
-        };
-
         //if ( m * n * k < 1024*1024 )
         if ( m * n * k < 1 )
         {
-            cpu_implementation();
+            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
             return;
         }
 
@@ -405,7 +406,7 @@ namespace ceras
         }
         else
         {
-            cpu_implementation();
+            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
         }
     }
 
