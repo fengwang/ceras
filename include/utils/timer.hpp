@@ -18,13 +18,13 @@ namespace ceras
         timer( const T& val )
         {
             t = std::clock();
-            debug_print("Begin of timer: ", val, " at ", t );
+            //debug_print("Begin of timer: ", val, " at ", t );
         }
 
         timer()
         {
             t = std::clock();
-            debug_print("Begin of timer at ", t );
+            //debug_print("Begin of timer at ", t );
         }
 
         operator clock_type () const
@@ -53,13 +53,6 @@ namespace ceras
             const std::clock_t _t = std::clock();
             const std::clock_t  d = _t - t;
             return  long_double_type(d) / CLOCKS_PER_SEC;
-        }
-
-        ~timer()
-        {
-            const std::clock_t _t = std::clock();
-            const std::clock_t  d = _t - t;
-            debug_print( "End of timer after ", static_cast<double>(d), " clocks / ", static_cast<double>(d)/CLOCKS_PER_SEC, " second(s)." );
         }
     };
 

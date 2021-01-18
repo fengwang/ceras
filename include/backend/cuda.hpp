@@ -5,6 +5,7 @@
 #include "../config.hpp"
 #include "../utils/singleton.hpp"
 #include "../utils/debug.hpp"
+#include "../utils/timer.hpp"
 
 extern "C"
 {
@@ -392,8 +393,49 @@ namespace ceras
         // device -> host
         device_to_host_n( c, m*k,  C );
     }
+#if 0
+    // this function is used to update the threshod 'cuda_gemm_threshold' defined in '../config.hpp'
+    inline void update_cuda_gemm_threshold()
+    {
+        if constexpr( cuda_mode == 0 )
+        {
+            cuda_gemm_threshold = std::numeric_limits<std::size_t>::max();
+        }
+        else
+        {
+            //warm-up GPU
+            {
+                auto A = random<float>({128, 128});
+                auto B = random<float>({128, 128});
+                auto C = zeros<float>({128, 128});
+                cuda_gemm( A, false, B, false, 128, 128, 128, C )
+            }
 
-}
+            std::size_t dim = 16;
+
+            while ( true )
+            {
+                auto A = random<float>( {dim*dim,} );
+                auto B = random<float>( {dim*dim,} );
+                auto C_cpu = zeros<float>( {dim*dim,} );
+                auto C_gpu = zeros<float>( {dim*dim,} );
+                auto t_gpu = time_it( [=](){ cuda_gemm( A.data(), false, B.data(), false, m, n, k, C_gpu.data() ); });
+                auto t_cpu = time_it( [=](){ gemm_cpu( A.data(), false, B.data(), false, m, n, k, C_gpu.data() ); });
+
+                if ( static_cast<unsigned long>( t_cpu ) > static_cast<unsigned long>( t_gpu ) )
+                    break;
+
+                dim += dim;
+            }
+
+            cuda_gemm_threshold = dim * dim * dim;
+            debug_print( "found cuda gemm threshod: ", cuda_gemm_threshold );
+        }
+    }
+
+#endif
+
+}//namespace ceras
 
 #endif//HLUDCUYMXCGREGWXHAVFNPYCNJLENNKSIOVPKKRXDUBYCAEMYBOKVKWODFGLJOUYYLQEDWSTB
 

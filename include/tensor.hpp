@@ -387,22 +387,63 @@ namespace ceras
                 }
     }
 
+    // this function is used to update the threshod 'cuda_gemm_threshold' defined in '../config.hpp', only considering float case
+    inline void update_cuda_gemm_threshold()
+    {
+        if constexpr( cuda_mode == 0 )
+        {
+            cuda_gemm_threshold = std::numeric_limits<std::size_t>::max();
+        }
+        else
+        {
+            //warm-up GPU
+            {
+                auto A = tensor<float>({128, 128});
+                auto B = tensor<float>({128, 128});
+                auto C = tensor<float>({128, 128});
+                cuda_gemm( A.data(), false, B.data(), false, 128, 128, 128, C.data() );
+            }
+
+            std::size_t dim = 16;
+
+            while ( true )
+            {
+                auto A = tensor<float>( {dim*dim,} );
+                auto B = tensor<float>( {dim*dim,} );
+                auto C = tensor<float>( {dim*dim,} );
+                unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+                unsigned long t_cpu = time_it( [&](){ gemm_cpu( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+
+                //debug_print( "while dim = ", dim, " t_gpu = ", t_gpu, ", t_cpu = ", t_cpu );
+
+                if ( t_cpu > t_gpu )
+                    break;
+
+                dim += dim;
+            }
+
+            cuda_gemm_threshold = dim * dim * dim;
+            //debug_print( "found cuda gemm threshod: ", cuda_gemm_threshold );
+        }
+    }
+
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     template< typename T > requires std::floating_point<T>
     void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        //if ( m * n * k < 1024*1024 )
-        // TODO: determin this parameter
-        if ( m * n * k < 1 )
-        {
-            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
-            return;
-        }
+        if ( cuda_gemm_threshold == 0 ) // global variable defined in config.h
+            update_cuda_gemm_threshold();
 
         if constexpr( cuda_mode )
         {
-            cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+            std::size_t const operations = m * n * k;
+
+            if ( operations > cuda_gemm_threshold )
+                gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
+
+            else
+                cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
         }
         else
         {

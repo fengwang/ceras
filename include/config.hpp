@@ -15,6 +15,7 @@ namespace ceras
         inline constexpr unsigned long cuda_mode = 0;
     #endif
     inline int visible_device = 0; // using GPU 0 by default
+    inline unsigned long cuda_gemm_threshold = 0UL; // will be updated if in CUDA mode, always assume float multiplications as double is rearly used
 
     inline constexpr double eps = 1.0e-8;
 

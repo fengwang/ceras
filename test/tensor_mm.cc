@@ -204,7 +204,7 @@ TEST_CASE("tensor_gemm", "[tensor_gemm]")
 
                         if ( 1 )
                         {
-                            gemm( A.data(), false, B.data(), false, m, n, k, C_gpu.data() );
+                            cuda_gemm( A.data(), false, B.data(), false, m, n, k, C_gpu.data() );
                             gemm_cpu( A.data(), false, B.data(), false, m, n, k, C_cpu.data() );
                             auto diff = C_gpu - C_cpu;
                             for ( auto x : diff )
@@ -213,7 +213,7 @@ TEST_CASE("tensor_gemm", "[tensor_gemm]")
 
                         if ( 1 )
                         {
-                            gemm( A.data(), true, B.data(), false, m, n, k, C_gpu.data() );
+                            cuda_gemm( A.data(), true, B.data(), false, m, n, k, C_gpu.data() );
                             gemm_cpu( A.data(), true, B.data(), false, m, n, k, C_cpu.data() );
                             auto diff = C_gpu - C_cpu;
                             for ( auto x : diff )
@@ -222,7 +222,7 @@ TEST_CASE("tensor_gemm", "[tensor_gemm]")
 
                         if ( 1 )
                         {
-                            gemm( A.data(), true, B.data(), true, m, n, k, C_gpu.data() );
+                            cuda_gemm( A.data(), true, B.data(), true, m, n, k, C_gpu.data() );
                             gemm_cpu( A.data(), true, B.data(), true, m, n, k, C_cpu.data() );
                             auto diff = C_gpu - C_cpu;
                             for ( auto x : diff )
@@ -231,7 +231,7 @@ TEST_CASE("tensor_gemm", "[tensor_gemm]")
 
                         if ( 1 )
                         {
-                            gemm( A.data(), false, B.data(), true, m, n, k, C_gpu.data() );
+                            cuda_gemm( A.data(), false, B.data(), true, m, n, k, C_gpu.data() );
                             gemm_cpu( A.data(), false, B.data(), true, m, n, k, C_cpu.data() );
                             auto diff = C_gpu - C_cpu;
                             for ( auto x : diff )
