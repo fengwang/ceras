@@ -361,7 +361,8 @@ namespace ceras
         T* b = a + m*n;
         host_to_device_n( B, n*k, b );
         T* c = b + n*k;
-        host_to_device_n( C, m*k, c );
+        // not copying this
+        //host_to_device_n( C, m*k, c );
 
         T* result_ptr = c;
         T* first_ptr = b;
