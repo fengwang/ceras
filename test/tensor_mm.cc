@@ -42,32 +42,20 @@ auto diff_00( Tsor const& A, Tsor const& B )
 
 TEST_CASE("tensor_mm_00", "[tensor_mm_00]")
 {
-
-    {
-        auto a = random<float>( {1, 2} );
-        auto b = random<float>( {2, 7} );
-        auto c = a * b;
-        std::cout << "a:\n" << a << std::endl;
-        std::cout << "b:\n" << b << std::endl;
-        std::cout << "c:\n" << c << std::endl;
-    }
-
-
-
     //unsigned long const tests = 1024;
-    unsigned long const tests = 1;
-    unsigned long const upper_dims = 7;
+    unsigned long const tests = 2;
+    unsigned long const upper_dims = 31;
 
 
-    for ( auto r : range( upper_dims ) )
+    for ( auto r : range(1UL, upper_dims ) )
     {
-        auto R = r + 11;
-        for ( auto c : range( upper_dims ) )
+        auto R = r;
+        for ( auto c : range(1UL, upper_dims ) )
         {
-            auto C = c + 21;
-            for ( auto k : range( upper_dims ) )
+            auto C = c;
+            for ( auto k : range(1UL, upper_dims ) )
             {
-                auto K = k + 31;
+                auto K = k;
                 {
                     for ( [[maybe_unused]] auto _: range( tests ) )
                     {
@@ -75,7 +63,15 @@ TEST_CASE("tensor_mm_00", "[tensor_mm_00]")
                             auto A = random<float>( {R, K} );
                             auto B = random<float>( {K, C} );
                             auto diff = diff_00( A, B );
-                            auto rm = reduce_sum( diff );
+                            auto rm = reduce_sum( diff ) / (R*C);
+                            auto mn = rm[0];
+                            REQUIRE( mn < 1.0e-5 );
+                        }
+                        {//00
+                            auto A = random<double>( {R, K} );
+                            auto B = random<double>( {K, C} );
+                            auto diff = diff_00( A, B );
+                            auto rm = reduce_sum( diff ) / (R*C);
                             auto mn = rm[0];
                             REQUIRE( mn < 1.0e-5 );
                         }

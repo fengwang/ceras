@@ -683,7 +683,6 @@ namespace ceras
     template<typename Type>
     void host_to_device_n( const Type* host_begin, std::size_t length, Type* device_begin )
     {
-        //debug_print( "host_to_device_n with from host_begin: ", host_begin, ", length: ", length*sizeof(Type), " bytes, to device_begin: ", device_begin, " the last position is ", device_begin + length );
         cuda_assert( cudaMemcpy( reinterpret_cast<void*>( device_begin ), reinterpret_cast<const void*>( host_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
@@ -722,14 +721,12 @@ namespace ceras
     {
         T* ans;
         cudaMalloc( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
-        debug_print( "allocating ", n*sizeof(T), " bytes of cuda memory at ", ans );
         return ans;
     }
 
     template< typename T >
     void deallocate( T* ptr )
     {
-        debug_print( "deallocating cuda memory at ", ptr );
         cudaFree( reinterpret_cast<void*>( ptr ) );
     }
 
@@ -757,8 +754,6 @@ namespace ceras
 
             data_ = allocate<T>( new_length );
             size_ = new_size;
-
-            debug_print( "cuda_memory_cache reserves ", size_, " bytes, from ", static_cast<float*>(data_),  " to ", static_cast<float*>(data_)+(size_/sizeof(T)) );
         }
 
         template< typename T >
@@ -853,7 +848,7 @@ namespace ceras
     template< typename T > requires std::floating_point<T>
     void cuda_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        debug_print( "calling cuda_gemm with A=", A, ", B=", B, ", C=", C, ", m=", m, ", n=", n, ", k=", k, ", b_transposed=", b_transposed, ", a_transposed=", a_transposed );
+        //debug_print( "calling cuda_gemm with A=", A, ", B=", B, ", C=", C, ", m=", m, ", n=", n, ", k=", k, ", b_transposed=", b_transposed, ", a_transposed=", a_transposed );
         cublas_handle& handle = singleton<cublas_handle>::instance();
         cublasHandle_t hd = handle.handle_;
 
