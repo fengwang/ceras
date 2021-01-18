@@ -2,6 +2,8 @@
 #define BUFFERED_ALLOCATOR_HPP_INCLUDED_DPSIOJASLKJ3489UASLIKJASOI8UJ3498UAFDSJA
 
 #include "../includes.hpp"
+#include "../config.hpp"
+#include "../backend/cuda.hpp"
 
 // TODO: incase of cuda enabled, using cudaHostAlloc/cudaFreeHost to allocate/deallocate memory
 namespace ceras
@@ -29,12 +31,18 @@ namespace ceras
         [[nodiscard]] constexpr T* allocate( std::size_t const n )
         {
             const std::size_t bytes = sizeof(T) * n;
-
             if ( bytes <= BYTES )
                 return reinterpret_cast<T*>( cache_.data() );
 
-            std::allocator<T> a;
-            return a.allocate( bytes );
+            if constexpr( cuda_mode )
+            {
+                return allocate_host<T>( n );
+            }
+            else
+            {
+                std::allocator<T> a;
+                return a.allocate( bytes );
+            }
         }
 
         constexpr void deallocate( T* p, std::size_t const n )
@@ -44,8 +52,15 @@ namespace ceras
             if ( bytes <= BYTES )
                 return;
 
-            std::allocator<T> a;
-            a.deallocate( p, n );
+            if constexpr( cuda_mode )
+            {
+                deallocate_host( p );
+            }
+            else
+            {
+                std::allocator<T> a;
+                a.deallocate( p, n );
+            }
         }
 
         std::array<std::byte, BYTES> cache_;

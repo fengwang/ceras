@@ -234,7 +234,9 @@ namespace ceras
 extern "C"
 {
     CUresult cudaMalloc ( void** devPtr, size_t size );
+    CUresult cudaMallocHost ( void** ptr, size_t size );
     CUresult cudaFree ( void* devPtr );
+    CUresult cudaFreeHost ( void* devPtr );
 }
 
 namespace ceras
@@ -251,6 +253,20 @@ namespace ceras
     void deallocate( T* ptr )
     {
         cudaFree( reinterpret_cast<void*>( ptr ) );
+    }
+
+    template< typename T >
+    T* allocate_host( unsigned long n )
+    {
+        T* ans;
+        cudaMallocHost( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
+        return ans;
+    }
+
+    template< typename T >
+    void deallocate_host( T* ptr )
+    {
+        cudaFreeHost( reinterpret_cast<void*>( ptr ) );
     }
 
     struct cuda_memory_cache

@@ -513,11 +513,10 @@ namespace ceras
     template< Tensor Tsor >
     Tsor operator - ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
     {
-        /*
         auto ans = rhs.deep_copy();
         ans.map( [lhs]( auto& v ){ v = lhs - v; } );
         return ans;
-        */
+        /*
         std::size_t const l_size = lhs.size();
         std::size_t const r_size = rhs.size();
         if ( l_size < r_size ) return (-rhs) + lhs;
@@ -531,6 +530,7 @@ namespace ceras
                 ans[idx*r_size+jdx] = lhs[idx*r_size+jdx] - rhs[jdx];
 
         return ans;
+        */
     }
 
     template< Tensor Tsor >
