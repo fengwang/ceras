@@ -371,20 +371,26 @@ namespace ceras
 
         std::fill_n( C, m*k, T{0} );
 
-        // TODO: move if-else outside loops
-        for ( auto r = 0UL; r != m; ++r )
-            for ( auto c = 0UL; c != k; ++c )
-                for ( auto idx = 0UL; idx != n; ++idx )
-                {
-                    if ( a_transposed == false && b_transposed == false )
+        if ( a_transposed == false && b_transposed == false )
+            for ( auto r = 0UL; r != m; ++r )
+                for ( auto c = 0UL; c != k; ++c )
+                    for ( auto idx = 0UL; idx != n; ++idx )
                         c_view[r][c] += a_view[r][idx] * b_view[idx][c];
-                    else if ( a_transposed == false && b_transposed == true )
+        else if ( a_transposed == false && b_transposed == true )
+            for ( auto r = 0UL; r != m; ++r )
+                for ( auto c = 0UL; c != k; ++c )
+                    for ( auto idx = 0UL; idx != n; ++idx )
                         c_view[r][c] += a_view[r][idx] * b_view[c][idx];
-                    else if ( a_transposed == true && b_transposed == false )
+        else if ( a_transposed == true && b_transposed == false )
+            for ( auto r = 0UL; r != m; ++r )
+                for ( auto c = 0UL; c != k; ++c )
+                    for ( auto idx = 0UL; idx != n; ++idx )
                         c_view[r][c] += a_view[idx][r] * b_view[idx][c];
-                    else
+        else
+            for ( auto r = 0UL; r != m; ++r )
+                for ( auto c = 0UL; c != k; ++c )
+                    for ( auto idx = 0UL; idx != n; ++idx )
                         c_view[r][c] += a_view[idx][r] * b_view[c][idx];
-                }
     }
 
     // this function is used to update the threshod 'cuda_gemm_threshold' defined in '../config.hpp', only considering float case
@@ -421,8 +427,6 @@ namespace ceras
             }
 
             cuda_gemm_threshold = dim * dim * dim;
-
-            debug_print( "found gemm threshold ", dim );
         }
     }
 
