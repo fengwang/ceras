@@ -1100,8 +1100,8 @@ namespace ceras
                         return ans;
                     }
 
-                    //if ( batch_size < 32 )
-                    if ( batch_size < 8 )
+                    //if ( batch_size < 8 )
+                    if ( batch_size < 32 )
                     {
                         debug_print( "Normalization warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <Failure-Prone>" );
                     }
@@ -1140,6 +1140,9 @@ namespace ceras
                     // update global average and global variance
                     {
                         Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
+                        // Comment: No obvious different is observed between initializing global_variance to zeros and ones
+                        //          initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
+                        //          initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
                         Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
                         //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
                         for ( auto idx : range( global_average.size() ) )
