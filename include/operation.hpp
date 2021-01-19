@@ -817,7 +817,6 @@ namespace ceras
 
                     Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
 
-                    //Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
                     Tsor& ans = context_cast<Tsor>( forward_cache );
                     ans.deep_copy( input );
 
@@ -832,7 +831,6 @@ namespace ceras
 
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
 
-                    //Tsor ans = grad.deep_copy();
                     Tsor& ans = context_cast<Tsor>( backward_cache );
                     ans.deep_copy( grad );
 
