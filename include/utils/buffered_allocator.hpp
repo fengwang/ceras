@@ -5,7 +5,6 @@
 #include "../config.hpp"
 #include "../backend/cuda.hpp"
 
-// TODO: incase of cuda enabled, using cudaHostAlloc/cudaFreeHost to allocate/deallocate memory
 namespace ceras
 {
 
@@ -31,14 +30,14 @@ namespace ceras
         [[nodiscard]] constexpr T* allocate( std::size_t const n )
         {
             const std::size_t bytes = sizeof(T) * n;
-            if ( bytes <= BYTES )
+            if ( bytes <= BYTES ) // use stack in case of small memory
                 return reinterpret_cast<T*>( cache_.data() );
 
-            if constexpr( cuda_mode )
+            if constexpr( cuda_mode ) // cuda host allocation to accelerate the cudaMemcpy
             {
                 return allocate_host<T>( n );
             }
-            else
+            else // default heap allocation
             {
                 std::allocator<T> a;
                 return a.allocate( bytes );
