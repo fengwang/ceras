@@ -154,6 +154,10 @@ imageio: test/imageio.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_imageio.o test/imageio.cc
 	$(LINK) -o $(BIN_DIR)/test_imageio $(OBJECTS_DIR)/test_imageio.o $(LFLAGS)
 
+keras_input: test/keras_input.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_input.o test/keras_input.cc
+	$(LINK) -o $(BIN_DIR)/test_keras_input $(OBJECTS_DIR)/test_keras_input.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
