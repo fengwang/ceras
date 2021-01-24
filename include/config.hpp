@@ -3,6 +3,8 @@
 
 namespace ceras
 {
+    inline constexpr unsigned long version = 20210124UL;
+
     #ifdef NDEBUG
         inline constexpr unsigned long debug_mode = 0;
     #else

@@ -32,5 +32,14 @@
 #include <utility>
 #include <vector>
 
+// begin of 3rd party libraries
+//
+#define STB_IMAGE_IMPLEMENTATION
+#include "./utils/3rd_party/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "./utils/3rd_party/stb_image_write.h"
+//
+// end of 3rd party libraries
+
 #endif//JIDOKQFMGRFETGICWFQXOAUHPAYLQWXAGIBPFTAXKFLOWQMWEAWUOKJJBUNTLLMIHYSFJQOYA
 

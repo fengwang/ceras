@@ -150,6 +150,10 @@ timer: test/timer.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_timer.o test/timer.cc
 	$(LINK) -o $(BIN_DIR)/test_timer $(OBJECTS_DIR)/test_timer.o $(LFLAGS)
 
+imageio: test/imageio.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_imageio.o test/imageio.cc
+	$(LINK) -o $(BIN_DIR)/test_imageio $(OBJECTS_DIR)/test_imageio.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
