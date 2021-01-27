@@ -371,7 +371,7 @@ namespace ceras
                                         better_assert( grad.size() == 1, "mean_reduce should only output one value" );
                                         Tsor ans = ones_like( input );
                                         ans *= grad[0];
-                                        std::size_t const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
+                                        unsigned long const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
                                     }
@@ -482,7 +482,7 @@ namespace ceras
     //  false: do not consider the batch size
     //      - for an input of (1, 3, 4), expecting an incoming expression of shape like [12, 1]
     //      - expected output of shape [1, 3, 4]
-    auto inline reshape( std::vector<std::size_t> const& new_shape, bool include_batch_flag=true ) noexcept
+    auto inline reshape( std::vector<unsigned long> const& new_shape, bool include_batch_flag=true ) noexcept
     {
         return [new_shape, include_batch_flag]<Expression Ex>( Ex const& ex ) noexcept
         {
@@ -490,9 +490,9 @@ namespace ceras
             (
                 [new_shape, include_batch_flag]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
-                    std::size_t const total_size = tsor.size();
-                    std::size_t const batch_size = total_size / new_size;
+                    unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const total_size = tsor.size();
+                    unsigned long const batch_size = total_size / new_size;
                     better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, got ",  batch_size*new_size, " but total input size is ", total_size );
 
                     if ( !include_batch_flag )
@@ -503,7 +503,7 @@ namespace ceras
                         return ans;
                     }
 
-                    std::vector<std::size_t> batched_new_shape;
+                    std::vector<unsigned long> batched_new_shape;
                     {
                         batched_new_shape.resize( 1 + new_shape.size() );
                         batched_new_shape[0] = batch_size;
@@ -532,8 +532,8 @@ namespace ceras
             []<Tensor Tsor>( Tsor const& tsor ) noexcept
             {
                 better_assert( tsor.ndim() > 1, "Expecting dimension of incoming tensor to be greater than 1, but got ", tsor.ndim() );
-                std::size_t const batch_size = *(tsor.shape().begin());
-                std::size_t const rem = tsor.size() / batch_size;
+                unsigned long const batch_size = *(tsor.shape().begin());
+                unsigned long const rem = tsor.size() / batch_size;
                 Tsor ans = tsor;
                 return ans.reshape( {batch_size, rem} );
             },
@@ -574,7 +574,7 @@ namespace ceras
 
                 typedef typename Tsor::value_type value_type;
 
-                std::vector<std::size_t> const shape = tsor.shape();
+                std::vector<unsigned long> const shape = tsor.shape();
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ tsor.data(), row, col };
 
@@ -592,7 +592,7 @@ namespace ceras
             {
                 typedef typename Tsor::value_type value_type;
 
-                std::vector<std::size_t> const shape = grad.shape();
+                std::vector<unsigned long> const shape = grad.shape();
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ grad.data(), row, col };
 
@@ -611,35 +611,35 @@ namespace ceras
         )( ex );
     }
 
-    auto inline img2col( std::size_t const row_kernel, std::size_t col_kernel=-1,
-                         std::size_t const row_padding=0, std::size_t col_padding=0,
-                         std::size_t const row_stride=1, std::size_t const col_stride=1,
-                         std::size_t const row_dilation=1, std::size_t const col_dilation=1 ) noexcept
+    auto inline img2col( unsigned long const row_kernel, unsigned long col_kernel=-1,
+                         unsigned long const row_padding=0, unsigned long col_padding=0,
+                         unsigned long const row_stride=1, unsigned long const col_stride=1,
+                         unsigned long const row_dilation=1, unsigned long const col_dilation=1 ) noexcept
     {
-        if ( col_kernel == (std::size_t)-1 ) col_kernel = row_kernel;
+        if ( col_kernel == (unsigned long)-1 ) col_kernel = row_kernel;
 
         std::shared_ptr<std::vector<std::uint32_t>> s_index_record = std::make_shared<std::vector<std::uint32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto img2col_forward = [s_index_record]<Tensor Tsor>
         (
             Tsor const& input_img, Tsor& output_col_mat,
-            std::size_t kernel_row, std::size_t kernel_col,
-            std::size_t padding_row, std::size_t padding_col,
-            std::size_t stride_row, std::size_t stride_col,
-            std::size_t dilation_row, std::size_t dilation_col
+            unsigned long kernel_row, unsigned long kernel_col,
+            unsigned long padding_row, unsigned long padding_col,
+            unsigned long stride_row, unsigned long stride_col,
+            unsigned long dilation_row, unsigned long dilation_col
         ) noexcept
         {
             typedef typename Tsor::value_type value_type;
             std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
-            std::vector<std::size_t> input_shape = input_img.shape();
+            std::vector<unsigned long> input_shape = input_img.shape();
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
             auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
 
-            std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
-            std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
-            std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH;
-            std::size_t const output_column_matrix_col = BS * output_row * output_col;
+            unsigned long const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
+            unsigned long const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
+            unsigned long const output_column_matrix_row = kernel_row * kernel_col * CH;
+            unsigned long const output_column_matrix_col = BS * output_row * output_col;
 
             output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
 
@@ -735,9 +735,9 @@ namespace ceras
 
     auto inline conv2d
     (
-        std::size_t row_input, std::size_t col_input,
-        std::size_t const row_stride=1, std::size_t const col_stride=1,
-        std::size_t const row_dilation=1, std::size_t const col_dilation=1,
+        unsigned long row_input, unsigned long col_input,
+        unsigned long const row_stride=1, unsigned long const col_stride=1,
+        unsigned long const row_dilation=1, unsigned long const col_dilation=1,
         std::string const& padding="valid"
     ) noexcept
     {
@@ -749,24 +749,24 @@ namespace ceras
         //
         return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
         {
-            std::vector<std::size_t> const& shape = rhs_ex.shape();
+            std::vector<unsigned long> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
             //TODO: optimization in case of small kernels of (1, 1), (3, 3)
-            std::size_t row_padding = 0;
-            std::size_t col_padding = 0;
+            unsigned long row_padding = 0;
+            unsigned long col_padding = 0;
             if ( padding == "same" )
             {
-                std::size_t const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
+                unsigned long const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
                 better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total );
-                std::size_t const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
+                unsigned long const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
                 row_padding = row_padding_total >> 1;
                 col_padding = col_padding_total >> 1;
             }
 
-            std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
-            std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
+            unsigned long const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
+            unsigned long const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
 
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
 
@@ -844,7 +844,7 @@ namespace ceras
 
 
     // comment: maybe using function 'reduce' to reduce the cod complexity? at a price of performance?
-    inline auto max_pooling_2d( std::size_t stride ) noexcept
+    inline auto max_pooling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
 
@@ -865,7 +865,7 @@ namespace ceras
                     mask__.resize( input.shape() );
 
 
-                    std::vector<std::size_t> shape = input.shape();
+                    std::vector<unsigned long> shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
                     Tsor input_ = input;
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
@@ -881,8 +881,8 @@ namespace ceras
                             for ( auto c : range(col/stride) ) // col for t1
                                 for ( auto ch : range(channel) )
                                 {
-                                    std::size_t current_row_max = r * stride;
-                                    std::size_t current_col_max = c * stride;
+                                    unsigned long current_row_max = r * stride;
+                                    unsigned long current_col_max = c * stride;
                                     for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
                                         for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
                                         {
@@ -900,7 +900,7 @@ namespace ceras
                 [stride, mask, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
+                    std::vector<unsigned long> const& shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
 
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
@@ -926,7 +926,7 @@ namespace ceras
         };
     }
 
-    inline auto average_pooling_2d( std::size_t stride ) noexcept
+    inline auto average_pooling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting average_pooling_2d stride greater than 1, but got ", stride );
 
@@ -942,7 +942,7 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
 
-                    std::vector<std::size_t> shape = input.shape();
+                    std::vector<unsigned long> shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
                     Tsor input_ = input;
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
@@ -966,7 +966,7 @@ namespace ceras
                 [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
+                    std::vector<unsigned long> const& shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
 
                     Tsor& ans = context_cast<Tsor>( backward_cache );
@@ -989,7 +989,7 @@ namespace ceras
         };
     }
 
-    inline auto up_sampling_2d( std::size_t stride ) noexcept
+    inline auto up_sampling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting up_sampling_pooling_2d stride greater than 1, but got ", stride );
 
@@ -1005,7 +1005,7 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
 
-                    std::vector<std::size_t> shape = input.shape();
+                    std::vector<unsigned long> shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
                     Tsor input_ = input;
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
@@ -1028,7 +1028,7 @@ namespace ceras
                 [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
+                    std::vector<unsigned long> const& shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
 
                     Tsor& ans = context_cast<Tsor>( backward_cache );
@@ -1074,11 +1074,11 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     typedef typename Tsor::allocator allocator;
 
-                    std::vector<std::size_t> const& shape = input.shape();
-                    std::size_t const batch_size = shape[0];
-                    std::size_t const rest_dim = input.size() / batch_size;
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const batch_size = shape[0];
+                    unsigned long const rest_dim = input.size() / batch_size;
                     view_2d<value_type> input_{ input.data(), batch_size, rest_dim };
-                    std::vector<std::size_t> new_shape{ shape.begin()+1, shape.end() };
+                    std::vector<unsigned long> new_shape{ shape.begin()+1, shape.end() };
 
                     // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
@@ -1138,9 +1138,9 @@ namespace ceras
                     // update global average and global variance
                     {
                         Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
-                        // Comment: No obvious different is observed between initializing global_variance to zeros and ones
-                        //          initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
-                        //          initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
+                        // Note: No obvious different is observed between initializing global_variance to zeros and to ones with MNIST example:
+                        //       initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
+                        //       initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
                         Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
                         //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
                         for ( auto idx : range( global_average.size() ) )
@@ -1157,9 +1157,9 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     Tsor& variance = context_extract<Tsor>( variance_cache );
 
-                    std::vector<std::size_t> const& shape = input.shape();
-                    std::size_t const batch_size = shape[0];
-                    std::size_t const rest_dim = variance.size();
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const batch_size = shape[0];
+                    unsigned long const rest_dim = variance.size();
 
                     //Tsor ans{ input.shape() };
                     Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );

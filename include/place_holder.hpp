@@ -14,10 +14,6 @@ namespace ceras
     {
         std::shared_ptr<Tsor> data_;
 
-        place_holder() { }
-
-        ~place_holder() { }
-
         Tsor const forward() const
         {
             better_assert( data_, "This place holder does not hold a data!" );
