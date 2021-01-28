@@ -19,11 +19,11 @@ clang++ -c -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0
 clang++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
 ```
 
-Enabling CUDA by defining macro `CUDA`: (tested with cuda_11.2.r11.2, gcc 10.2.0)
+Enabling CUDA by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 10.2.0)
 
 ```bash
-g++ -c -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA -o ./obj/test_mnist.o test/mnist.cc
-g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
+g++ -c -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -o ./obj/test_mnist.o test/mnist.cc
+g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_mnist ./obj/test_mnist.o -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 ```
 
 ## mnist model
