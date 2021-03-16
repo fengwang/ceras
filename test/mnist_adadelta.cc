@@ -64,14 +64,14 @@ int main()
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
-    std::size_t const batch_size = 10;
+    std::size_t const batch_size = 100;
     //std::size_t const batch_size = 10;
     //std::size_t const batch_size = 20000;
     tensor_type input_images{ {batch_size, 28*28} };
     tensor_type output_labels{ {batch_size, 10} };
 
     //std::size_t const epoch = 100;
-    std::size_t const epoch = 1;
+    std::size_t const epoch = 10;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
@@ -79,11 +79,8 @@ int main()
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 
-    // proceed training
-    float learning_rate = 1.0e-1f;
-    //float learning_rate = 1.0e-1f;
-    //float learning_rate = 5.0e-1f;
-    auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
+    float rho = 0.9;
+    auto optimizer = ada_delta{ loss, batch_size, rho };
 
     for ( auto e : range( epoch ) )
     {

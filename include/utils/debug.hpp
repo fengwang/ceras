@@ -30,6 +30,11 @@ namespace ceras
         }
     }
 
+    template< typename ... M >
+    inline void debug_log( M const& ... message )
+    {
+        debug_print( message ... );
+    }
 
 }//namespace ceras
 

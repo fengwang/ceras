@@ -8,6 +8,9 @@
 namespace ceras
 {
 
+    //
+    // Warning: this allocator is only designed for tensor
+    //
     template< typename T, std::size_t BYTES > requires (not std::same_as<T, void>)
     struct buffered_allocator
     {

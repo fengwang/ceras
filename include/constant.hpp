@@ -4,12 +4,14 @@
 #include "./includes.hpp"
 #include "./tensor.hpp"
 #include "./utils/id.hpp"
+#include "./utils/better_assert.hpp"
+#include "./utils/enable_shared.hpp"
 
 namespace ceras
 {
 
     template< Tensor Tsor >
-    struct constant
+    struct constant : enable_shared<constant<Tsor>>
     {
         std::shared_ptr<Tsor> data_;
 
@@ -22,6 +24,7 @@ namespace ceras
 
         Tsor const forward() const
         {
+            better_assert( data_, "Error: data is empty." );
             return *data_;
         }
 

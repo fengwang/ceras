@@ -1,9 +1,21 @@
-CXX           = g++
+LOP           = -Wl,--gc-sections -flto
+#OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
-#OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-#CXXFLAGS      = -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP)
-CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 $(OP)
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
+OP            = -pg -O0 -DDEBUG# -ggdb3
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
+
+#CXX           = clang++
+#CXXFLAGS      = -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP) # clang++
+CXX           = g++
+CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=2 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
+
+#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -pg -O0 -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -157,6 +169,62 @@ imageio: test/imageio.cc
 keras_input: test/keras_input.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_input.o test/keras_input.cc
 	$(LINK) -o $(BIN_DIR)/test_keras_input $(OBJECTS_DIR)/test_keras_input.o $(LFLAGS)
+
+float32: test/float32.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_float32.o test/float32.cc
+	$(LINK) -o $(BIN_DIR)/test_float32 $(OBJECTS_DIR)/test_float32.o $(LFLAGS)
+
+keras_initializer: test/keras_initializer.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_initializer.o test/keras_initializer.cc
+	$(LINK) -o $(BIN_DIR)/test_keras_initializer $(OBJECTS_DIR)/test_keras_initializer.o $(LFLAGS)
+
+mnist_sgd: test/mnist_sgd.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_sgd.o test/mnist_sgd.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_sgd $(OBJECTS_DIR)/test_mnist_sgd.o $(LFLAGS)
+
+mnist_adagrad: test/mnist_adagrad.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_adagrad.o test/mnist_adagrad.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_adagrad $(OBJECTS_DIR)/test_mnist_adagrad.o $(LFLAGS)
+
+mnist_adam: test/mnist_adam.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_adam.o test/mnist_adam.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_adam $(OBJECTS_DIR)/test_mnist_adam.o $(LFLAGS)
+
+mnist_rmsprop: test/mnist_rmsprop.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_rmsprop.o test/mnist_rmsprop.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_rmsprop $(OBJECTS_DIR)/test_mnist_rmsprop.o $(LFLAGS)
+
+mnist_adadelta: test/mnist_adadelta.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_adadelta.o test/mnist_adadelta.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_adadelta $(OBJECTS_DIR)/test_mnist_adadelta.o $(LFLAGS)
+
+glob: test/glob.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_glob.o test/glob.cc
+	$(LINK) -o $(BIN_DIR)/test_glob $(OBJECTS_DIR)/test_glob.o $(LFLAGS)
+
+keras_dense: test/keras_dense.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_dense.o test/keras_dense.cc
+	$(LINK) -o $(BIN_DIR)/test_keras_dense $(OBJECTS_DIR)/test_keras_dense.o $(LFLAGS)
+
+keras_model: test/keras_model.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_model.o test/keras_model.cc
+	$(LINK) -o $(BIN_DIR)/test_keras_model $(OBJECTS_DIR)/test_keras_model.o $(LFLAGS)
+
+reverse: test/reverse.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_reverse.o test/reverse.cc
+	$(LINK) -o $(BIN_DIR)/test_reverse $(OBJECTS_DIR)/test_reverse.o $(LFLAGS)
+
+tqdm: test/tqdm.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tqdm.o test/tqdm.cc
+	$(LINK) -o $(BIN_DIR)/test_tqdm $(OBJECTS_DIR)/test_tqdm.o $(LFLAGS)
+
+mnist_keras: test/mnist_keras.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_keras.o test/mnist_keras.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_keras $(OBJECTS_DIR)/test_mnist_keras.o $(LFLAGS)
+
+state: test/state.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_state.o test/state.cc
+	$(LINK) -o $(BIN_DIR)/test_state $(OBJECTS_DIR)/test_state.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin

@@ -8,22 +8,57 @@
 #include "./utils/for_each.hpp"
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
+#include "./utils/id.hpp"
 #include "./backend/cuda.hpp"
 
 namespace ceras
 {
-    // seed for random numbers
-    static unsigned long seed = std::chrono::system_clock::now().time_since_epoch().count();
-    // static random number generator
-    static std::mt19937 generator{seed};
+    // random_seed for random numbers
+    static unsigned long random_seed = std::chrono::system_clock::now().time_since_epoch().count();
+    // static random number random_generator
+    static std::mt19937 random_generator{random_seed};
 
     template< typename T >
     using default_allocator = buffered_allocator<T, 256>;
+    //using default_allocator = std::allocator<T>;
+    //
+
+    template< typename Tsor >
+    struct tensor_log
+    {
+        tensor_log() noexcept
+        {
+            auto& zen = static_cast<Tsor&>(*this);
+            debug_log( zen.name_, " created directly, with id ", zen.id_ );
+        }
+        tensor_log( tensor_log const& ) noexcept
+        {
+            auto& zen = static_cast<Tsor&>(*this);
+            debug_log( zen.name_, " created using copy ctor, id ", zen.id_, " and size ", zen.size() );
+        }
+        tensor_log( tensor_log && ) noexcept
+        {
+            auto& zen = static_cast<Tsor&>(*this);
+            debug_log( zen.name_, " created using move ctor, id ", zen.id_, " and size ", zen.size() );
+        }
+        tensor_log& operator = ( tensor_log const& ) noexcept
+        {
+            auto& zen = static_cast<Tsor&>(*this);
+            debug_log( zen.name_, " created from copy assignment, id ", zen.id_, " and size ", zen.size() );
+            return *this;
+        }
+        tensor_log& operator = ( tensor_log && ) noexcept
+        {
+            auto& zen = static_cast<Tsor&>(*this);
+            debug_log( zen.name_, " created from move assigment, id ", zen.id_, " and size ", zen.size() );
+            return *this;
+        }
+    };
 
     // Beware: shallow copy
     // TODO: impl tensor_view, enabling stride dataset
     template< typename T, typename Allocator = default_allocator<T> >
-    struct tensor
+    struct tensor : enable_id<tensor<T, Allocator>, "Tensor">//, tensor_log<tensor<T, Allocator>>
     {
         typedef T value_type;
         typedef Allocator allocator;
@@ -34,6 +69,23 @@ namespace ceras
         std::vector<unsigned long> shape_;
         unsigned long memory_offset_;
         shared_vector vector_; //shared across different instances
+
+        tensor slice( unsigned long m, unsigned long n ) const noexcept
+        {
+            better_assert( m < n, "starting dimension larger than then ending dimension." );
+
+            better_assert( !shape_.empty(), "Cannot slice an empty tensor." );
+
+            unsigned long first_dim = shape_[0];
+            better_assert( n <= first_dim, "this tensor only has ", first_dim, " at the first dimension, too small for n = ", n );
+
+            unsigned long rest_dims = std::accumulate( shape_.begin()+1, shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+
+            tensor ans = *this;
+            ans.shape_[0] = n - m;
+            ans.memory_offset_ = rest_dims * m + memory_offset_;
+            return ans;
+        }
 
         constexpr auto begin() noexcept
         {
@@ -107,7 +159,10 @@ namespace ceras
             return *(data()+idx);
         }
 
-        tensor() : memory_offset_{0}, vector_{std::make_shared<vector_type>()} {}
+        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()}
+        {
+            //debug_print( "Creating an empty tensor ", (*this).id_ );
+        }
 
         //
         // tensor<double> A{ {2,2}, { 1.0, 1.0, 1.0, 1.0} };
@@ -115,16 +170,60 @@ namespace ceras
         constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{ shape }, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
         {
             better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
+            //debug_print( "Creating a tensor from <shape,<init>> ", (*this).id_, " and size ", (*this).size() );
         }
 
-        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) } {}
+        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
+        {
+            //debug_print( "Creating a tensor from <shape> ", (*this).id_, " and size ", (*this).size() );
+        }
+
+        constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
+        {
+            //debug_print( "Creating a tensor from <shape,init> ", (*this).id_, " and size ", (*this).size() );
+            std::fill( begin(), end(), init );
+        }
 
         constexpr tensor( tensor const& other, unsigned long memory_offset ) : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
 
-        constexpr tensor( self_type const& ) = default;
-        constexpr tensor( self_type && ) noexcept = default;
-        constexpr self_type& operator = ( self_type const& ) = default;
-        constexpr self_type& operator = ( self_type && ) noexcept = default;
+        /*
+        std::vector<unsigned long> shape_;
+        unsigned long memory_offset_;
+        shared_vector vector_; //shared across different instances
+        */
+
+        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            //debug_print( "Tensor copy construction: prev tensor ", other.id_, " has ", other.size(), " elements." );
+        }
+
+        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            //debug_print( "Tensor move construction: prev tensor ", other.id_, " has ", other.size(), " elements." );
+        }
+
+        constexpr self_type& operator = ( self_type const& other ) noexcept
+        {
+            shape_ = other.shape_;
+            memory_offset_ = other.memory_offset_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            //debug_print( "Tensor copy assigment: prev tensor ", other.id_, " has ", other.size(), " elements." );
+            return *this;
+        }
+        constexpr self_type& operator = ( self_type && other ) noexcept
+        {
+            shape_ = other.shape_;
+            memory_offset_ = other.memory_offset_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            //debug_print( "Tensor move assigment: prev tensor ", other.id_, " has ", other.size(), " elements." );
+            return *this;
+        }
 
         constexpr std::vector< unsigned long > const& shape() const noexcept { return shape_; }
 
@@ -152,13 +251,6 @@ namespace ceras
         {
             unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
             better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            /*
-            if( size() != new_size )
-            {
-                (*vector_).resize(new_size);
-                memory_offset_ = 0UL;
-            }
-            */
             (*this).shape_ = new_shape;
             return *this;
         }
@@ -478,6 +570,7 @@ namespace ceras
     //
     //template< typename T, typename A >
     //tensor<T, A> add( tensor<T, A> const& lhs, tensor<T, A> const& rhs ) noexcept
+    //TODO: fix cases like [31, 1, 31, 31, 1] + [31, 1, 1, 31]
     template< Tensor Tsor >
     Tsor add( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
@@ -767,12 +860,32 @@ namespace ceras
     }
 
     template< typename T, typename A=default_allocator<T> >
-    //tensor<T,A> randn( std::initializer_list<unsigned long> shape, T mean=T{0}, T stddev=T{1} )
     tensor<T,A> randn( std::vector<unsigned long> const& shape, T mean=T{0}, T stddev=T{1} )
     {
         std::normal_distribution<T> distribution( mean, stddev );
         tensor<T,A> ans{ shape };
-        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(generator); } );
+        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
+        return ans;
+    }
+
+    template< typename T, typename A=default_allocator<T> >
+    tensor<T,A> truncated_normal( std::vector<unsigned long> const& shape, T mean=T{0}, T stddev=T{1}, T lower=T{0}, T upper=T{1} )
+    {
+        std::normal_distribution<T> distribution( mean, stddev );
+        tensor<T,A> ans{ shape };
+        for ( auto& v : ans )
+        {
+            for ( ;; )
+            {
+                T x = distribution(random_generator);
+                if ( x >= lower && x <= upper )
+                {
+                    v = x;
+                    break;
+                }
+            }
+        }
+
         return ans;
     }
 
@@ -781,7 +894,7 @@ namespace ceras
     {
         std::uniform_real_distribution<T> distribution( min, max );
         tensor<T,A> ans{ shape };
-        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(generator); } );
+        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
         return ans;
     }
 
@@ -791,6 +904,8 @@ namespace ceras
         return random<typename Tsor::value_type, typename Tsor::allocator>( tsor.shape(), min, max );
     }
 
+    // TODO glorot_normal
+    //
     // Glorot, Xavier, and Yoshua Bengio. “Understanding the Difficulty of Training Deep Feedforward Neural Networks.” In Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics, 249–256, 2010.
     template< typename T, typename A=default_allocator<T> >
     tensor<T,A> glorot_uniform( std::initializer_list<unsigned long> shape )
@@ -862,25 +977,25 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    bool empty(  Tsor const& tsor ) noexcept
+    constexpr bool empty(  Tsor const& tsor ) noexcept
     {
         return tsor.size() == 0;
     }
 
     template< typename T, typename A=default_allocator<T> >
-    tensor<T,A> zeros( std::vector<unsigned long> const& shape )
+    constexpr tensor<T,A> zeros( std::vector<unsigned long> const& shape )
     {
         return {shape};
     }
 
     template< Tensor Tsor >
-    Tsor zeros_like( Tsor const& tsor )
+    constexpr Tsor zeros_like( Tsor const& tsor )
     {
         return {tsor.shape()};
     }
 
     template< typename T, typename A=default_allocator<T> >
-    tensor<T,A> ones( std::vector<unsigned long> const& shape )
+    constexpr tensor<T,A> ones( std::vector<unsigned long> const& shape )
     {
         tensor<T, A> ans{ shape };
         std::fill( ans.data(), ans.data() + ans.size(), T{1} );
@@ -888,7 +1003,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor ones_like( Tsor const& tsor )
+    constexpr Tsor ones_like( Tsor const& tsor )
     {
         return ones<typename Tsor::value_type, typename Tsor::allocator>( tsor.shape() );
     }
@@ -964,7 +1079,9 @@ namespace ceras
     template< Tensor Tsor >
     Tsor softmax( Tsor const& tsor )
     {
+        debug_print( "calling softmax(tsor) with tensor id ", tsor.id_ );
         typedef typename Tsor::value_type value_type;
+        better_assert( !tsor.empty(), "softmax argument is an empty tensor. " );
         Tsor ans = tsor.deep_copy();
         unsigned long const last_dim = *(tsor.shape().rbegin());
         unsigned long const rem_dim = tsor.size() / last_dim;
@@ -976,6 +1093,7 @@ namespace ceras
             value_type const ac = std::accumulate( mat[idx], mat[idx+1], value_type{0}, []( value_type init, value_type val ){ return init + std::exp(val); } );
             for_each( mat[idx], mat[idx+1], [ac]( auto& v ){ v = std::exp(v) / (ac+eps); } );
         }
+        debug_print( "softmax(tsor) returns answer tensor with id ", ans.id_ );
         return ans;
     }
 

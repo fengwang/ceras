@@ -71,7 +71,7 @@ int main()
     tensor_type output_labels{ {batch_size, 10} };
 
     //std::size_t const epoch = 100;
-    std::size_t const epoch = 1;
+    std::size_t const epoch = 10;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
@@ -80,10 +80,12 @@ int main()
     s.bind( ground_truth, output_labels );
 
     // proceed training
-    float learning_rate = 1.0e-1f;
-    //float learning_rate = 1.0e-1f;
-    //float learning_rate = 5.0e-1f;
-    auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
+    float learning_rate = 1.0e-2f;
+    float rho = 0.9;
+    float decay = 1.0e-8f;
+    //
+    //auto optimizer = sgd{ loss, batch_size, learning_rate, 0.01f, 1.0e-8f, false };
+    auto optimizer = rmsprop{ loss, batch_size, learning_rate, rho, decay };
 
     for ( auto e : range( epoch ) )
     {

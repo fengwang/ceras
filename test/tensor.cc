@@ -278,6 +278,23 @@ int main()
         std::cout << "Testing resize(): resize to {12, 1}, got:\n" << x << std::endl;
     }
 
+
+    {
+        auto x = ceras::truncated_normal<double>( {3, 3}, 0.0, 10.0, 0.0, 1.0 );
+        std::cout << "x:\n" << x << std::endl;
+    }
+
+    {
+        auto x = ceras::random<float>( {8, 5} );
+        std::cout << "x:\n" << x << std::endl;
+
+        auto x12 = x.slice( 1, 2 );
+        std::cout << "x(1,2):\n" << x12 << std::endl;
+
+        auto x68 = x.slice( 6, 8 );
+        std::cout << "x(6,8):\n" << x68 << std::endl;
+    }
+
     return 0;
 }
 

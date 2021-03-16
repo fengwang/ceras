@@ -15,7 +15,7 @@ namespace ceras
         std::clock_t t;
 
         template<typename T >
-        timer( const T& val )
+        timer( [[maybe_unused]]const T& val )
         {
             t = std::clock();
             //debug_print("Begin of timer: ", val, " at ", t );

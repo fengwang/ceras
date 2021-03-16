@@ -10,6 +10,8 @@
 #include "./config.hpp"
 #include "./utils/context_cast.hpp"
 #include "./utils/for_each.hpp"
+#include "./utils/id.hpp"
+#include "./utils/enable_shared.hpp"
 
 namespace ceras
 {
@@ -17,130 +19,103 @@ namespace ceras
     // 1. a left operator, a right operator and a lambda function, OR
     // 2. an operator and a lambda function
 
-    // TODO: rewrite using overload idiom
-    struct operator_type_wrapper
+    template< typename Unary_Operator >
+    struct operator_log
     {
-        //default type with default shallow copy, as
-        template< typename T >
-        T operator()( T const& t ) const noexcept { return t; };
-
-        template< typename T >
-        std::reference_wrapper<T> operator()( T & t ) const noexcept { return std::ref(t); };
-
-        //in case of a place holder, copy its reference, as place holder is not yet binded to a tensor already
-        template< Tensor Tsor >
-        std::reference_wrapper<place_holder<Tsor> const> operator()( place_holder<Tsor> const& ph ) const noexcept
+        operator_log( )
         {
-            return std::cref( ph );
+            auto& zen = static_cast<Unary_Operator&>(*this);
+            debug_print( zen.name_, " created with id ", zen.id_ );
         }
-    };
-
-    struct forward_wrapper
-    {
-        template< typename T >
-        auto operator() ( T& t ) const noexcept { return t.forward(); }
-
-        template< Tensor Tsor>
-        auto operator() ( place_holder<Tsor> const& ph ) const noexcept { return ph.forward(); }
-
-        template< typename T >
-        auto operator() ( std::reference_wrapper<T const> t ) const noexcept { return t.get().forward(); };
-
-        template< typename T >
-        auto operator() ( std::reference_wrapper<T> t ) const noexcept { return t.get().forward(); };
-    };
-
-    struct backward_wrapper
-    {
-        template< typename Op > // here Operation can also be variable
-        auto operator() ( Op& op ) const noexcept
+        operator_log( operator_log const& ) noexcept
         {
-            return [&op]<Tensor Tsor>( Tsor const& grad )
-            {
-                if ( learning_phase == 1 ) op.backward(grad);
-            };
+            auto& zen = static_cast<Unary_Operator&>(*this);
+            debug_print( zen.name_, " created by copying, get id ", zen.id_ );
+        }
+        operator_log( operator_log && ) noexcept
+        {
+            auto& zen = static_cast<Unary_Operator&>(*this);
+            debug_print( zen.name_, " created by moving, get id ", zen.id_ );
         }
 
-        template< Tensor Tsor >
-        auto operator() ( std::reference_wrapper<place_holder<Tsor> const> ) const noexcept { return [](auto){}; }; //for place_holder
-
-        template< Tensor Tsor >
-        auto operator() ( place_holder<Tsor> ) const noexcept { return [](auto){}; }; //for place_holder
-
-        template< typename Op > // Operation and also variable
-        auto operator() ( std::reference_wrapper<Op> op ) noexcept
+        operator_log& operator = ( operator_log const& ) noexcept
         {
-            return [op]<Tensor Tsor>(Tsor const& grad)
-            {
-                if (learning_phase == 1 ) op.get().backward(grad);
-            };
+            auto& zen = static_cast<Unary_Operator&>(*this);
+            debug_print( zen.name_, " copy assignment, get id ", zen.id_ );
+            return *this;
+        }
+
+        operator_log& operator = ( operator_log && ) noexcept
+        {
+            auto& zen = static_cast<Unary_Operator&>(*this);
+            debug_print( zen.name_, " move assignment, get id ", zen.id_ );
+            return *this;
         }
     };
-
-    // TODO:
-    // 1. in forward propagation, output of one layer is not pasted to the next layer, try to optimize here
 
     template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct unary_operator
+    struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">,
+                            operator_log<unary_operator<Operator, Forward_Action, Backward_Action>>
     {
-        decltype( operator_type_wrapper{}( std::declval<Operator>() ) ) op_;
+
+        Operator op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_;
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype( forward_wrapper{}(op_))>() ) ) tensor_type;
+        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
+
         tensor_type input_data_;
         tensor_type output_data_;
 
         unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            op_{operator_type_wrapper{}(op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
+            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
 
-        // update output_data, reset gradient
         auto forward()// const
         {
-            input_data_ = forward_wrapper{}( op_ );
+            input_data_ = op_.forward();
             output_data_ = forward_action_( input_data_ );
-
             return output_data_;
         }
 
-        // update gradient
         template< Tensor Tsor>
         void backward( Tsor const& grad )
         {
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
-            backward_wrapper{}( op_ )( current_gradient );
+            op_.backward( current_gradient );
         }
     };
 
-    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action ) noexcept
+    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action, std::string const& name="Anonymous Unary Operator" ) noexcept
     {
-        return [&unary_forward_action, &unary_backward_action]( auto const& op ) noexcept
+        return [&unary_forward_action, &unary_backward_action, &name]( auto const& op ) noexcept
         {
-            return unary_operator{ op, unary_forward_action, unary_backward_action };
+            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action };
+            ans.name_ = name;
+            return ans;
         };
     };
 
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct binary_operator
+    struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">,
+                            operator_log<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>>//,
     {
-        decltype( operator_type_wrapper{}( std::declval<Lhs_Operator>() ) ) lhs_op_;
-        decltype( operator_type_wrapper{}( std::declval<Rhs_Operator>() ) ) rhs_op_;
-        Forward_Action const& forward_action_;
-        Backward_Action const& backward_action_; // backward action for binary operator produces a tuple of two tensors
+        Lhs_Operator lhs_op_;
+        Rhs_Operator rhs_op_;
+        Forward_Action forward_action_;
+        Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype( forward_wrapper{}(lhs_op_))>(), std::declval<decltype( forward_wrapper{}(rhs_op_))>() ) ) tensor_type;
+        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
         binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            lhs_op_{operator_type_wrapper{}(lhs_op)}, rhs_op_{operator_type_wrapper{}(rhs_op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
+            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
 
-        auto forward()// const
+        auto forward()
         {
-            lhs_input_data_ = forward_wrapper{}( lhs_op_ );
-            rhs_input_data_ = forward_wrapper{}( rhs_op_ );
-
+            lhs_input_data_ = lhs_op_.forward();
+            rhs_input_data_ = rhs_op_.forward();
             output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
         }
@@ -149,17 +124,18 @@ namespace ceras
         void backward( tensor<T,A> const& grad )
         {
             auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-            backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-            backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
-
+            lhs_op_.backward( current_gradient_lhs );
+            rhs_op_.backward( current_gradient_rhs );
         }
     };
 
-    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action ) noexcept
+    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator" ) noexcept
     {
-        return [&binary_forward_action, &binary_backward_action]( auto const& lhs_op, auto const& rhs_op ) noexcept
+        return [&binary_forward_action, &binary_backward_action, &name]( auto const& lhs_op, auto const& rhs_op ) noexcept
         {
-            return binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
+            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
+            ans.name_ = name;
+            return ans;
         };
     };
 
@@ -186,6 +162,7 @@ namespace ceras
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
+                                        debug_print( "Operator plus forwarded with lhs tensor ", lhs_tensor.id_, " and rhs tensor ", rhs_tensor.id_ );
                                         better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
                                         return add( lhs_tensor, rhs_tensor );
@@ -206,7 +183,8 @@ namespace ceras
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
-                                     }
+                                     },
+                                     "Plus"
                 )( lhs_ex, rhs_ex );
     }
 
@@ -219,52 +197,44 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
+        if constexpr( std::is_same_v<decltype(lhs_ex),place_holder<tensor<float>>> )
+        {
+            debug_print( "expression * created with place_holder lhs id ", lhs_ex.id_ );
+        }
+        if constexpr( std::is_same_v<decltype(rhs_ex),place_holder<tensor<float>>> )
+        {
+            debug_print( "expression * created with place_holder rhs id ", rhs_ex.id_ );
+        }
+
+
         //
         // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
         //
-        //std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        //std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
-        //std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
         return make_binary_operator
         (
             []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
             {
-               //better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
-               //better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
-
-               return multiply( lhs_tensor, rhs_tensor );
-               //
-               //debug_print( "Start forward propagation of *" );
-               //Tsor& ans = context_cast<Tsor>( forward_cache );
-               //multiply( lhs_tensor, rhs_tensor, ans );
-               //return ans;
+                debug_print( "Operator * forwarded with lhs tensor ", lhs_tensor.id_, " and rhs tensor ", rhs_tensor.id_ );
+                return multiply( lhs_tensor, rhs_tensor );
             },
             []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
             {
-               //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
                // left branch <-- grad * rhs^T
                auto const& g_shape = grad.shape();
                auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
                auto const k = *(lhs_input.shape().rbegin()); // 13
 
                Tsor lhs_grad{ lhs_input.shape() };
-               //Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
-               //lhs_grad.resize( lhs_input.shape() );
 
                gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
-               //better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
-
                // right branch <-- lhs^T * grad
                Tsor rhs_grad{ rhs_input.shape() };
-               //Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
-               //rhs_grad.resize( rhs_input.shape() );
                gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
 
-               //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
-
                return std::make_tuple( lhs_grad, rhs_grad );
-            }
+            },
+            "Multiply"
         )( lhs_ex, rhs_ex );
     }
 
@@ -325,7 +295,6 @@ namespace ceras
                                                 if ( shape[axis] == 1 )
                                                     ans = sum( ans, axis, true );
                                             return ans;
-                                            //return elementwise_product(ans, input);
                                         };
                                         return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
                                      }
@@ -448,7 +417,7 @@ namespace ceras
     }
 
     template <typename Float> requires std::floating_point<Float>
-    auto constexpr clip( Float lower, Float upper ) noexcept
+    auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
     {
         return [lower, upper]<Expression Ex>( Ex const& ex ) noexcept
         {
@@ -1054,7 +1023,7 @@ namespace ceras
     }
 
     template< typename T=double > requires std::floating_point<T>
-    inline auto normalization( T const momentum=0.98 ) noexcept
+    inline auto normalization_batch( T const momentum=0.98 ) noexcept
     {
         std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
@@ -1069,7 +1038,7 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const& input ) noexcept
                 {
-                    better_assert( input.ndim() > 1, "normalization requires input dimension at least 2, got ", input.ndim() );
+                    better_assert( input.ndim() > 1, "normalization_batch requires input dimension at least 2, got ", input.ndim() );
 
                     typedef typename Tsor::value_type value_type;
                     typedef typename Tsor::allocator allocator;
@@ -1101,7 +1070,7 @@ namespace ceras
                     //if ( batch_size < 8 )
                     if ( batch_size < 32 )
                     {
-                        debug_print( "Normalization warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <Failure-Prone>" );
+                        debug_print( "Normalization_batch warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <FAILURE AHEAD>" );
                     }
 
                     // training phase below
@@ -1179,9 +1148,171 @@ namespace ceras
     {
         return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
         {
-            return elementwise_product( normalization(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
+            return elementwise_product( normalization_batch(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
         };
     }
+
+    template< typename T=double > requires std::floating_point<T>
+    inline auto normalization_instance( T const momentum=0.98 ) noexcept
+    {
+        std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    better_assert( input.ndim() > 2, "normalization_instance requires input dimension at least 3, got ", input.ndim() );
+
+                    typedef typename Tsor::value_type value_type;
+                    typedef typename Tsor::allocator allocator;
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const batch_size = shape[0];
+                    unsigned long const last_dim = *(shape.rbegin());
+                    unsigned long const rest_dim = input.size() / (batch_size*last_dim);
+                    view_3d<value_type> input_{ input.data(), batch_size, rest_dim, last_dim };
+
+                    std::vector<unsigned long> new_shape{ shape.begin()+1, shape.end()-1 };
+
+                    // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                    {
+                        Tsor& global_average = context_extract<Tsor>( global_average_cache );
+                        Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
+                        ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
+
+                        view_3d<value_type> ans_{ ans.data(), batch_size, rest_dim, last_dim };
+                        {
+                            for ( auto r : range( batch_size ) )
+                                for ( auto c : range( rest_dim ) )
+                                    for ( auto l : range( last_dim ) )
+                                    ans_[r][c][l] = (input_[r][c][l] - global_average[c]) / std::sqrt( global_variance[c] + eps );
+                        }
+                        return ans;
+                    }
+
+                    // training phase below
+
+                    //calculate E
+                    Tsor& average = context_cast<Tsor>( average_cache, zeros<value_type, allocator>(new_shape) );
+                    {
+                        std::fill( average.begin(), average.end(), value_type{0} );
+                        for ( auto r : range( batch_size ) )
+                            for ( auto c : range( rest_dim ) )
+                                for ( auto l : range( last_dim ) )
+                                    average[c] += input_[r][c][l];
+                        average /= static_cast<value_type>(batch_size*last_dim);
+                    }
+
+                    //calculate Var
+                    Tsor& variance = context_cast<Tsor>( variance_cache, zeros<value_type, allocator>(new_shape) );
+                    {
+                        std::fill( variance.begin(), variance.end(), value_type{0} );
+                        for ( auto r : range( batch_size ) )
+                            for ( auto c : range( rest_dim ) )
+                                for ( auto l : range( last_dim ) )
+                                    variance[c] += std::pow( input_[r][c][l] - average[c], 2);
+                        variance /= static_cast<value_type>(batch_size*last_dim);
+                    }
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
+                    ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
+                    view_3d<value_type> ans_{ ans.data(), batch_size, rest_dim, last_dim };
+                    {
+                        for ( auto r : range( batch_size ) )
+                            for ( auto c : range( rest_dim ) )
+                                for ( auto l : range( last_dim ) )
+                                    ans_[r][c][l] = (input_[r][c][l] - average[c]) / std::sqrt( variance[c] + eps );
+                    }
+
+                    // update global average and global variance
+                    {
+                        Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
+                        // Note: No obvious different is observed between initializing global_variance to zeros and to ones with MNIST example:
+                        //       initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
+                        //       initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
+                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
+                        //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
+                        for ( auto idx : range( global_average.size() ) )
+                        {
+                            global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
+                            global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
+                        }
+                    }
+
+                    return ans;
+                },
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    Tsor& variance = context_extract<Tsor>( variance_cache );
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const batch_size = shape[0];
+                    unsigned long const last_dim = *(shape.rbegin());
+                    unsigned long const rest_dim = variance.size();
+
+                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
+                    view_3d<value_type> ans_{ans.data(), batch_size, rest_dim, last_dim};
+                    view_3d<value_type> grad_{grad.data(), batch_size, rest_dim, last_dim};
+                    for ( auto r : range( batch_size ) )
+                        for ( auto c : range( rest_dim ) )
+                            for ( auto l : range( last_dim ) )
+                                ans_[r][c][l] = grad_[r][c][l] / std::sqrt( variance[c] + eps );
+                    return ans;
+                }
+            )( ex );
+        };
+    }
+
+    template< typename T > requires std::floating_point<T>
+    inline auto instance_normalization( T const momentum=0.98 ) noexcept
+    {
+        return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
+        {   // TODO: should have problem with operator '+', as only broadcasting from right-most side. TOBE FIXED
+            return elementwise_product( normalization_instance(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
+        };
+    }
+
+    /*
+    //TODO:
+    template< Operator Op, Constant Co >
+    auto constexpr plus( Op const& lhs_ex, Co const& rhs_ex ) noexcept
+    auto constexpr multiply( Op const& lhs_ex, Co const& rhs_ex ) noexcept
+    {
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                                     {
+                                        return add( lhs_tensor, rhs_tensor );
+                                     },
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                                     {
+                                        auto const& grad_fun = [&grad]( auto const& input )
+                                        {
+                                            Tsor ans = grad.deep_copy();
+                                            while( input.ndim() < ans.ndim() )
+                                                ans = sum( ans, 0 );
+                                            auto const& shape = input.shape();
+                                            for ( auto axis : range( input.ndim() ) )
+                                                if ( shape[axis] == 1 )
+                                                    ans = sum( ans, axis, true );
+                                            return ans;
+                                        };
+                                        return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
+                                     }
+                )( lhs_ex, rhs_ex );
+    }
+    */
+
+
 
 }//namespace ceras
 

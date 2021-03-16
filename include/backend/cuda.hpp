@@ -131,9 +131,13 @@ extern "C"
 #undef cublas_assert
 #endif
 
-inline void cuda_no_error_so_far()
+namespace ceras
 {
-    cuda_assert( cudaGetLastError() );
+    inline void cuda_no_error_so_far()
+    {
+        if constexpr( cuda_mode )
+            cuda_assert( cudaGetLastError() );
+    }
 }
 
 struct cublas_result_assert
@@ -206,27 +210,35 @@ namespace ceras
     template<typename Type>
     void host_to_device_n( const Type* host_begin, std::size_t length, Type* device_begin )
     {
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( device_begin ), reinterpret_cast<const void*>( host_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
+        if constexpr( cuda_mode )
+            cuda_assert( cudaMemcpy( reinterpret_cast<void*>( device_begin ), reinterpret_cast<const void*>( host_begin ), length * sizeof( Type ), cudaMemcpyHostToDevice ) );
     }
 
     template<typename Type>
     void host_to_device( const Type* host_begin, const Type* host_end, Type* device_begin )
     {
-        std::size_t length = std::distance( host_begin, host_end );
-        host_to_device_n( host_begin, length, device_begin );
+        if constexpr( cuda_mode )
+        {
+            std::size_t length = std::distance( host_begin, host_end );
+            host_to_device_n( host_begin, length, device_begin );
+        }
     }
 
     template<typename Type>
     void device_to_host_n( const Type* device_begin, std::size_t length, Type* host_begin )
     {
-        cuda_assert( cudaMemcpy( reinterpret_cast<void*>( host_begin ), reinterpret_cast<const void*>( device_begin ), length * sizeof( Type ), cudaMemcpyDeviceToHost ) );
+        if constexpr( cuda_mode )
+            cuda_assert( cudaMemcpy( reinterpret_cast<void*>( host_begin ), reinterpret_cast<const void*>( device_begin ), length * sizeof( Type ), cudaMemcpyDeviceToHost ) );
     }
 
     template<typename Type>
     void device_to_host( const Type* device_begin, const Type* device_end, Type* host_begin )
     {
-        std::size_t length = std::distance( device_begin, device_end );
-        device_to_host_n( device_begin, length, host_begin );
+        if constexpr( cuda_mode )
+        {
+            std::size_t length = std::distance( device_begin, device_end );
+            device_to_host_n( device_begin, length, host_begin );
+        }
     }
 
 }//namespace ceras
@@ -245,28 +257,32 @@ namespace ceras
     T* allocate( unsigned long n )
     {
         T* ans;
-        cudaMalloc( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
+        if constexpr( cuda_mode )
+            cudaMalloc( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
         return ans;
     }
 
     template< typename T >
     void deallocate( T* ptr )
     {
-        cudaFree( reinterpret_cast<void*>( ptr ) );
+        if constexpr( cuda_mode )
+            cudaFree( reinterpret_cast<void*>( ptr ) );
     }
 
     template< typename T >
     T* allocate_host( unsigned long n )
     {
         T* ans;
-        cudaMallocHost( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
+        if constexpr( cuda_mode )
+            cudaMallocHost( reinterpret_cast<void**>( &ans ), n * sizeof( T ) );
         return ans;
     }
 
     template< typename T >
     void deallocate_host( T* ptr )
     {
-        cudaFreeHost( reinterpret_cast<void*>( ptr ) );
+        if constexpr( cuda_mode )
+            cudaFreeHost( reinterpret_cast<void*>( ptr ) );
     }
 
     struct cuda_memory_cache
@@ -279,18 +295,21 @@ namespace ceras
         template< typename T >
         void reserve( std::size_t length )
         {
-            std::size_t new_size = length * sizeof( T ); // size in bytes
-            if ( size_ >= new_size )
-                return;
+            if constexpr( cuda_mode )
+            {
+                std::size_t new_size = length * sizeof( T ); // size in bytes
+                if ( size_ >= new_size )
+                    return;
 
-            new_size = (1 + ((new_size+size_) >> 20)) << 20; // at least 1 MB
-            std::size_t new_length = new_size / sizeof(T);
+                new_size = (1 + ((new_size+size_) >> 20)) << 20; // at least 1 MB
+                std::size_t new_length = new_size / sizeof(T);
 
-            if ( size_ > 0 )
-                deallocate( data_ );
+                if ( size_ > 0 )
+                    deallocate( data_ );
 
-            data_ = allocate<T>( new_length );
-            size_ = new_size;
+                data_ = allocate<T>( new_length );
+                size_ = new_size;
+            }
         }
 
         template< typename T >
@@ -301,10 +320,13 @@ namespace ceras
 
         ~cuda_memory_cache()
         {
-            if ( size_ > 0 )
-                deallocate( data_ );
-            size_ = 0;
-            data_ = nullptr;
+            if constexpr( cuda_mode )
+            {
+                if ( size_ > 0 )
+                    deallocate( data_ );
+                size_ = 0;
+                data_ = nullptr;
+            }
         }
 
     };
@@ -345,11 +367,14 @@ namespace ceras
         cublasHandle_t handle_;
         cublas_handle()
         {
-            int current_id;
-            cuda_assert( cudaGetDevice(&current_id) );
-            if ( current_id != visible_device ) // visible_device is defined in config.hpp
-                cuda_assert( cudaSetDevice( visible_device ) );
-            cublas_assert( cublasCreate_v2( &handle_ ) );
+            if constexpr( cuda_mode )
+            {
+                int current_id;
+                cuda_assert( cudaGetDevice(&current_id) );
+                if ( current_id != visible_device ) // visible_device is defined in config.hpp
+                    cuda_assert( cudaSetDevice( visible_device ) );
+                cublas_assert( cublasCreate_v2( &handle_ ) );
+            }
         }
 
         ~cublas_handle()
@@ -364,51 +389,54 @@ namespace ceras
     template< typename T > requires std::floating_point<T>
     void cuda_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        cublas_handle& handle = singleton<cublas_handle>::instance();
-        cublasHandle_t hd = handle.handle_;
-
-        T alpha = 1.0;
-        T beta = 0.0;
-
-        cuda_memory_cache& cache = singleton<cuda_memory_cache>::instance();
-        cache.reserve<T>( m*n + n*k + m*k ); // total memory
-        T* a = cache.data<T>();
-        host_to_device_n( A, m*n, a );
-        T* b = a + m*n;
-        host_to_device_n( B, n*k, b );
-        T* c = b + n*k;
-        // not copying this
-        //host_to_device_n( C, m*k, c );
-
-        T* result_ptr = c;
-        T* first_ptr = b;
-        T* second_ptr = a;
-        int row_of_c = m;
-        int col_of_c = k;
-        int common_dimension = n;
-
-        int ld_of_first_ptr = b_transposed ? n : k;
-        int ld_of_second_ptr = a_transposed ? m : n;
-        int ld_of_result_ptr = k;
-
-        cublasOperation_t first_transposed = b_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
-        cublasOperation_t second_transposed = a_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
-
-        if constexpr( std::is_same_v<T, float> )
+        if constexpr( cuda_mode )
         {
-            cublas_assert( cublasSgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
-        }
-        else if constexpr( std::is_same_v<T, double> )
-        {
-            cublas_assert( cublasDgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
-        }
-        else
-        {
-            better_assert( false, "gemm only supports float and double!" );
-        }
+            cublas_handle& handle = singleton<cublas_handle>::instance();
+            cublasHandle_t hd = handle.handle_;
 
-        // device -> host
-        device_to_host_n( c, m*k,  C );
+            T alpha = 1.0;
+            T beta = 0.0;
+
+            cuda_memory_cache& cache = singleton<cuda_memory_cache>::instance();
+            cache.reserve<T>( m*n + n*k + m*k ); // total memory
+            T* a = cache.data<T>();
+            host_to_device_n( A, m*n, a );
+            T* b = a + m*n;
+            host_to_device_n( B, n*k, b );
+            T* c = b + n*k;
+            // not copying this
+            //host_to_device_n( C, m*k, c );
+
+            T* result_ptr = c;
+            T* first_ptr = b;
+            T* second_ptr = a;
+            int row_of_c = m;
+            int col_of_c = k;
+            int common_dimension = n;
+
+            int ld_of_first_ptr = b_transposed ? n : k;
+            int ld_of_second_ptr = a_transposed ? m : n;
+            int ld_of_result_ptr = k;
+
+            cublasOperation_t first_transposed = b_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+            cublasOperation_t second_transposed = a_transposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+            if constexpr( std::is_same_v<T, float> )
+            {
+                cublas_assert( cublasSgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
+            }
+            else if constexpr( std::is_same_v<T, double> )
+            {
+                cublas_assert( cublasDgemm_v2( hd, first_transposed, second_transposed, col_of_c, row_of_c, common_dimension, &alpha, first_ptr, ld_of_first_ptr, second_ptr, ld_of_second_ptr, &beta, result_ptr, ld_of_result_ptr ) );
+            }
+            else
+            {
+                better_assert( false, "gemm only supports float and double!" );
+            }
+
+            // device -> host
+            device_to_host_n( c, m*k,  C );
+        }
     }
 
 }//namespace ceras
