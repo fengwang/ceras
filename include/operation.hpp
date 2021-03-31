@@ -1312,6 +1312,46 @@ namespace ceras
     }
     */
 
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr concatenate( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return [&]( int axe = -1 ) noexcept
+        {};
+    }
+
+
+    /*
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                                     {
+                                        debug_print( "Operator plus forwarded with lhs tensor ", lhs_tensor.id_, " and rhs tensor ", rhs_tensor.id_ );
+                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
+                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
+                                        return add( lhs_tensor, rhs_tensor );
+                                     },
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                                     {
+                                        better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
+
+                                        auto const& grad_fun = [&grad]( auto const& input )
+                                        {
+                                            Tsor ans = grad.deep_copy();
+                                            while( input.ndim() < ans.ndim() )
+                                                ans = sum( ans, 0 );
+                                            auto const& shape = input.shape();
+                                            for ( auto axis : range( input.ndim() ) )
+                                                if ( shape[axis] == 1 )
+                                                    ans = sum( ans, axis, true );
+                                            return ans;
+                                        };
+                                        return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
+                                     },
+                                     "Plus"
+                )( lhs_ex, rhs_ex );
+    }
+    */
 
 
 }//namespace ceras

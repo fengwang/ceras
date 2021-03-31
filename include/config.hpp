@@ -3,7 +3,8 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20210215UL;
+    inline constexpr unsigned long version = 20210329UL;
+    inline constexpr unsigned long __version__ = version;
 
 
     #ifdef _MSC_VER

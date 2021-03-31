@@ -331,6 +331,52 @@ namespace ceras
                 )( ex );
     }
 
+    // GAUSSIAN ERROR LINEAR UNITS (GELUS) https://arxiv.org/pdf/1606.08415.pdf
+    // f(x) = 0.5x (1 + tanh[\sqrt{2/π}(x + 0.044715x^3)])
+    // df = x ( 1 + tanh[\sqrt{2/π}(x + 0.044715x^3)] ) +  \sqrt(2/π) x sech^2[\sqrt(2/π) x (1+0.44715x^2) (1+0.134145x^2) ]
+    // where sec^2(x) = 1 - tanh^2(x)
+    // derivative generated using service from https://www.symbolab.com/solver/derivative-calculator
+    template <Expression Ex>
+    auto inline gelu( Ex const& ex ) noexcept
+    {
+        auto _gelu = []<typename T>( T x )
+        {
+            auto const ans = 0.5 * x * ( 1.0 + std::tanh( 0.79788456080286535588 * x ( 1.0 + 0.044715*x*x ) ) );
+            return static_cast<T>( ans );
+        };
+        auto sech_2 = []( auto x )
+        {
+            return 1.0 - std::pow( std::tanh(x), 2 );
+        };
+        auto _dgelu = [sech_2]<typename T>( T x )
+        {
+            auto const sq_2_pi_x = 0.79788456080286535588 * x;
+            auto const _xx = x * x;
+            auto const ans = 0.5 * ( 1.0 + std::tanh( sq_2_pi_x * ( 1.0 + 0.044715 * _xx ) ) ) + sq_2_pi_x * std::sech_2( sq_2_pi_x * (1.0 + 0.044715 * _xx ) * ( 1.0 + 0.134145 * _xx) );
+            return static_cast<T>( ans );
+        };
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+
+        return make_unary_operator( [forward_cache, _gelu]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        typedef typename Tsor::value_type value_type;
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        std::copy( input.begin(), input.end(), ans.begin() );
+                                        ans.map([](auto& x) { x = _gelu(x); });
+                                        return ans;
+                                    },
+                                    [_dgelu]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        typedef typename Tsor::value_type value_type;
+                                        Tsor ans = grad;
+                                        for_each( ans.begin(), ans.end(), [&_dgelu]( auto& x ) {  x = _dgelu(x); } );
+                                        return ans;
+                                    }
+                )( ex );
+    }
+
 }//namespace ceras
 
 #endif//DJDWJBHNDAYTNOXLFOBDSGAQAAYPWMXJGEBYIRKEAKAQUUWVGDUGGDKSDXUKSPCYYNTWTDNII
