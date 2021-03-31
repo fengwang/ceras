@@ -39,7 +39,7 @@ void test_2()
     std::cout << "gradient generated as:\n" << ceras::squeeze(grad) << std::endl;
     ta.backward( grad );
 
-    auto new_g = *(va.gradient_);
+    auto new_g = (va.state_->gradient_);
     std::cout << "propageated gradient:\n" << ceras::squeeze(new_g) << std::endl;
 }
 

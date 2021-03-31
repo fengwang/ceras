@@ -295,6 +295,16 @@ int main()
         std::cout << "x(6,8):\n" << x68 << std::endl;
     }
 
+    {
+        auto x = ceras::random<double>( {2,2} );
+        auto y = ceras::random<double>( {2,2} );
+        std::cout << "x:\n" << x << std::endl;
+        std::cout << "y:\n" << y << std::endl;
+        std::cout << "concatenate(x, y, 0):\n" << ceras::concatenate(x, y, 0) << std::endl;
+        std::cout << "concatenate(x, y, 1):\n" << ceras::concatenate(x, y, 1) << std::endl;
+        std::cout << "concatenate(x, y, -1):\n" << ceras::concatenate(x, y, -1) << std::endl;
+    }
+
     return 0;
 }
 

@@ -352,7 +352,7 @@ namespace ceras
         {
             auto const sq_2_pi_x = 0.79788456080286535588 * x;
             auto const _xx = x * x;
-            auto const ans = 0.5 * ( 1.0 + std::tanh( sq_2_pi_x * ( 1.0 + 0.044715 * _xx ) ) ) + sq_2_pi_x * std::sech_2( sq_2_pi_x * (1.0 + 0.044715 * _xx ) * ( 1.0 + 0.134145 * _xx) );
+            auto const ans = 0.5 * ( 1.0 + std::tanh( sq_2_pi_x * ( 1.0 + 0.044715 * _xx ) ) ) + sq_2_pi_x * sech_2( sq_2_pi_x * (1.0 + 0.044715 * _xx ) * ( 1.0 + 0.134145 * _xx) );
             return static_cast<T>( ans );
         };
 
@@ -360,16 +360,16 @@ namespace ceras
 
         return make_unary_operator( [forward_cache, _gelu]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
-                                        typedef typename Tsor::value_type value_type;
+                                        //typedef typename Tsor::value_type value_type;
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
                                         std::copy( input.begin(), input.end(), ans.begin() );
-                                        ans.map([](auto& x) { x = _gelu(x); });
+                                        ans.map([_gelu](auto& x) { x = _gelu(x); });
                                         return ans;
                                     },
                                     [_dgelu]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
-                                        typedef typename Tsor::value_type value_type;
+                                        //typedef typename Tsor::value_type value_type;
                                         Tsor ans = grad;
                                         for_each( ans.begin(), ans.end(), [&_dgelu]( auto& x ) {  x = _dgelu(x); } );
                                         return ans;

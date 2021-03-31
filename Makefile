@@ -226,6 +226,10 @@ state: test/state.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_state.o test/state.cc
 	$(LINK) -o $(BIN_DIR)/test_state $(OBJECTS_DIR)/test_state.o $(LFLAGS)
 
+concatenate: test/concatenate.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_concatenate.o test/concatenate.cc
+	$(LINK) -o $(BIN_DIR)/test_concatenate $(OBJECTS_DIR)/test_concatenate.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

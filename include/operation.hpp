@@ -1283,40 +1283,67 @@ namespace ceras
         };
     }
 
-    /*
-    //TODO:
-    template< Operator Op, Constant Co >
-    auto constexpr plus( Op const& lhs_ex, Co const& rhs_ex ) noexcept
-    auto constexpr multiply( Op const& lhs_ex, Co const& rhs_ex ) noexcept
-    {
-        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-                                     {
-                                        return add( lhs_tensor, rhs_tensor );
-                                     },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
-                                     {
-                                        auto const& grad_fun = [&grad]( auto const& input )
-                                        {
-                                            Tsor ans = grad.deep_copy();
-                                            while( input.ndim() < ans.ndim() )
-                                                ans = sum( ans, 0 );
-                                            auto const& shape = input.shape();
-                                            for ( auto axis : range( input.ndim() ) )
-                                                if ( shape[axis] == 1 )
-                                                    ans = sum( ans, axis, true );
-                                            return ans;
-                                        };
-                                        return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
-                                     }
-                )( lhs_ex, rhs_ex );
-    }
-    */
-
+    //
+    //  example:
+    //
+    //      variable<tensor<float>> a {... };
+    //      variable<tensor<float>> b {... };
+    //      auto cab = concatenate( a, b )();
+    //
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr concatenate( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return [&]( int axe = -1 ) noexcept
-        {};
+        return [&]( unsigned long axe = -1 ) noexcept
+        {
+            return make_binary_operator
+            (
+                [axe]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                {
+                    return concatenate( lhs_tensor, rhs_tensor, axe ); // TODO: inplace implementation for efficiency..... Not a lie.
+                },
+                [axe]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+
+                    Tsor l_ans{ lhs_input.shape() };
+                    Tsor r_ans{ rhs_input.shape() };
+                    better_assert( l_ans.size() + r_ans.size() == grad.size(), "size mismatch" );
+
+
+                    // 2D view of grad
+                    unsigned long const ax = (axe == (unsigned long)(-1)) ? grad.ndim()-1 : axe;
+                    unsigned long const g_col = std::accumulate( grad.shape().begin()+ax, grad.shape().end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                    unsigned long const g_row = grad.size() / g_col;
+                    view_2d<value_type> v_g{ grad.data(), g_row, g_col };
+                    // 2D view of l_ans
+                    unsigned long const lhs_row = g_row;
+                    unsigned long const lhs_col = lhs_input.size() / lhs_row;
+                    view_2d<value_type> v_l{ l_ans.data(), lhs_row, lhs_col };
+                    // 2D view of r_ans
+                    unsigned long const rhs_row = g_row;
+                    unsigned long const rhs_col = rhs_input.size() / rhs_row;
+                    view_2d<value_type> v_r{ r_ans.data(), rhs_row, rhs_col };
+
+                    better_assert( g_col == lhs_col + rhs_col, "last dimension not agree" );
+
+                    for ( unsigned long idx = 0; idx != g_row; ++idx )
+                    {
+                        std::copy( v_g[idx], v_g[idx]+lhs_col, v_l[idx] );          // fill idx-th row of 'v_l'
+                        std::copy( v_g[idx]+lhs_col, v_g[idx]+g_col, v_r[idx] );    // fill idx-th row of 'v_r'
+                    }
+
+                    return std::make_tuple( l_ans, r_ans );
+                },
+                "Concatenate"
+            )( lhs_ex, rhs_ex );
+        };
+    }
+
+    // 'concat' is an alias name of 'concatenate'
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr concat( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return concatenate( lhs_ex, rhs_ex );
     }
 
 
