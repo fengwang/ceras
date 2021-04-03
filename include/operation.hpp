@@ -182,7 +182,6 @@ namespace ceras
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
-                                        debug_print( "Operator plus forwarded with lhs tensor ", lhs_tensor.id_, " and rhs tensor ", rhs_tensor.id_ );
                                         better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
                                         return add( lhs_tensor, rhs_tensor );
@@ -217,16 +216,6 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        if constexpr( std::is_same_v<decltype(lhs_ex),place_holder<tensor<float>>> )
-        {
-            debug_print( "expression * created with place_holder lhs id ", lhs_ex.id_ );
-        }
-        if constexpr( std::is_same_v<decltype(rhs_ex),place_holder<tensor<float>>> )
-        {
-            debug_print( "expression * created with place_holder rhs id ", rhs_ex.id_ );
-        }
-
-
         //
         // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
         //
@@ -234,7 +223,6 @@ namespace ceras
         (
             []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
             {
-                debug_print( "Operator * forwarded with lhs tensor ", lhs_tensor.id_, " and rhs tensor ", rhs_tensor.id_ );
                 return multiply( lhs_tensor, rhs_tensor );
             },
             []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
