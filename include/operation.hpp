@@ -20,32 +20,32 @@ namespace ceras
     // 2. an operator and a lambda function
 
     template< typename Unary_Operator >
-    struct operator_log
+    struct enable_log
     {
-        operator_log( )
+        enable_log( )
         {
             auto& zen = static_cast<Unary_Operator&>(*this);
             debug_print( zen.name_, " created with id ", zen.id_ );
         }
-        operator_log( operator_log const& ) noexcept
+        enable_log( enable_log const& ) noexcept
         {
             auto& zen = static_cast<Unary_Operator&>(*this);
             debug_print( zen.name_, " created by copying, get id ", zen.id_ );
         }
-        operator_log( operator_log && ) noexcept
+        enable_log( enable_log && ) noexcept
         {
             auto& zen = static_cast<Unary_Operator&>(*this);
             debug_print( zen.name_, " created by moving, get id ", zen.id_ );
         }
 
-        operator_log& operator = ( operator_log const& ) noexcept
+        enable_log& operator = ( enable_log const& ) noexcept
         {
             auto& zen = static_cast<Unary_Operator&>(*this);
             debug_print( zen.name_, " copy assignment, get id ", zen.id_ );
             return *this;
         }
 
-        operator_log& operator = ( operator_log && ) noexcept
+        enable_log& operator = ( enable_log && ) noexcept
         {
             auto& zen = static_cast<Unary_Operator&>(*this);
             debug_print( zen.name_, " move assignment, get id ", zen.id_ );
@@ -55,20 +55,20 @@ namespace ceras
 
     template< typename Operator, typename Forward_Action, typename Backward_Action >
     struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">,
-                            operator_log<unary_operator<Operator, Forward_Action, Backward_Action>>
+                            enable_log<unary_operator<Operator, Forward_Action, Backward_Action>>
     {
-
         Operator op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_;
+        std::function<void()> reset_action_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
         tensor_type output_data_;
 
-        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
+        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, std::function<void()> const& reset_action ) noexcept :
+            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, reset_action_{ reset_action } { }
 
         auto forward()// const
         {
@@ -83,13 +83,22 @@ namespace ceras
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
             op_.backward( current_gradient );
         }
+
+        // designed for recurrent layers
+        void reset_states()
+        {
+            reset_action_();
+            if constexpr( !( is_place_holder_v<Operator> || is_variable_v<Operator>  || is_constant_v<Operator>  ) )
+                op_.reset_states();
+        }
+
     };
 
-    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action, std::string const& name="Anonymous Unary Operator" ) noexcept
+    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action, std::string const& name="Anonymous Unary Operator", std::function<void()> reset_action = [](){} ) noexcept
     {
-        return [&unary_forward_action, &unary_backward_action, &name]( auto const& op ) noexcept
+        return [&unary_forward_action, &unary_backward_action, &name, &reset_action]( auto const& op ) noexcept
         {
-            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action };
+            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action, reset_action };
             ans.name_ = name;
             return ans;
         };
@@ -97,20 +106,21 @@ namespace ceras
 
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
     struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">,
-                            operator_log<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>>//,
+                            enable_log<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>>//,
     {
         Lhs_Operator lhs_op_;
         Rhs_Operator rhs_op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
+        std::function<void()> reset_action_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
-        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
+        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action, std::function<void()> const& reset_action ) noexcept :
+            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action }, reset_action_{ reset_action } { }
 
         auto forward()
         {
@@ -127,13 +137,23 @@ namespace ceras
             lhs_op_.backward( current_gradient_lhs );
             rhs_op_.backward( current_gradient_rhs );
         }
+
+        void reset_states()
+        {
+            reset_action_();
+
+            if constexpr( !( is_place_holder_v<Lhs_Operator> || is_variable_v<Lhs_Operator>  || is_constant_v<Lhs_Operator>  ) )
+                lhs_op_.reset_states();
+            if constexpr( !( is_place_holder_v<Rhs_Operator> || is_variable_v<Rhs_Operator>  || is_constant_v<Rhs_Operator>  ) )
+                rhs_op_.reset_states();
+        }
     };
 
-    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator" ) noexcept
+    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator", std::function<void()> const& reset_action=[](){} ) noexcept
     {
-        return [&binary_forward_action, &binary_backward_action, &name]( auto const& lhs_op, auto const& rhs_op ) noexcept
+        return [&binary_forward_action, &binary_backward_action, &name, &reset_action]( auto const& lhs_op, auto const& rhs_op ) noexcept
         {
-            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
+            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action, reset_action };
             ans.name_ = name;
             return ans;
         };
@@ -1357,7 +1377,7 @@ namespace ceras
     }
 
     // alias of 'concatenate'
-    inline concat( unsigned long axe = -1 )
+    inline auto concat( unsigned long axe = -1 )
     {
         return concatenate( axe );
     }

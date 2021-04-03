@@ -109,45 +109,6 @@ namespace ceras
         }
     };//struct variable
 
-
-    /*
-    template< Tensor Tsor >
-    struct variable : enable_id<variable<Tsor>>
-    {
-        bool trainable_;
-        std::shared_ptr<Tsor> data_;
-        std::shared_ptr<Tsor> gradient_;
-        std::vector<std::shared_ptr<Tsor>> contexts_;
-
-        variable( Tsor const& data ) : trainable_{true}, data_{ std::make_shared<Tsor>( data ) }, gradient_{ std::make_shared<Tsor>(data.shape()) } {}
-
-        variable() = delete;
-
-        void backward( auto const& grad )
-        {
-            *gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times
-            auto& ss = get_default_session<Tsor>().get();
-            ss.remember( *this );
-        }
-
-        Tsor const forward() const
-        {
-            if ( learning_phase == 1 )
-            {
-                typedef typename Tsor::value_type value_type;
-                (*gradient_).reset( value_type{0} );
-            }
-            return *data_;
-        }
-
-        std::vector<std::size_t> shape() const noexcept
-        {
-            return data_ ? (*data_).shape() : std::vector<std::size_t>{};
-        }
-    };//struct variable
-    */
-
-
     template< typename T >
     struct is_variable : std::false_type {};
 

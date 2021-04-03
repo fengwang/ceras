@@ -22,6 +22,7 @@ void test_1()
 
     ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( cab );
+    cab.reset_states();
     std::cout << "after concate(a,b)():\n" << ceras::squeeze(ans) << std::endl;
 
     auto grad = ceras::linspace<double>( 1.0, 32.0, 32 );
