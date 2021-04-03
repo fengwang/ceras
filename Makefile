@@ -234,7 +234,7 @@ concatenate: test/concatenate.cc
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
-	rm $(OBJECTS_DIR)/*.o
+	-rm $(OBJECTS_DIR)/*.o
 clean_bin:
-	rm $(BIN_DIR)/*
+	-rm $(BIN_DIR)/*
 

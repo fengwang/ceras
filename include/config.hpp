@@ -13,20 +13,18 @@ namespace ceras
         inline constexpr unsigned long is_windows_platform = 0;
     #endif
 
-
     #ifdef NDEBUG
         inline constexpr unsigned long debug_mode = 0;
     #else
         inline constexpr unsigned long debug_mode = 1;
     #endif
 
-
+    // TODO: impls blas based gemm backend
     #ifdef BLAS
         inline constexpr unsigned long blas_mode = 1;
     #else
         inline constexpr unsigned long blas_mode = 0;
     #endif
-
 
     #ifdef CUDA
         inline constexpr unsigned long cuda_mode = 1;

@@ -1,5 +1,8 @@
 # CERAS: yet another tiny deep learning engine
 
+
+__ceras__ mimiks tensorflow 1.x APIs, in pure C++20. But CUDA acceleration is only possible in _convolutional_ and _dense_ layers, as this library is written in a laptop with a GeForce GTX 1060 installed, where the device memory is luxurious.
+
 ----
 
 ## Example Usage:
@@ -15,14 +18,14 @@ copy the `include` directory to your working directory, then in your source code
 **compiliation/link**:
 
 ```bash
-clang++ -c -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -o ./obj/test_mnist.o test/mnist.cc
+clang++ -c -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
 clang++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
 ```
 
 Enabling CUDA by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 10.2.0)
 
 ```bash
-g++ -c -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -o ./obj/test_mnist.o test/mnist.cc
+g++ -c -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
 g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_mnist ./obj/test_mnist.o -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 ```
 

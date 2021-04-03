@@ -17,7 +17,8 @@ void test_1()
 
     auto va = ceras::variable{ a };
     auto vb = ceras::variable{ b };
-    auto cab = ceras::concatenate( va, vb )();
+    //auto cab = ceras::concatenate( va, vb )();
+    auto cab = ceras::concatenate()( va, vb );
 
     ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( cab );
