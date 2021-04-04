@@ -23,6 +23,8 @@ namespace ceras
     struct place_holder :   enable_id< place_holder<Tsor>, "Place Holder" >,
                             enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
     {
+        typedef Tsor tensor_type;
+
         place_holder( place_holder const& other) = default;
         place_holder( place_holder && other) = default;
         place_holder& operator = ( place_holder const& other) = default;

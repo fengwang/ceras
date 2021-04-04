@@ -13,6 +13,8 @@ namespace ceras
     template< Tensor Tsor >
     struct constant : enable_shared<constant<Tsor>>
     {
+        typedef Tsor tensor_type;
+
         std::shared_ptr<Tsor> data_;
 
         constant() = delete;

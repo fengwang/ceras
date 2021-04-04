@@ -27,12 +27,14 @@ namespace ceras
     };
 
     template< Tensor Tsor >
-    struct variable :   enable_id<variable<Tsor>>,
-                        enable_shared_state<variable<Tsor>, variable_state<Tsor>>
+    struct variable : enable_id<variable<Tsor>>, enable_shared_state<variable<Tsor>, variable_state<Tsor>>
     {
-        bool trainable_;
+        typedef Tsor tensor_type;
 
-        variable( Tsor const& data ) : trainable_{true}
+        bool trainable_;
+        bool stateful_;
+
+        variable( Tsor const& data, bool trainable = true, bool stateful = false ) : trainable_{trainable}, stateful_{stateful}
         {
             (*this).state_ = std::make_shared<variable_state<Tsor>>();
             (*((*this).state_)).data_ = data;
@@ -106,6 +108,18 @@ namespace ceras
         {
             auto& state = *((*this).state_);
             return state.gradient_;
+        }
+
+        void reset()
+        {
+            data().reset();
+            gradient().reset();
+        }
+
+        void reset_states()
+        {
+            if ( stateful_ )
+                reset();
         }
     };//struct variable
 

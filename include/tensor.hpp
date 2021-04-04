@@ -19,8 +19,8 @@ namespace ceras
     static std::mt19937 random_generator{random_seed};
 
     template< typename T >
-    using default_allocator = buffered_allocator<T, 256>;
-    //using default_allocator = std::allocator<T>;
+    //using default_allocator = buffered_allocator<T, 256>;
+    using default_allocator = std::allocator<T>;
     //
 
     template< typename Tsor >

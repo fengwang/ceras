@@ -17,6 +17,7 @@
 + softsign function
 + selu function
 + elu function
++ gelu function
 exponential function
 #endif
 

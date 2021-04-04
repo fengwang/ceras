@@ -88,7 +88,7 @@ namespace ceras
         void reset_states()
         {
             reset_action_();
-            if constexpr( !( is_place_holder_v<Operator> || is_variable_v<Operator>  || is_constant_v<Operator>  ) )
+            if constexpr( !( is_place_holder_v<Operator> || is_constant_v<Operator>  ) )
                 op_.reset_states();
         }
 
@@ -142,9 +142,9 @@ namespace ceras
         {
             reset_action_();
 
-            if constexpr( !( is_place_holder_v<Lhs_Operator> || is_variable_v<Lhs_Operator>  || is_constant_v<Lhs_Operator>  ) )
+            if constexpr( !( is_place_holder_v<Lhs_Operator> || is_constant_v<Lhs_Operator>  ) )
                 lhs_op_.reset_states();
-            if constexpr( !( is_place_holder_v<Rhs_Operator> || is_variable_v<Rhs_Operator>  || is_constant_v<Rhs_Operator>  ) )
+            if constexpr( !( is_place_holder_v<Rhs_Operator> || is_constant_v<Rhs_Operator>  ) )
                 rhs_op_.reset_states();
         }
     };
@@ -186,7 +186,7 @@ namespace ceras
                                         better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
                                         return add( lhs_tensor, rhs_tensor );
                                      },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
                                      {
                                         better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
 
@@ -225,7 +225,7 @@ namespace ceras
             {
                 return multiply( lhs_tensor, rhs_tensor );
             },
-            []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+            []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
             {
                // left branch <-- grad * rhs^T
                auto const& g_shape = grad.shape();
@@ -1307,7 +1307,7 @@ namespace ceras
             (
                 [axe]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                 {
-                    return concatenate( lhs_tensor, rhs_tensor, axe ); // TODO: inplace implementation for efficiency..... Not a lie.
+                    return concatenate( lhs_tensor, rhs_tensor, axe ); // TODO: inplace implementation for efficiency
                 },
                 [axe]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                 {

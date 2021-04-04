@@ -6,6 +6,8 @@ OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -D
 OP            = -pg -O0 -DDEBUG# -ggdb3
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
+OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 
 #CXX           = clang++
 #CXXFLAGS      = -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP) # clang++
@@ -229,6 +231,10 @@ state: test/state.cc
 concatenate: test/concatenate.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_concatenate.o test/concatenate.cc
 	$(LINK) -o $(BIN_DIR)/test_concatenate $(OBJECTS_DIR)/test_concatenate.o $(LFLAGS)
+
+copy: test/copy.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_copy.o test/copy.cc
+	$(LINK) -o $(BIN_DIR)/test_copy $(OBJECTS_DIR)/test_copy.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin
