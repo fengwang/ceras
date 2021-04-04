@@ -186,24 +186,16 @@ namespace ceras
 
         constexpr tensor( tensor const& other, unsigned long memory_offset ) : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
 
-        /*
-        std::vector<unsigned long> shape_;
-        unsigned long memory_offset_;
-        shared_vector vector_; //shared across different instances
-        */
-
         constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
         {
             vector_ = other.vector_;
             (*this).id_ = other.id_;
-            //debug_print( "Tensor copy construction: prev tensor ", other.id_, " has ", other.size(), " elements." );
         }
 
         constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
         {
             vector_ = other.vector_;
             (*this).id_ = other.id_;
-            //debug_print( "Tensor move construction: prev tensor ", other.id_, " has ", other.size(), " elements." );
         }
 
         constexpr self_type& operator = ( self_type const& other ) noexcept
@@ -212,7 +204,6 @@ namespace ceras
             memory_offset_ = other.memory_offset_;
             vector_ = other.vector_;
             (*this).id_ = other.id_;
-            //debug_print( "Tensor copy assigment: prev tensor ", other.id_, " has ", other.size(), " elements." );
             return *this;
         }
         constexpr self_type& operator = ( self_type && other ) noexcept
@@ -252,6 +243,22 @@ namespace ceras
             unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
             better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
             (*this).shape_ = new_shape;
+            return *this;
+        }
+
+        //mapping a smaller tensor on a larger one
+        constexpr self_type& shrink_to( std::vector< unsigned long > const& new_shape )
+        {
+            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
+            better_assert( (*this).size() >= new_size, "reshape: expecting smaller size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
+            (*this).shape_ = new_shape;
+            return *this;
+        }
+
+        //adjust the memory offset
+        constexpr self_type& creep_to( unsigned long new_memory_offset )
+        {
+            (*this).memory_offset_ = new_memory_offset;
             return *this;
         }
 
@@ -933,7 +940,7 @@ namespace ceras
     {
         auto l_shape = lhs.shape();
         auto r_shape = rhs.shape();
-        better_assert( (l_shape.size() == r_shape.size()), "dimension not match, lhs dim is ", l_shape.size(), ", but rhs dim is ", r_shape.size() );
+        better_assert( (l_shape.size() == r_shape.size()), "dimension not match, lhs dim is ", l_shape.size(), " and last dim ", *(l_shape.rbegin()),  ", but rhs dim is ", r_shape.size(), " where the last dim ", *(r_shape.rbegin()) );
         axis = (axis == (unsigned long)(-1)) ? (l_shape.size()-1) : axis;
         better_assert( (l_shape.size() > axis), "axis is too large: axis-", axis, " but allowed range-[0,", l_shape.size()-1, "]" );
         better_assert( (std::vector<unsigned long>{l_shape.begin(), l_shape.begin()+axis} == std::vector<unsigned long>{r_shape.begin(), r_shape.begin()+axis}) );

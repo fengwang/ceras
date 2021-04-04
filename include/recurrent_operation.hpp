@@ -29,6 +29,12 @@ namespace ceras
                 )( lhs_ex, rhs_va );
     }
 
+    //
+    // example usage:
+    //
+    //  auto x = place_holder<Tsor>{}; // 1D input, of shape (batch_size, 16)
+    //  auto l = lstm( 16, 32 )( x ); // creating a lstm layer
+    //
     inline auto lstm = []( unsigned long input_size, unsigned long unit_size )
     {
 
@@ -56,7 +62,7 @@ namespace ceras
             // c_t = \sigma (W_c * [h_t, x_t] + b_c)
             auto Wc = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
             auto bc = variable_type{ zeros<value_type>( {unit_size,} ) };
-            auto ct = sigmoid( Wc * hx + bc );
+            auto ct = tanh( Wc * hx + bc );
 
             // o_t = \sigma (W_o * [h_t, x_t] + b_o)
             auto Wo = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
