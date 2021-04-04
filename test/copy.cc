@@ -25,6 +25,11 @@ void test_1()
     std::cout << "After session, the answer is:" << ceras::squeeze(ans) << std::endl;
     std::cout << "a is udpated to " << ceras::squeeze(a) << std::endl;
 
+
+    auto ans_2 = s.run( result );
+    std::cout << "After the second session, the answer is:" << ceras::squeeze(ans_2) << std::endl;
+
+
     result.reset_states();
     std::cout << "after resetting states, a is udpated to " << ceras::squeeze(a) << std::endl;
 }

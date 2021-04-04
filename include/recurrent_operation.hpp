@@ -3,10 +3,14 @@
 
 #include "./operation.hpp"
 #include "./activation.hpp"
+#include "./variable.hpp"
 
 namespace ceras
 {
-
+    //
+    // This operator copies the contents of lhs_ex to rhs_va, returns lhs_ex;
+    // This operator is useful for recurrent operations to restore the update value
+    //
     template< Expression Lhs_Expression, Variable Rhs_Variable>
     auto constexpr copy( Lhs_Expression const& lhs_ex, Rhs_Variable const& rhs_va ) noexcept // assign lhs value to rhs value
     {
@@ -25,8 +29,53 @@ namespace ceras
                 )( lhs_ex, rhs_va );
     }
 
+    inline auto lstm = []( unsigned long input_size, unsigned long unit_size )
+    {
 
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            typedef typename Ex::tensor_type tensor_type;
+            typedef variable<tensor_type> variable_type;
+            typedef typename tensor_type::value_type value_type;
 
+            tensor_type tsor_h{ {unit_size,} }; // zero
+            auto ht = variable_type{ tsor_h, false, true }; // statefule variable, not trainable
+
+            auto hx = concatenate(-1)( ht, ex ); // size should be ( -1, unit_size+input_size )
+
+            // f_t = \sigma (W_f * [h_t, x_t] + b_f)
+            auto Wf = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
+            auto bf = variable_type{ zeros<value_type>( {unit_size,} ) };
+            auto ft = sigmoid( Wf * hx + bf );
+
+            // i_t = \sigma (W_i * [h_t, x_t] + b_i)
+            auto Wi = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
+            auto bi = variable_type{ zeros<value_type>( {unit_size,} ) };
+            auto it = sigmoid( Wi * hx + bi );
+
+            // c_t = \sigma (W_c * [h_t, x_t] + b_c)
+            auto Wc = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
+            auto bc = variable_type{ zeros<value_type>( {unit_size,} ) };
+            auto ct = sigmoid( Wc * hx + bc );
+
+            // o_t = \sigma (W_o * [h_t, x_t] + b_o)
+            auto Wo = variable_type{ glorot_uniform<value_type>( {unit_size, unit_size+input_size} ) };
+            auto bo = variable_type{ zeros<value_type>( {unit_size,} ) };
+            auto ot = sigmoid( Wo * hx + bo );
+
+            // C_t+1 = f_t * C_t + i_t * c_t
+            tensor_type tsor_c{ {unit_size,} };
+            auto C_t = variable_type{ tsor_c, false, true }; // stateful variable, not trainable
+            auto C_t_1 = elementwise_product(ft, C_t) + elementwise_product(it, ct);
+            auto CT = copy( C_t_1, C_t ); // update C_t for next iteration
+
+            // h_t+1 = o_t * tahn(C_t+1)
+            auto h_t_1 = elementwise_product( ot, tanh(CT) );
+            auto HT = copy( h_t_1, ht ); // update h_t for next iteration
+
+            return HT;
+        };
+    };
 
 }//namespace ceras
 
