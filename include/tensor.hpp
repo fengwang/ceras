@@ -561,7 +561,7 @@ namespace ceras
 
         better_assert( x_row == a_row );
         better_assert( y_col == a_col );
-        better_assert( x_col == y_row, "Expecting x_row == y_col, but x_col = ", x_col, ", and y_row = ", y_row );
+        better_assert( x_col == y_row, "Expecting x_col == y_row, but x_col = ", x_col, ", and y_row = ", y_row );
 
         gemm( x.data(), x.transposed_, y.data(), y.transposed_, x_row, x_col, y_col, ans.data() );
     }
@@ -823,6 +823,23 @@ namespace ceras
         return rhs * lhs;
     }
 
+    template< Tensor Tsor >
+    Tsor repeat( Tsor const& tsor, unsigned long n )
+    {
+        Tsor ans{ {n, tsor.size()} };
+        {
+            auto itor = ans.data();
+            for  ( auto idx : range(n) )
+                std::copy( tsor.begin(), tsor.end(), itor + idx * tsor.size() );
+
+            std::vector<unsigned long>  new_shape;
+            new_shape.push_back( n );
+            std::copy( tsor.shape().begin(), tsor.shape().end(), std::back_inserter( new_shape ) );
+            ans.reshape( new_shape );
+        }
+
+        return ans;
+    }
 
     template< Tensor Tsor >
     Tsor reduce_sum( Tsor const& tsor )
@@ -938,6 +955,20 @@ namespace ceras
     template< Tensor Tsor >
     Tsor concatenate( Tsor const& lhs, Tsor const& rhs, unsigned long axis=0 ) noexcept
     {
+        if ( lhs.ndim() < rhs.ndim() )
+            return concatenate( rhs, lhs, axis );
+
+        // axis alignment
+        if ( lhs.ndim() > rhs.ndim() )
+        {
+            unsigned long const dims_to_repeat = std::accumulate( lhs.shape().begin(), lhs.shape().begin()+lhs.ndim()-rhs.ndim(), 1UL, [](auto x, auto y ){ return x*y; } );
+            auto new_rhs = repeat( rhs, dims_to_repeat );
+            std::vector<unsigned long> new_shape{ lhs.shape().begin(), lhs.shape().begin()+lhs.ndim()-rhs.ndim() };
+            std::copy( rhs.shape().begin(), rhs.shape().end(), std::back_inserter( new_shape ) );
+            new_rhs.reshape( new_shape );
+            return concatenate( lhs, new_rhs, axis );
+        }
+
         auto l_shape = lhs.shape();
         auto r_shape = rhs.shape();
         better_assert( (l_shape.size() == r_shape.size()), "dimension not match, lhs dim is ", l_shape.size(), " and last dim ", *(l_shape.rbegin()),  ", but rhs dim is ", r_shape.size(), " where the last dim ", *(r_shape.rbegin()) );

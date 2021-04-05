@@ -115,6 +115,8 @@ namespace ceras
         std::function<void()> reset_action_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
+        //typedef decltype( std::declval<Lhs_Operator>().forward() ) tensor_type;
+
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
         tensor_type output_data_;
@@ -1307,7 +1309,7 @@ namespace ceras
             (
                 [axe]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                 {
-                    return concatenate( lhs_tensor, rhs_tensor, axe ); // TODO: inplace implementation for efficiency
+                    return concatenate( lhs_tensor, rhs_tensor, axe );
                 },
                 [axe]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                 {
@@ -1315,18 +1317,20 @@ namespace ceras
 
                     Tsor l_ans{ lhs_input.shape() };
                     Tsor r_ans{ rhs_input.shape() };
-                    better_assert( l_ans.size() + r_ans.size() == grad.size(), "size mismatch" );
-
+                    better_assert(  l_ans.size() + r_ans.size() == grad.size(), "size mismatch: lhs size is ", l_ans.size(), " rhs size is ", r_ans.size(), " and grad size is ", grad.size(),
+                                    " with lhs dim is ", l_ans.ndim(), "  and rhs dim is ", r_ans.ndim() );
 
                     // 2D view of grad
                     unsigned long const ax = (axe == (unsigned long)(-1)) ? grad.ndim()-1 : axe;
                     unsigned long const g_col = std::accumulate( grad.shape().begin()+ax, grad.shape().end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
                     unsigned long const g_row = grad.size() / g_col;
                     view_2d<value_type> v_g{ grad.data(), g_row, g_col };
+
                     // 2D view of l_ans
                     unsigned long const lhs_row = g_row;
                     unsigned long const lhs_col = lhs_input.size() / lhs_row;
                     view_2d<value_type> v_l{ l_ans.data(), lhs_row, lhs_col };
+
                     // 2D view of r_ans
                     unsigned long const rhs_row = g_row;
                     unsigned long const rhs_col = rhs_input.size() / rhs_row;
