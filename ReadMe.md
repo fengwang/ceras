@@ -1,3 +1,10 @@
+<div align="center">
+  <img src="https://github.com/fengwang/ceras/blob/main/assets/logo.png"><br><br>
+</div>
+
+----
+
+
 # CERAS: yet another tiny deep learning engine
 
 
