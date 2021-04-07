@@ -20,6 +20,7 @@ int main()
     stbi_image_free(img);
 
 
+    // test imread/imwrite
     {
         using namespace ceras::imageio;
         auto image = imread( "./assets/asset_1.png" );
@@ -30,10 +31,12 @@ int main()
             imwrite("./assets/asset_1_test.tga", image);
             imwrite("./assets/asset_1_test.bmp", image);
             imwrite("./assets/asset_1_test_no_extension", image);
+
+            auto resized_image = imresize( image, {256, 256, 4} );
+            imwrite("./assets/asset_128_128_resize.png", resized_image );
         }
+
     }
-
-
 
     return 0;
 }

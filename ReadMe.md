@@ -1,7 +1,7 @@
 # CERAS: yet another tiny deep learning engine
 
 
-__ceras__ mimiks tensorflow 1.x APIs, in pure C++20. But CUDA acceleration is only possible in _convolutional_ and _dense_ layers, as this library is written in a laptop with a GeForce GTX 1060 installed, where the device memory is luxurious.
+__ceras__ mimiks tensorflow 1.x APIs, in pure C++20. CUDA acceleration is only possible in _convolutional_ and _dense_ layers, as this library is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
 
 ----
 
@@ -9,7 +9,7 @@ __ceras__ mimiks tensorflow 1.x APIs, in pure C++20. But CUDA acceleration is on
 
 **using this library**:
 
-copy the `include` directory to your working directory, then in your source code
+copy the `include` directory to the working directory, then inclue the header file
 
 ```cpp
 #include "ceras.hpp"
@@ -18,16 +18,20 @@ copy the `include` directory to your working directory, then in your source code
 **compiliation/link**:
 
 ```bash
-clang++ -c -std=c++2a -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
-clang++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
+g++ -c -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
+g++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
 ```
 
-Enabling CUDA by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 10.2.0)
+CUDA could be optionally enabled by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 10.2.0, note the compile/link options)
 
 ```bash
-g++ -c -std=c++2a -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
+g++ -c -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
 g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_mnist ./obj/test_mnist.o -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 ```
+
+Note: As [Non-Type Template Parameters](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf) is not yet implemented in clang, only gcc works with this library.
+
+
 
 ## mnist model
 

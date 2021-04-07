@@ -4,9 +4,27 @@
 #include "../includes.hpp"
 #include "../tensor.hpp"
 #include "./better_assert.hpp"
+#include "./range.hpp"
 
 namespace ceras::imageio
 {
+    //stbir_resize_uint8( input_pixels , in_w , in_h , 0, output_pixels, out_w, out_h, 0, num_channels)
+    inline tensor<unsigned char> imresize( tensor<unsigned char> const& input_image, std::vector<unsigned long> const& output_shape )
+    {
+        std::vector<unsigned long> const& input_shape = input_image.shape();
+        tensor<unsigned char> ans{ output_shape };
+        if ( input_shape.size() == 3 )
+        {
+            better_assert( output_shape[2] == input_shape[2], "Expecting same channel for input and output, but the input channel is ", input_shape[2], " and the output channel is ", output_shape[2] );
+            stbir_resize_uint8( input_image.data(), input_shape[0], input_shape[1], 0, ans.data(), output_shape[0], output_shape[1], 0, input_shape[2] );
+        }
+        else
+        {
+            stbir_resize_uint8( input_image.data(), input_shape[0], input_shape[1], 0, ans.data(), output_shape[0], output_shape[1], 0, 2 ); // gray
+        }
+
+        return ans;
+    }
 
     inline tensor<unsigned char> imread( std::string const& path )
     {

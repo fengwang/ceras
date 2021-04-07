@@ -45,6 +45,8 @@
 #include "./utils/3rd_party/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "./utils/3rd_party/stb_image_write.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "./utils/3rd_party/stb_image_resize.h"
 
 #include "./utils/3rd_party/glob.hpp"
 

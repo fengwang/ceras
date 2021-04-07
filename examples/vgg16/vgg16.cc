@@ -1,7 +1,6 @@
 #include "../../include/ceras.hpp"
 #include "../../include/utils/range.hpp"
 #include "../../include/utils/better_assert.hpp"
-#include "../../include/utils/color.hpp"
 
 #include <fstream>
 #include <string>
