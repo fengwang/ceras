@@ -241,6 +241,10 @@ lstm_1: test/lstm_1.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_lstm_1.o test/lstm_1.cc
 	$(LINK) -o $(BIN_DIR)/test_lstm_1 $(OBJECTS_DIR)/test_lstm_1.o $(LFLAGS)
 
+vgg16: examples/vgg16/vgg16.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_vgg16.o examples/vgg16/vgg16.cc
+	$(LINK) -o $(BIN_DIR)/test_vgg16 $(OBJECTS_DIR)/test_vgg16.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
