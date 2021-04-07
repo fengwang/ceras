@@ -5,15 +5,36 @@
 ----
 
 
-# CERAS: yet another tiny deep learning engine
-
-
-__ceras__ mimiks tensorflow 1.x APIs, in pure C++20. CUDA acceleration is only possible in _convolutional_ and _dense_ layers, as this library is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
+__ceras__ is yet another tiny deep learning engine.  __ceras__ mimiks tensorflow 1.x APIs, in pure C++20 and header-only. CUDA acceleration is limited to _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
 
 ----
 
-## Example Usage:
 
+## Table of contents
+
+* [Features](#features)
+* [Build](#build)
+* [Supported layers/operations](#supported-layers)
+* [Examples](#examples)
+* [License](#license)
+* [Acknowledgements](#acknowledgements)
+* [TODO](#todo)
+
+
+----
+
+## Features
+- Fast, with/without GPU:
+    - 98% accuracy on MNIST in 10 epochs in 30s (loading dataset, training and validation on a laptop with Intel(R) Core(TM) i7-7700HQ and a mobile GTX 1060)
+- Portable.
+    - Runs anywhere as long as you have a compiler which supports C++20;
+    - A Nvidia GPU is optional for acceleration, not a must;
+    - header-only.
+- Simply implemented:
+    - mimicking TF grammar, but in C++.
+
+
+## Build
 **using this library**:
 
 copy the `include` directory to the working directory, then inclue the header file
@@ -38,11 +59,57 @@ g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_
 
 Note: As [Non-Type Template Parameters](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf) is not yet implemented in clang, only gcc works with this library.
 
+## Supported layers
++ Operations:
+    - `plus`, or operator `+`;
+    - `multiply`, or operator `*`, note this operation enables matrix-matrix multiplication, i.e., `dot` in numpy;
+    - `log`;
+    - `negative`;
+    - `elementwise_product`, or `hadamard_product`;
+    - `sum_reduct`;
+    - `mean_reduce`;
+    - `minus`, or operator `-`;
+    - `square`;
+    - `abs`;
+    - `exp`;
+    - `clip`;
+    - `reshape`;
+    - `flatten`;
+    - `identity`;
+    - `transpose`;
+    - `conv2d`;
+    - `drop_out`;
+    - `max_pooling_2d`;
+    - `average_pooling_2d`;
+    - `up_sampling_2d`;
+    - `batch_normalization`;
+    - `instance_normalization`;
+    - `concatenate`, or `concat`.
++ Activations:
+    - `softmax`;
+    - `selu`;
+    - `softplus`;
+    - `softsign`;
+    - `sigmoid`;
+    - `tanh`;
+    - `relu`;
+    - `leaky_relu`;
+    - `elu`;
+    - `exponential`;
+    - `hard_sigmoid`;
+    - `gelu`.
++ Optimizers:
+    - `sgd`;
+    - `adagrad`;
+    - `rmsprop`;
+    - `adadelta`;
+    - `adam`;
+    - `gradient_descent`.
 
 
-## mnist model
+## Examples
 
-### [defining a 3-layered NN, 256+128 hidden units](./test/mnist.cc)
+### [defining a 3-layered NN, 256+128 hidden units](./test/mnist.cc) for mnist
 
 **define the model**
 
@@ -163,6 +230,7 @@ auto ground_truth = place_holder<tensor<float>>{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
+
 ## License
 
 + AGPLv3
@@ -174,4 +242,10 @@ auto loss = cross_entropy_loss( ground_truth, output );
 + [Tensorflow 1](https://www.tensorflow.org/)
 + [TensorSlow](https://github.com/danielsabinasz/TensorSlow)
 + [Caffe](https://github.com/BVLC/caffe)
+
+## TODO
++ save/load model
++ mimicking Tensorflow::Keras grammar
++ recurrent operations
+
 
