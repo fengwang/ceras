@@ -42,12 +42,10 @@ namespace glob
                 {
                     result_string += ".*";
                 }
-
                 else if ( c == '?' )
                 {
                     result_string += ".";
                 }
-
                 else if ( c == '[' )
                 {
                     auto j = i;
@@ -71,7 +69,6 @@ namespace glob
                     {
                         result_string += "\\[";
                     }
-
                     else
                     {
                         auto stuff = std::string( pattern.begin() + i, pattern.begin() + j );
@@ -80,7 +77,6 @@ namespace glob
                         {
                             string_replace( stuff, std::string{"\\"}, std::string{R"(\\)"} );
                         }
-
                         else
                         {
                             std::vector<std::string> chunks;
@@ -90,7 +86,6 @@ namespace glob
                             {
                                 k = i + 2;
                             }
-
                             else
                             {
                                 k = i + 1;
@@ -125,7 +120,6 @@ namespace glob
                                     stuff += s;
                                     first = false;
                                 }
-
                                 else
                                 {
                                     stuff += "-" + s;
@@ -146,7 +140,6 @@ namespace glob
                         {
                             stuff = "^" + std::string( stuff.begin() + 1, stuff.end() );
                         }
-
                         else if ( stuff[0] == '^' || stuff[0] == '[' )
                         {
                             stuff = "\\\\" + stuff;
@@ -155,7 +148,6 @@ namespace glob
                         result_string = result_string + "[" + stuff + "]";
                     }
                 }
-
                 else
                 {
                     // SPECIAL_CHARS
@@ -179,7 +171,6 @@ namespace glob
                     {
                         result_string += special_characters_map[static_cast<int>( c )];
                     }
-
                     else
                     {
                         result_string += c;
@@ -233,7 +224,6 @@ namespace glob
                 s = std::string( home ) + s.substr( 1, s.size() - 1 );
                 return std::filesystem::path( s );
             }
-
             else
             {
                 return path;
@@ -280,7 +270,6 @@ namespace glob
                             {
                                 result.push_back( entry.path() );
                             }
-
                             else
                             {
                                 result.push_back( std::filesystem::relative( entry.path() ) );
@@ -368,7 +357,6 @@ namespace glob
                     result = {basename};
                 }
             }
-
             else
             {
                 if ( std::filesystem::exists( dirname / basename ) )
@@ -405,7 +393,6 @@ namespace glob
                         result.push_back( path );
                     }
                 }
-
                 else
                 {
                     // Patterns ending with a slash should match only directories
@@ -424,7 +411,6 @@ namespace glob
                 {
                     return glob2( dirname, basename, dironly );
                 }
-
                 else
                 {
                     return glob1( dirname, basename, dironly );
@@ -437,7 +423,6 @@ namespace glob
             {
                 dirs = glob( dirname, recursive, true );
             }
-
             else
             {
                 dirs = {dirname};
@@ -452,13 +437,11 @@ namespace glob
                 {
                     glob_in_dir = glob2;
                 }
-
                 else
                 {
                     glob_in_dir = glob1;
                 }
             }
-
             else
             {
                 glob_in_dir = glob0;
