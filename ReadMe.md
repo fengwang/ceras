@@ -215,8 +215,8 @@ auto l19 = Relu_Dense( 4096, 4096 )( l18 ); // 4096
 auto l20 = Relu_Dense( 1000, 4096 )( l19 ); // 1000
 auto output = l20;
 ```
-This kind of defination is kind of similar to Tensor.
 
+Very similar to the behaviour of Tensorflow::Keras.
 
 
 
