@@ -98,6 +98,10 @@ Note: As [Non-Type Template Parameters](http://www.open-std.org/jtc1/sc22/wg21/d
     - `exponential`;
     - `hard_sigmoid`;
     - `gelu`.
++ Losses:
+    - `mae`;
+    - `mse`;
+    - `cross_entropy`.
 + Optimizers:
     - `sgd`;
     - `adagrad`;
