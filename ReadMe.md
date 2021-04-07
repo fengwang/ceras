@@ -15,6 +15,7 @@ __ceras__ is yet another tiny deep learning engine.  __ceras__ mimiks tensorflow
 * [Features](#features)
 * [Build](#build)
 * [Supported layers/operations](#supported-layers)
+* [Concepts](#concepts)
 * [Examples](#examples)
 * [License](#license)
 * [Acknowledgements](#acknowledgements)
@@ -110,8 +111,114 @@ Note: As [Non-Type Template Parameters](http://www.open-std.org/jtc1/sc22/wg21/d
     - `adam`;
     - `gradient_descent`.
 
+# Concepts
+
+__TODO__
+
 
 ## Examples
+
+
+### implement VGG16
+
+First we define a convllution layer followed by a relu activation layer:
+
+```cpp
+using namespace ceras;
+typedef tensor<float> tensor_type;
+
+//
+// example: Relu_Conv( 63, 3, {224, 224, 3} )( input_of_shape_224x224x3 );
+//
+inline auto Relu_Conv2D( unsigned long output_channels,std::vector<unsigned long> const& kernel_size, std::vector<unsigned long> const& input_shape )
+{
+    return [=]<Expression Ex>( Ex const& ex )
+    {
+        unsigned long const kernel_size_x = kernel_size[0];
+        unsigned long const kernel_size_y = kernel_size[1];
+        unsigned long const input_channels = input_shape[2];
+        unsigned long const input_x = input_shape[0];
+        unsigned long const input_y = input_shape[1];
+        auto w = variable<tensor_type>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
+        return relu( conv2d( input_x, input_y, 1, 1, 1, 1, "same" )( ex, w ) );
+    };
+};
+```
+
+Then we define a dense layer followed by a relu activation layer:
+
+```cpp
+//
+// example: Relu_Dense( 512, 17 )( input_of_shape_17 );
+//
+inline auto Relu_Dense( unsigned long output_size, unsigned long input_size )
+{
+    return [=]<Expression Ex>( Ex const& ex )
+    {
+        auto w = variable<tensor_type>{ glorot_uniform<float>({input_size, output_size}) };
+        auto b = variable<tensor_type>{ zeros<float>({1, output_size}) };
+        return ex * w + b;
+    };
+}
+```
+
+The input layer for VGG16 is defined as
+```cpp
+auto input = place_holder<tensor_type>{}; //  3D tensor input, (batch_size, 224, 224, 3)
+```
+followed by a convolutional layer
+```cpp
+auto l0 = Relu_Conv2D( 64, {3, 3}, {224, 224, 3} )( input ); // 224, 224, 64
+```
+and a max pooling layer
+```cpp
+auto l1 = max_pooling_2d( 2 ) ( l0 ); // 112, 112, 64
+```
+Then 2 convolutional layers and a max pooling layer
+```cpp
+auto l2 = Relu_Conv2D( 128, {3, 3}, {112, 112, 64} )( l1 ); // 112, 112, 128
+auto l3 = Relu_Conv2D( 128, {3, 3}, {112, 112, 128} )( l2 ); // 112, 112, 128
+auto l4 = max_pooling_2d( 2 ) ( l3 ); // 56, 56, 128
+```
+followed by 3 convolutional layers and a max pooling layer
+```cpp
+auto l5 = Relu_Conv2D( 256, {3, 3}, {56, 56, 128} )( l4 ); // 56, 56, 256
+auto l6 = Relu_Conv2D( 256, {3, 3}, {56, 56, 256} )( l5 ); // 56, 56, 256
+auto l7 = Relu_Conv2D( 256, {3, 3}, {56, 56, 256} )( l6 ); // 56, 56, 256
+auto l8 = max_pooling_2d( 2 ) ( l7 ); // 28, 28, 256
+```
+followed by another 3 convolutional layers and a max pooling layer
+```cpp
+auto l9 = Relu_Conv2D( 512, {3, 3}, {28, 28, 256} )( l8 ); // 28, 28, 512
+auto l10 = Relu_Conv2D( 512, {3, 3}, {28, 28, 512} )( l9 ); // 28, 28, 512
+auto l11 = Relu_Conv2D( 512, {3, 3}, {28, 28, 512} )( l10 ); // 28, 28, 512
+auto l12 = max_pooling_2d( 2 ) ( l11 ); // 14, 14, 512
+```
+and again
+```cpp
+auto l13 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l12 ); // 14, 14, 512
+auto l14 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l13 ); // 14, 14, 512
+auto l15 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l14 ); // 14, 14, 512
+auto l16 = max_pooling_2d( 2 ) ( l15 ); // 7, 7, 512
+```
+then this 3d layer is flattened to 1d
+```cpp
+auto l17 = flatten( l16 ); // 7x7x512
+```
+followed by a dense layer
+```cpp
+auto l18 = Relu_Dense( 4096, 7*7*512 )( l17 ); // 4096
+```
+and then 2 dense layers to the output layer
+```cpp
+auto l19 = Relu_Dense( 4096, 4096 )( l18 ); // 4096
+auto l20 = Relu_Dense( 1000, 4096 )( l19 ); // 1000
+auto output = l20;
+```
+This kind of defination is kind of similar to Tensor.
+
+
+
 
 ### [defining a 3-layered NN, 256+128 hidden units](./test/mnist.cc) for mnist
 
