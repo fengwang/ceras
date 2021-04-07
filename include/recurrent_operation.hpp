@@ -1,6 +1,8 @@
 #ifndef PGHFBYNPEXGPKRRAGXCDOHPEMDJEQMLAYAEQJEKEIFFEMGSIHWSEUPSPHGAJPJFYOBKFEKGWP
 #define PGHFBYNPEXGPKRRAGXCDOHPEMDJEQMLAYAEQJEKEIFFEMGSIHWSEUPSPHGAJPJFYOBKFEKGWP
 
+#error "lstm is not well implemented yet"
+
 #include "./operation.hpp"
 #include "./activation.hpp"
 #include "./variable.hpp"
@@ -46,7 +48,6 @@ namespace ceras
     //
     inline auto lstm = []( unsigned long input_size, unsigned long unit_size )
     {
-        #warning "lstm is not well implemented yet"
         return [=]<Expression Ex>( Ex const& ex ) noexcept
         {
             typedef typename Ex::tensor_type tensor_type;

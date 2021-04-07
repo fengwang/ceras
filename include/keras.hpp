@@ -1,7 +1,7 @@
 #ifndef FDPVVYYPGVWXMBQXWGHRWCSUPLMPYCOUGCNJXTFHBXYYLGTQQRCUWHYKVMIMBEKXUXYMPKDFO
 #define FDPVVYYPGVWXMBQXWGHRWCSUPLMPYCOUGCNJXTFHBXYYLGTQQRCUWHYKVMIMBEKXUXYMPKDFO
 
-#warning "keras is not well implemented yet"
+#error "keras is not well implemented yet"
 
 #include "./keras/layer.hpp"
 #include "./keras/activation.hpp"

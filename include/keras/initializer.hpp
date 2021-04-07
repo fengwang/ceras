@@ -1,6 +1,8 @@
 #ifndef MQEBSEDSAGUXWASAOIVVIUTLNCCEPFJBCHCVUHYCBYVIFKAEBJFYHGALOWYVIUSWEVCOTHAKH
 #define MQEBSEDSAGUXWASAOIVVIUTLNCCEPFJBCHCVUHYCBYVIFKAEBJFYHGALOWYVIUSWEVCOTHAKH
 
+#error "keras is not well implemented yet"
+
 #include "../includes.hpp"
 #include "../tensor.hpp"
 #include "../variable.hpp"
