@@ -14,6 +14,7 @@
 #include "./tensor.hpp"
 #include "./variable.hpp"
 #include "./constant.hpp"
+#include "./layer.hpp"
 
 #endif//AOXWQXCBBVJUJJSDTMLRNOHUNBOARCNCRGBTAHMIKSULFJOIUGCEEGXXVRUVWTOSKPYWDJOKQ
 
