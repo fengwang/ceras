@@ -363,6 +363,12 @@ namespace ceras
         return plus( lhs_ex, negative(rhs_ex) );
     }
 
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr operator - ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return minus( lhs_ex, rhs_ex );
+    }
+
     template <Expression Ex>
     auto constexpr square( Ex const& ex ) noexcept
     {

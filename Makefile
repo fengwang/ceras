@@ -257,6 +257,10 @@ mnist_bn_mini: test/mnist_bn_mini.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_bn_mini.o test/mnist_bn_mini.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_bn_mini $(OBJECTS_DIR)/test_mnist_bn_mini.o $(LFLAGS)
 
+session: test/session.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_session.o test/session.cc
+	$(LINK) -o $(BIN_DIR)/test_session $(OBJECTS_DIR)/test_session.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
