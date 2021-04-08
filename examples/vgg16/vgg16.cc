@@ -26,9 +26,10 @@ inline auto Relu_Conv2D( unsigned long output_channels,std::vector<unsigned long
         unsigned long const input_x = input_shape[0];
         unsigned long const input_y = input_shape[1];
         auto w = variable<tensor_type>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
-        return relu( conv2d( input_x, input_y, 1, 1, 1, 1, "same" )( ex, w ) );
+        auto b = variable<tensor_type>{ zeros<float>( {1, 1, output_channels} ) };
+        return relu( conv2d( input_x, input_y, 1, 1, 1, 1, "same" )( ex, w ) + b );
     };
-};
+}
 
 //
 // example: Relu_Dense( 512, 17 )( input_of_shape_17 );
@@ -39,7 +40,7 @@ inline auto Relu_Dense( unsigned long output_size, unsigned long input_size )
     {
         auto w = variable<tensor_type>{ glorot_uniform<float>({input_size, output_size}) };
         auto b = variable<tensor_type>{ zeros<float>({1, output_size}) };
-        return ex * w + b;
+        return relu( ex * w + b );
     };
 }
 

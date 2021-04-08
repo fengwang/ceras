@@ -142,7 +142,7 @@ inline auto Relu_Conv2D( unsigned long output_channels,std::vector<unsigned long
         auto w = variable<tensor_type>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
         return relu( conv2d( input_x, input_y, 1, 1, 1, 1, "same" )( ex, w ) );
     };
-};
+}
 ```
 
 Then we define a dense layer followed by a relu activation layer:
@@ -157,7 +157,7 @@ inline auto Relu_Dense( unsigned long output_size, unsigned long input_size )
     {
         auto w = variable<tensor_type>{ glorot_uniform<float>({input_size, output_size}) };
         auto b = variable<tensor_type>{ zeros<float>({1, output_size}) };
-        return ex * w + b;
+        return relu( ex * w + b );
     };
 }
 ```

@@ -586,7 +586,7 @@ namespace ceras
         if ( l_size < r_size ) return rhs + lhs;
 
         unsigned long const repeats = l_size / r_size;
-        better_assert( (r_size * repeats) == l_size, "Dimension is not match!" );
+        better_assert( (r_size * repeats) == l_size, "Dimension does not match!" );
 
         Tsor ans = lhs.deep_copy();
         for ( auto idx : range( repeats ) )
