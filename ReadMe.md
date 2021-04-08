@@ -240,7 +240,7 @@ float learning_rate = ...;
 auto optimizer = ceras::sgd{loss, batch_size, learning_rate};
 ```
 
-In a single epoch, we first execute a forward pass on the loss, with input `x` and `ground_truth` binded:
+In a single epoch, we first execute a forward pass on the loss, with input `x` and `ground_truth` having been binded:
 ```cpp
 s.bind( x, ...);
 s.bind(ground_truth, ...);
@@ -457,8 +457,8 @@ auto loss = cross_entropy_loss( ground_truth, output );
 
 ## License
 
-+ AGPLv3
-+ Anti-996
++ AGPLv3, or
++ BSD
 
 
 ## Acknowledgements
@@ -471,5 +471,6 @@ auto loss = cross_entropy_loss( ground_truth, output );
 + save/load model
 + mimicking Tensorflow::Keras grammar
 + recurrent operations
++ provide a single-header file
 
 
