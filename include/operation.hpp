@@ -472,7 +472,16 @@ namespace ceras
                     unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
                     unsigned long const total_size = tsor.size();
                     unsigned long const batch_size = total_size / new_size;
-                    better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, got ",  batch_size*new_size, " but total input size is ", total_size );
+
+                    if constexpr( debug_mode )
+                    {
+                        debug_print( "The new_shape is " );
+                        for ( auto i : new_shape ) debug_print( i, " " );
+                        debug_print( "The tsor passed has the shape " );
+                        for ( auto i : tsor.shape() ) debug_print( i, " " );
+                        debug_print( "\n" );
+                    }
+                    better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, expect ",  batch_size*new_size, " but total input size is ", total_size, ", where batch_size is ", batch_size );
 
                     if ( !include_batch_flag )
                     {

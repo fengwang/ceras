@@ -249,6 +249,9 @@ mnist_mini: test/mnist_mini.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_mini.o test/mnist_mini.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_mini $(OBJECTS_DIR)/test_mnist_mini.o $(LFLAGS)
 
+mnist_conv2d_mini: test/mnist_conv2d_mini.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_mini.o test/mnist_conv2d_mini.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_mini $(OBJECTS_DIR)/test_mnist_conv2d_mini.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
