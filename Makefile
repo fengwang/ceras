@@ -245,6 +245,10 @@ vgg16: examples/vgg16/vgg16.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_vgg16.o examples/vgg16/vgg16.cc
 	$(LINK) -o $(BIN_DIR)/test_vgg16 $(OBJECTS_DIR)/test_vgg16.o $(LFLAGS)
 
+mnist_mini: test/mnist_mini.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_mini.o test/mnist_mini.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_mini $(OBJECTS_DIR)/test_mnist_mini.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
