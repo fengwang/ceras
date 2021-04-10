@@ -13,63 +13,32 @@
 using namespace ceras;
 typedef tensor<float> tensor_type;
 
-//
-// example: Relu_Conv( 63, 3, {224, 224, 3} )( input_of_shape_224x224x3 );
-//
-inline auto Relu_Conv2D( unsigned long output_channels,std::vector<unsigned long> const& kernel_size, std::vector<unsigned long> const& input_shape )
-{
-    return [=]<Expression Ex>( Ex const& ex )
-    {
-        unsigned long const kernel_size_x = kernel_size[0];
-        unsigned long const kernel_size_y = kernel_size[1];
-        unsigned long const input_channels = input_shape[2];
-        unsigned long const input_x = input_shape[0];
-        unsigned long const input_y = input_shape[1];
-        auto w = variable<tensor_type>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
-        auto b = variable<tensor_type>{ zeros<float>( {1, 1, output_channels} ) };
-        return relu( conv2d( input_x, input_y, 1, 1, 1, 1, "same" )( ex, w ) + b );
-    };
-}
-
-//
-// example: Relu_Dense( 512, 17 )( input_of_shape_17 );
-//
-inline auto Relu_Dense( unsigned long output_size, unsigned long input_size )
-{
-    return [=]<Expression Ex>( Ex const& ex )
-    {
-        auto w = variable<tensor_type>{ glorot_uniform<float>({input_size, output_size}) };
-        auto b = variable<tensor_type>{ zeros<float>({1, output_size}) };
-        return relu( ex * w + b );
-    };
-}
-
 int main()
 {
     random_generator.seed( 42 ); // just for reproducibility
 
-    auto input = place_holder<tensor_type>{}; //  3D tensor input, (batch_size, 224, 224, 3)
-    auto l0 = Relu_Conv2D( 64, {3, 3}, {224, 224, 3} )( input ); // 224, 224, 64
+    auto input = Input(); //  3D tensor input, (batch_size, 224, 224, 3)
+    auto l0 = relu( Conv2D( 64, {3, 3}, {224, 3, 3}, "same" )(input) ); // 224, 224, 64
     auto l1 = max_pooling_2d( 2 ) ( l0 ); // 112, 112, 64
-    auto l2 = Relu_Conv2D( 128, {3, 3}, {112, 112, 64} )( l1 ); // 112, 112, 128
-    auto l3 = Relu_Conv2D( 128, {3, 3}, {112, 112, 128} )( l2 ); // 112, 112, 128
+    auto l2 = relu( Conv2D( 128, {3, 3}, {112, 112, 64}, "same" )( l1 ) ); // 112, 112, 128
+    auto l3 = relu( Conv2D( 128, {3, 3}, {112, 112, 128}, "same" )( l2 ) ); // 112, 112, 128
     auto l4 = max_pooling_2d( 2 ) ( l3 ); // 56, 56, 128
-    auto l5 = Relu_Conv2D( 256, {3, 3}, {56, 56, 128} )( l4 ); // 56, 56, 256
-    auto l6 = Relu_Conv2D( 256, {3, 3}, {56, 56, 256} )( l5 ); // 56, 56, 256
-    auto l7 = Relu_Conv2D( 256, {3, 3}, {56, 56, 256} )( l6 ); // 56, 56, 256
+    auto l5 = relu( Conv2D( 256, {3, 3}, {56, 56, 128}, "same" )( l4 ) ); // 56, 56, 256
+    auto l6 = relu( Conv2D( 256, {3, 3}, {56, 56, 256}, "same" )( l5 ) ); // 56, 56, 256
+    auto l7 = relu( Conv2D( 256, {3, 3}, {56, 56, 256}, "same" )( l6 ) ); // 56, 56, 256
     auto l8 = max_pooling_2d( 2 ) ( l7 ); // 28, 28, 256
-    auto l9 = Relu_Conv2D( 512, {3, 3}, {28, 28, 256} )( l8 ); // 28, 28, 512
-    auto l10 = Relu_Conv2D( 512, {3, 3}, {28, 28, 512} )( l9 ); // 28, 28, 512
-    auto l11 = Relu_Conv2D( 512, {3, 3}, {28, 28, 512} )( l10 ); // 28, 28, 512
+    auto l9 = relu( Conv2D( 512, {3, 3}, {28, 28, 256}, "same" )( l8 ) ); // 28, 28, 512
+    auto l10 = relu( Conv2D( 512, {3, 3}, {28, 28, 512}, "same" )( l9 ) ); // 28, 28, 512
+    auto l11 = relu( Conv2D( 512, {3, 3}, {28, 28, 512}, "same" )( l10 ) ); // 28, 28, 512
     auto l12 = max_pooling_2d( 2 ) ( l11 ); // 14, 14, 512
-    auto l13 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l12 ); // 14, 14, 512
-    auto l14 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l13 ); // 14, 14, 512
-    auto l15 = Relu_Conv2D( 512, {3, 3}, {14, 14, 512} )( l14 ); // 14, 14, 512
+    auto l13 = relu( Conv2D( 512, {3, 3}, {14, 14, 512}, "same" )( l12 ) ); // 14, 14, 512
+    auto l14 = relu( Conv2D( 512, {3, 3}, {14, 14, 512}, "same" )( l13 ) ); // 14, 14, 512
+    auto l15 = relu( Conv2D( 512, {3, 3}, {14, 14, 512}, "same" )( l14 ) ); // 14, 14, 512
     auto l16 = max_pooling_2d( 2 ) ( l15 ); // 7, 7, 512
     auto l17 = flatten( l16 ); // 7x7x512
-    auto l18 = Relu_Dense( 4096, 7*7*512 )( l17 ); // 4096
-    auto l19 = Relu_Dense( 4096, 4096 )( l18 ); // 4096
-    auto l20 = Relu_Dense( 1000, 4096 )( l19 ); // 1000
+    auto l18 = relu( Dense( 4096, 7*7*512 )( l17 ) ); // 4096
+    auto l19 = relu( Dense( 4096, 4096 )( l18 ) ); // 4096
+    auto l20 = relu( Dense( 1000, 4096 )( l19 ) ); // 1000
     auto output = l20;
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 1000
