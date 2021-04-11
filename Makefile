@@ -273,6 +273,10 @@ layer_log: test/layer_log.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_log.o test/layer_log.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_log $(OBJECTS_DIR)/test_layer_log.o $(LFLAGS)
 
+layer_softmax: test/layer_softmax.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_softmax.o test/layer_softmax.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_softmax $(OBJECTS_DIR)/test_layer_softmax.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

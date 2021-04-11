@@ -396,7 +396,7 @@ auto loss = cross_entropy_loss( ground_truth, output );
     - `instance_normalization`;
     - `concatenate`, or `concat`.
 + [Activations](./include/activation.hpp):
-    - `softmax`;
+    - [`softmax`](#softmax);
     - `selu`;
     - `softplus`;
     - `softsign`;
@@ -459,6 +459,18 @@ this will produce a 2x2 matrix of [[2, 2], [2, 2]]. Full code is [here](./test/l
 
 this will produce a 2x2 matrix of [[0, 0], [0, ]]. Full code is [here](./test/layer_log.cc).
 
+### softmax
+
+`softmax` applies softmax on last channel elements.
+
+```cpp
+    auto a = variable{ ones<float>( {2, 2} ) };
+    auto ls = softmax(a);
+    ceras::session<ceras::tensor<double>> s;
+    std::cout <<  s.run( ls );
+```
+
+this will produce a 2x2 matrix of [[0.5, 0.5], [0.5, 0.5]]. Full code is [here](./test/layer_softmax.cc).
 
 
 ## TODO
