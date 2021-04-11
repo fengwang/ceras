@@ -369,6 +369,9 @@ auto ground_truth = place_holder<tensor<float>>{}; // 1-D, 10
 auto loss = cross_entropy_loss( ground_truth, output );
 ```
 
+Note: this convolutional model uses `drop_out`, when training this model, we should set `ceras::learning_phase = 1;`, which is the default value; and when doing prediction using this model, we should set `ceras::learning_phase = 0;`. This is also the case for `BatchNormalization`. The reason is that, the forward propagation behaviours for `drop_out` and `BatchNormalization` layers are different between the training and the prediction phase.
+
+
 ## Supported layers
 + [Operations](./include/operation.hpp):
     - [`plus`](#plus), or operator `+`;
