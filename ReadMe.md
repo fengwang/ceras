@@ -373,7 +373,7 @@ auto loss = cross_entropy_loss( ground_truth, output );
 + [Operations](./include/operation.hpp):
     - [`plus`](#plus), or operator `+`;
     - [`multiply`](#multiply), or operator `*`, note this operation implies matrix-matrix multiplication, i.e., `dot` in numpy;
-    - `log`;
+    - [`log`](#log);
     - `negative`;
     - `elementwise_product`, or `hadamard_product`;
     - `sum_reduct`;
@@ -440,13 +440,24 @@ this will produce a 2x2 matrix of `[ [1, 1], [1, 1] ]`. Full code is [here](./te
 ```cpp
     auto a = variable{ ones<float>( {2, 2} ) };
     auto b = variable{ ones<float>( {2, 2} ) };
-    auto ab = a+b; // or 'auto ab = plus( a, b );'
+    auto ab = a*b; // or 'auto ab = multiply( a, b );'
     ceras::session<ceras::tensor<double>> s;
     std::cout <<  s.run( ab );
 ```
 this will produce a 2x2 matrix of [[2, 2], [2, 2]]. Full code is [here](./test/layer_multiply.cc).
 
+### log
 
+`log` does element-wise logarithm on each element.
+
+```cpp
+    auto a = variable{ ones<float>( {2, 2} ) };
+    auto la = log(a);
+    ceras::session<ceras::tensor<double>> s;
+    std::cout <<  s.run( la );
+```
+
+this will produce a 2x2 matrix of [[0, 0], [0, ]]. Full code is [here](./test/layer_log.cc).
 
 
 

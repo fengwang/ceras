@@ -6,10 +6,9 @@ int main()
     using namespace ceras;
 
     auto a = variable{ ones<float>( {2, 2} ) };
-    auto b = variable{ ones<float>( {2, 2} ) };
-    auto ab = a+b; // or 'auto ab = multiply( a, b );'
+    auto la = log(a);
     ceras::session<ceras::tensor<double>> s;
-    std::cout <<  s.run( ab );
+    std::cout <<  s.run( la );
 
     return 0;
 }

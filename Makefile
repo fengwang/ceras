@@ -269,6 +269,10 @@ layer_multiply: test/layer_multiply.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_multiply.o test/layer_multiply.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_multiply $(OBJECTS_DIR)/test_layer_multiply.o $(LFLAGS)
 
+layer_log: test/layer_log.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_log.o test/layer_log.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_log $(OBJECTS_DIR)/test_layer_log.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
