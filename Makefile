@@ -261,6 +261,10 @@ session: test/session.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_session.o test/session.cc
 	$(LINK) -o $(BIN_DIR)/test_session $(OBJECTS_DIR)/test_session.o $(LFLAGS)
 
+layer_plus: test/layer_plus.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_plus.o test/layer_plus.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_plus $(OBJECTS_DIR)/test_layer_plus.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
