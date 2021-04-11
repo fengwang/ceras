@@ -545,7 +545,7 @@ A typical optimizer instance is `auto optimizer = gradient_decent{ loss, batch_s
     }
 ```
 
-If fix the random seed to 42 by `random_generator.seed( 42 );`, then we can get the result below:
+Fixing the random seed to 42 by `random_generator.seed( 42 );`, we can get output below:
 
 ```
 J at iteration 1: 8165.29
