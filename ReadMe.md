@@ -421,7 +421,7 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `rmsprop`;
     - `adadelta`;
     - `adam`;
-    - `gradient_descent`.
+    - [`gradient_descent`](#gradient_descent).
 
 ### plus
 
@@ -489,6 +489,100 @@ this will produce a 2x2 matrix of [[0.5, 0.5], [0.5, 0.5]]. Full code is [here](
 
 this will produce a 1x1 matrix of [1]. Full code is [here](./test/layer_mae.cc).
 
+### gradient_decent
+
+
+`gradient_decent` is an optimizer taking 3 arguments:
+
+- a loss expression
+- a batch_size
+- a learning rate
+
+A typical optimizer instance is `auto optimizer = gradient_decent{ loss, batch_size, learning_rate };`
+
+```cpp
+    // define model, a single layer NN, using softmax activation
+    auto x = place_holder<tensor<double>>{};
+    auto W = variable{ tensor<double>{ {2, 2}, {1.0, -1.0, 1.0, -1.0} } };
+    auto b = variable{ tensor<double>{{1,2}, {0.0, 0.0} } };
+    auto p = softmax( x * W + b ); // p is our model
+
+    // preparing input for the model
+    unsigned long const N = 512;
+    auto blues = randn<double>( {N, 2} ) - 2.0 * ones<double>( {N, 2} );
+    auto reds = randn<double>( {N, 2} ) + 2.0 * ones<double>( {N, 2} );
+    auto _x = concatenate( blues, reds, 0 );
+
+    // binding input to layer x
+    session<tensor<double>> s;
+    s.bind( x, _x );
+
+    // define loss here
+    auto c = place_holder<tensor<double>>{};
+    auto J = cross_entropy( c, p );
+
+    // generating output/ground_truth for the model
+    auto c_blue = tensor<double>{{1, 2}, {1.0, 0.0} };
+    auto c_blues = repmat( c_blue, N, 1 );
+    auto c_red = tensor<double>{{1, 2}, {0.0, 1.0} };
+    auto c_reds = repmat( c_red, N, 1 );
+    auto _c = concatenate( c_blues, c_reds, 0 );
+
+    // binding output to the model
+    s.bind( c, _c );
+    // define optimizer here
+    double const learning_rate = 1.0e-3;
+    auto optimizer = gradient_descent{ J, 1, learning_rate }; // J is the loss, 1 is the batch size, learning_rate is the hyper-parameter
+
+    auto const iterations = 32UL;
+    for ( auto idx = 0UL; idx != iterations; ++idx )
+    {
+        // first do forward propagation
+        auto J_result = s.run( J );
+        std::cout << "J at iteration " << idx+1 << ": " << J_result[0] << std::endl;
+        // then do backward propagation
+        s.run( optimizer );
+    }
+```
+
+If fix the random seed to 42 by `random_generator.seed( 42 );`, then we can get the result below:
+
+```
+J at iteration 1: 8165.29
+J at iteration 2: 633.804
+J at iteration 3: 9.5146
+J at iteration 4: 3.41902
+J at iteration 5: 2.33691
+J at iteration 6: 1.8801
+J at iteration 7: 1.6095
+J at iteration 8: 1.41938
+J at iteration 9: 1.27353
+J at iteration 10: 1.1565
+J at iteration 11: 1.06044
+J at iteration 12: 0.980601
+J at iteration 13: 0.913777
+J at iteration 14: 0.857562
+J at iteration 15: 0.810077
+J at iteration 16: 0.769802
+J at iteration 17: 0.735497
+J at iteration 18: 0.706139
+J at iteration 19: 0.680886
+J at iteration 20: 0.65904
+J at iteration 21: 0.640021
+J at iteration 22: 0.623354
+J at iteration 23: 0.608642
+J at iteration 24: 0.595558
+J at iteration 25: 0.58383
+J at iteration 26: 0.573235
+J at iteration 27: 0.563587
+J at iteration 28: 0.554732
+J at iteration 29: 0.546542
+J at iteration 30: 0.538911
+J at iteration 31: 0.531752
+J at iteration 32: 0.524992
+```
+
+The full code is [here](./test/optimize.cc).
 
 
 ## TODO
