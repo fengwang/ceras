@@ -265,6 +265,10 @@ layer_plus: test/layer_plus.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_plus.o test/layer_plus.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_plus $(OBJECTS_DIR)/test_layer_plus.o $(LFLAGS)
 
+layer_multiply: test/layer_multiply.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_multiply.o test/layer_multiply.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_multiply $(OBJECTS_DIR)/test_layer_multiply.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

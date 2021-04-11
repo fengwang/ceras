@@ -371,8 +371,8 @@ auto loss = cross_entropy_loss( ground_truth, output );
 
 ## Supported layers
 + [Operations](./include/operation.hpp):
-    - `plus`, or operator `+`;
-    - `multiply`, or operator `*`, note this operation implies matrix-matrix multiplication, i.e., `dot` in numpy;
+    - [`plus`](#plus), or operator `+`;
+    - [`multiply`](#multiply), or operator `*`, note this operation implies matrix-matrix multiplication, i.e., `dot` in numpy;
     - `log`;
     - `negative`;
     - `elementwise_product`, or `hadamard_product`;
@@ -420,6 +420,31 @@ auto loss = cross_entropy_loss( ground_truth, output );
     - `adam`;
     - `gradient_descent`.
 
+### plus
+
+`plus` or `+` does element-wise addition. (note broadcasting is permitted.)
+
+```cpp
+    auto a = variable{ ones<float>( {2, 2} ) };
+    auto b = variable{ zeros<float>( {2, 2} ) };
+    auto ab = a+b; // or 'auto ab = plus( a, b );'
+    ceras::session<ceras::tensor<double>> s;
+    std::cout <<  s.run( ab );
+```
+this will produce a 2x2 matrix of `[ [1, 1], [1, 1] ]`. Full code is [here](./test/layer_plus.cc).
+
+### multiply
+
+`multiply` or `*` does matrix multiplication.
+
+```cpp
+    auto a = variable{ ones<float>( {2, 2} ) };
+    auto b = variable{ ones<float>( {2, 2} ) };
+    auto ab = a+b; // or 'auto ab = plus( a, b );'
+    ceras::session<ceras::tensor<double>> s;
+    std::cout <<  s.run( ab );
+```
+this will produce a 2x2 matrix of [[2, 2], [2, 2]]. Full code is [here](./test/layer_multiply.cc).
 
 
 
