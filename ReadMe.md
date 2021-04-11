@@ -489,7 +489,7 @@ this will produce a 2x2 matrix of [[0.5, 0.5], [0.5, 0.5]]. Full code is [here](
 
 this will produce a 1x1 matrix of [1]. Full code is [here](./test/layer_mae.cc).
 
-### gradient_decent
+### gradient_descent
 
 
 `gradient_decent` is an optimizer taking 3 arguments:
