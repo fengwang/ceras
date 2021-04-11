@@ -314,7 +314,7 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr hadamard_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return elementwise_multiply( lhs_ex, rhs_ex );
+        return elementwise_product( lhs_ex, rhs_ex );
     }
 
     template <Expression Ex>
