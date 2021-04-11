@@ -409,7 +409,7 @@ auto loss = cross_entropy_loss( ground_truth, output );
     - `hard_sigmoid`;
     - `gelu`.
 + [Losses](./include/loss.hpp):
-    - `mae`;
+    - [`mae`](#mae);
     - `mse`;
     - `cross_entropy`.
 + [Optimizers](./include/optimizer.hpp):
@@ -471,6 +471,21 @@ this will produce a 2x2 matrix of [[0, 0], [0, ]]. Full code is [here](./test/la
 ```
 
 this will produce a 2x2 matrix of [[0.5, 0.5], [0.5, 0.5]]. Full code is [here](./test/layer_softmax.cc).
+
+### mae
+
+`mae` gives out mean absolute error.
+
+```cpp
+    auto a = variable{ ones<float>( {2, 2} ) };
+    auto b = variable{ zeros<float>( {2, 2} ) };
+    auto ab = mae(a, b);
+    ceras::session<ceras::tensor<double>> s;
+    std::cout <<  s.run( ab );
+```
+
+this will produce a 1x1 matrix of [1]. Full code is [here](./test/layer_mae.cc).
+
 
 
 ## TODO

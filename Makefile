@@ -277,6 +277,10 @@ layer_softmax: test/layer_softmax.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_softmax.o test/layer_softmax.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_softmax $(OBJECTS_DIR)/test_layer_softmax.o $(LFLAGS)
 
+layer_mae: test/layer_mae.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_mae.o test/layer_mae.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_mae $(OBJECTS_DIR)/test_layer_mae.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
