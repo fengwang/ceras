@@ -26,11 +26,12 @@ __ceras__ is yet another tiny deep learning engine.  This library mimiks tensorf
 - Fast, with/without GPU:
     - 98% accuracy on MNIST in 10 epochs in 30s (loading dataset, training and validation on a laptop with Intel(R) Core(TM) i7-7700HQ and a mobile GTX 1060)
 - Portable:
-    - Runs anywhere as long as you have a compiler which supports C++20;
-    - A Nvidia GPU is optional for acceleration, not a must;
+    - compiles anywhere as long as your compiler supports C++20;
+    - CUDA acceleration is optional, not a must;
     - header-only.
 - Simply implemented:
     - mimicking Tensorflow grammar, but in C++.
+    - minimizing the levels of indirection to expose as many implementation details as possible.
 
 
 ## Build
