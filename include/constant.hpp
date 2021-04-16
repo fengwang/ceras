@@ -11,7 +11,7 @@ namespace ceras
 {
 
     template< Tensor Tsor >
-    struct constant : enable_shared<constant<Tsor>>
+    struct constant// : enable_shared<constant<Tsor>>
     {
         typedef Tsor tensor_type;
 
@@ -47,6 +47,8 @@ namespace ceras
 
     template< typename T >
     concept Constant = is_constant_v<T>;
+
+
 
 }//namespace ceras
 

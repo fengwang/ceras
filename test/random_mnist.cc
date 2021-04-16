@@ -1,9 +1,7 @@
 #include "../include/ceras.hpp"
-#include "../include/layer.hpp"
 #include "../include/utils/range.hpp"
 #include "../include/utils/better_assert.hpp"
 #include "../include/utils/color.hpp"
-#include "../include/utils/tqdm.hpp"
 
 #include <fstream>
 #include <string>
@@ -35,7 +33,6 @@ int main()
     ceras::random_generator.seed( 42 );
     //load training set
     std::vector<std::uint8_t> training_images = load_binary( training_image_path ); // [u32, u32, u32, u32, uint8, uint8, ... ]
-    std::vector<std::uint8_t> training_labels = load_binary( training_label_path ); // [u32, u32, uint8, uint8, ... ]
 
 
     // define computation graph, a 3-layered dense net with topology 784x256x128x10
@@ -44,66 +41,33 @@ int main()
     auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
-
-    /*
-    // 1st layer
-    auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    //auto b1 = variable{ zeros<float>( { 1, 256 } ) };
-    auto b1 = variable{ zeros<float>( { 256, } ) };
-    auto l1 = relu( input * w1 + b1 );
-    */
-
-    auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
-
-    /*
-    // 2nd layer
-    auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    //auto b2 = variable{ zeros<float>( { 1, 128 } ) };
-    auto b2 = variable{ zeros<float>( { 128, } ) };
-    //auto l2 = relu( l1 * w2 + b2 );
-    auto l2 = sigmoid( l1 * w2 + b2 );
-    */
-
-    auto output = Dense( 10, 128 )( l2 );
-
-
-    /*
-    // 3rd layer
-    auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
-    //auto b3 = variable{ zeros<float>( { 1, 10 } ) };
-    auto b3 = variable{ zeros<float>( { 10, } ) };
-    auto output = l2 * w3 + b3;
-    */
+    auto l2 = relu( Dense( 16, 256 )( l1 ) );
+    auto l3 = relu( Dense( 256, 16 )( l2 ) );
+    auto l4 = tanh( Dense( 28*28, 256 )( l3 ) );
+    auto output = l4;
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
-    auto loss = cross_entropy_loss( ground_truth, output );
+    auto loss = mse( ground_truth, output );
 
-    // preparing training
     std::size_t const batch_size = 10;
-    //std::size_t const batch_size = 10;
-    //std::size_t const batch_size = 20000;
     tensor_type input_images{ {batch_size, 28*28} };
-    tensor_type output_labels{ {batch_size, 10} };
 
-    //std::size_t const epoch = 100;
-    std::size_t const epoch = 10;
+    std::size_t const epoch = 1;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
     session<tensor_type> s;
     s.bind( input, input_images );
-    s.bind( ground_truth, output_labels );
+    s.bind( ground_truth, input_images );
 
     // proceed training
     float learning_rate = 1.0e-1f;
-    //float learning_rate = 1.0e-1f;
-    //float learning_rate = 5.0e-1f;
     auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
 
-    for ( [[maybe_unused]] auto e : range( epoch ) )
+    for ( auto e : range( epoch ) )
     {
 
-        for ( [[maybe_unused]] auto i : tq::trange( iteration_per_epoch ) )
+        for ( auto i : range( iteration_per_epoch ) )
         {
             // generate images
             std::size_t const image_offset = 16 + i * batch_size * 28 * 28;
@@ -111,18 +75,8 @@ int main()
                 input_images[j] = static_cast<float>(training_images[j+image_offset]) / 127.5f - 1.0f;
             better_assert( !has_nan( input_images ), "input_images has nan at iteration ", i );
 
-            // generating labels
-            std::size_t const label_offset = 8 + i * batch_size * 1;
-            std::fill_n( output_labels.data(), output_labels.size(), 0.0f ); //reset
-            for ( auto j : range( batch_size * 1 ) )
-            {
-                std::size_t const label = static_cast<std::size_t>(training_labels[j+label_offset]);
-                output_labels[j*10+label] = 1.0f;
-            }
-            better_assert( !has_nan( output_labels ), "output_labels has nan at iteration ", i );
-
             auto current_error = s.run( loss );
-            //std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << current_error[0] << "\r" << std::flush;
+            std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << current_error[0] << "\r" << std::flush;
             better_assert( !has_nan(current_error), "Error in current loss." );
             s.run( optimizer );
         }
@@ -135,13 +89,10 @@ int main()
     unsigned long const new_batch_size = 1;
 
     std::vector<std::uint8_t> testing_images = load_binary( testing_image_path );
-    std::vector<std::uint8_t> testing_labels = load_binary( testing_label_path );
     std::size_t const testing_iterations = 10000 / new_batch_size;
 
     tensor<float> new_input_images{ {new_batch_size, 28 * 28} };
     s.bind( input, new_input_images );
-
-    unsigned long errors = 0;
 
     for ( auto i = 0UL; i != testing_iterations; ++i )
     {
@@ -151,22 +102,7 @@ int main()
             new_input_images[j] = static_cast<float>( testing_images[j + image_offset] ) / 127.5f - 1.0f;
 
         auto prediction = s.run( output );
-        prediction.reshape( {prediction.size(), } );
-        std::size_t const predicted_number = std::max_element( prediction.begin(), prediction.end() ) - prediction.begin();
-
-        std::size_t const label_offset = 8 + i * new_batch_size * 1;
-        std::size_t const ground_truth = testing_labels[label_offset];
-
-        if ( predicted_number != ground_truth )
-        {
-            errors += 1;
-            std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth << std::endl;
-        }
-
     }
-
-    float const err = 1.0 * errors / 10000;
-    std::cout << "Prediction error on the testing set is " << err << std::endl;
 
     return 0;
 }

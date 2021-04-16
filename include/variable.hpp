@@ -63,7 +63,7 @@ namespace ceras
             if (!trainable_) return;
 
             auto& state = *((*this).state_);
-            state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times
+            state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
             auto& ss = get_default_session<Tsor>().get();
             ss.remember( *this );
         }

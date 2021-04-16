@@ -281,6 +281,14 @@ layer_mae: test/layer_mae.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_mae.o test/layer_mae.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_mae $(OBJECTS_DIR)/test_layer_mae.o $(LFLAGS)
 
+conv2d_se: test/conv2d_se.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_conv2d_se.o test/conv2d_se.cc
+	$(LINK) -o $(BIN_DIR)/test_conv2d_se $(OBJECTS_DIR)/test_conv2d_se.o $(LFLAGS)
+
+maximum: test/maximum.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_maximum.o test/maximum.cc
+	$(LINK) -o $(BIN_DIR)/test_maximum $(OBJECTS_DIR)/test_maximum.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

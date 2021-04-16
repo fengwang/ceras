@@ -337,6 +337,12 @@ namespace ceras
     }
 
     template <Expression Ex>
+    auto constexpr reduce_sum( Ex const& ex ) noexcept
+    {
+        return sum_reduce( ex );
+    }
+
+    template <Expression Ex>
     auto constexpr mean_reduce( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
@@ -355,6 +361,12 @@ namespace ceras
                                         return ans;
                                     }
                 )( ex );
+    }
+
+    template <Expression Ex>
+    auto constexpr reduce_mean( Ex const& ex ) noexcept
+    {
+        return mean_reduce( ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -755,8 +767,8 @@ namespace ceras
                 better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total );
                 unsigned long const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
-                row_padding = row_padding_total >> 1;
-                col_padding = col_padding_total >> 1;
+                row_padding = ((row_kernel&1)+row_padding_total) >> 1;
+                col_padding = ((col_kernel&1)+col_padding_total) >> 1;
             }
 
             unsigned long const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
@@ -1387,6 +1399,45 @@ namespace ceras
     inline auto concat( unsigned long axe = -1 )
     {
         return concatenate( axe );
+    }
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr maximum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> mask_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "tensor shape mismatch." );
+
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+                mask.resize( lhs_tensor.shape() );
+
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), mask.begin(), []( auto const l, auto const r, auto& a, auto& m ) { m = l > r ? 1.0 : 0.0; a = l > r ? l : r; } );
+
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+
+                Tsor& l_ans = context_cast<Tsor>( backward_cache_lhs );
+                l_ans.resize( lhs_input.shape() );
+                Tsor& r_ans = context_cast<Tsor>( backward_cache_rhs );
+                r_ans.resize( rhs_input.shape() );
+
+                for_each( grad.begin(), grad.end(), mask.begin(), l_ans.begin(), r_ans.begin(), []( auto const g, auto const m, auto& l, auto& r ) { if ( m > 0.5 ) { l = g; r = 0.0; } else { l = 0.0; r = g; } } );
+
+                return std::make_tuple( l_ans, r_ans );
+            },
+            "Maximum"
+        )( lhs_ex, rhs_ex );
     }
 
 }//namespace ceras

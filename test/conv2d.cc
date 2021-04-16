@@ -141,7 +141,7 @@ void test_55_33_same_back()
     auto grad = ceras::ones<double>( {1, 5, 5, 1} );
     cab.backward( grad );
 
-    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(va.gradient()) << std::endl;
 }
 
 void test_55_33_same_back_s2()
@@ -168,7 +168,7 @@ void test_55_33_same_back_s2()
     auto grad = ceras::ones<double>( {1, 5, 5, 1} );
     cab.backward( grad );
 
-    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(va.gradient()) << std::endl;
 }
 
 void test_66_33_same()
@@ -195,7 +195,7 @@ void test_66_33_same()
     auto grad = ceras::ones<double>( {1, 2, 2, 1} );
     cab.backward( grad );
 
-    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+    std::cout << "after backward, gradient for a is updated to :\n" << ceras::squeeze(va.gradient()) << std::endl;
 }
 
 int main()

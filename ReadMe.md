@@ -397,7 +397,8 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `up_sampling_2d`;
     - `batch_normalization`;
     - `instance_normalization`;
-    - `concatenate`, or `concat`.
+    - `concatenate`, or `concat`;
+    - `maximum`.
 + [Activations](./include/activation.hpp):
     - [`softmax`](#softmax);
     - `selu`;
@@ -603,3 +604,7 @@ The full code is [here](./test/optimize.cc).
 + [Tensorflow 1](https://www.tensorflow.org/)
 + [TensorSlow](https://github.com/danielsabinasz/TensorSlow)
 + [Caffe](https://github.com/BVLC/caffe)
++ [stb](https://github.com/nothings/stb)
++ [glob](https://github.com/p-ranav/glob)
++ [tqdm-cpp](https://github.com/mraggi/tqdm-cpp)
+

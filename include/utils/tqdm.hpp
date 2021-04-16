@@ -1,3 +1,9 @@
+// Example Usage:
+//
+// for (int a : tq::trange(10) ) { ... }
+//
+// vector<int> A;
+// for (int a : tq::dm(A) ) { ... }
 //
 // credit goes to Miguel Raggi https://raw.githubusercontent.com/mraggi/dm-cpp/master/dm.hpp
 //
