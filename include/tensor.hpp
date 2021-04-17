@@ -170,17 +170,14 @@ namespace ceras
         constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{ shape }, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
         {
             better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
-            //debug_print( "Creating a tensor from <shape,<init>> ", (*this).id_, " and size ", (*this).size() );
         }
 
         constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
         {
-            //debug_print( "Creating a tensor from <shape> ", (*this).id_, " and size ", (*this).size() );
         }
 
         constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
         {
-            //debug_print( "Creating a tensor from <shape,init> ", (*this).id_, " and size ", (*this).size() );
             std::fill( begin(), end(), init );
         }
 
@@ -212,7 +209,6 @@ namespace ceras
             memory_offset_ = other.memory_offset_;
             vector_ = other.vector_;
             (*this).id_ = other.id_;
-            //debug_print( "Tensor move assigment: prev tensor ", other.id_, " has ", other.size(), " elements." );
             return *this;
         }
 
@@ -497,7 +493,7 @@ namespace ceras
     {
         if constexpr( cuda_mode == 0 )
         {
-            cuda_gemm_threshold = std::numeric_limits<unsigned long>::max();
+            cuda_gemm_threshold = std::numeric_limits<unsigned long>::max(); // very larger threshold to stop from using CUDA
         }
         else
         {
@@ -566,7 +562,7 @@ namespace ceras
         gemm( x.data(), x.transposed_, y.data(), y.transposed_, x_row, x_col, y_col, ans.data() );
     }
 
-    // always taking channel last data formate
+    // always prefer channel-last data format
     // Example:
     //
     // ( 3x2 )  + ( 1x2 )  --> ( 3x2 )
@@ -645,6 +641,28 @@ namespace ceras
     }
 
     template< Tensor Tsor >
+    Tsor operator * ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
+    {
+        auto ans = rhs.deep_copy();
+        ans.map( [lhs]( auto& v ){ v *= lhs; } );
+        return ans;
+    }
+
+    template< Tensor Tsor >
+    Tsor operator * ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    {
+        return rhs * lhs;
+    }
+
+    template< Tensor Tsor >
+    Tsor operator / ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    {
+        auto ans = lhs.deep_copy();
+        ans.map( [rhs]( auto& v ){ v /= rhs; } );
+        return ans;
+    }
+
+    template< Tensor Tsor >
     Tsor reshape( Tsor const& ts, std::vector<unsigned long> const& new_shape )
     {
         Tsor ans = ts;
@@ -671,11 +689,9 @@ namespace ceras
             view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
             view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
             auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
-            //Tsor ans{ std::vector<unsigned long>{ {row, col} } };
             ans.resize( {row, col} );
             view_2d<value_type> z{ ans.data(), row, col };
             gemm( x, y, z );
-            //return ans;
             return;
         }
         better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
@@ -687,59 +703,6 @@ namespace ceras
         Tsor ans;
         multiply( lhs, rhs, ans );
         return ans;
-
-#if 0
-        if ( 1 == lhs.ndim() )
-            return multiply( reshape( lhs, {1UL, lhs.size()} ), rhs );
-
-        if ( 1 == rhs.ndim() )
-            return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ) );
-
-        better_assert( 2 == rhs.ndim(), "expecting rhs tensor has 2 dimensions, but got ", rhs.ndim() );
-
-        if ( 2 == lhs.ndim() )
-        {
-            typedef typename Tsor::value_type value_type;
-            auto const& lhs_shape = lhs.shape();
-            auto const& rhs_shape = rhs.shape();
-
-            view_2d<value_type> const x{ lhs.data(), lhs_shape[0], lhs_shape[1] };
-            view_2d<value_type> const y{ rhs.data(), rhs_shape[0], rhs_shape[1] };
-            auto const [row, col] = std::make_pair( lhs_shape[0], rhs_shape[1] );
-            Tsor ans{ std::vector<unsigned long>{ {row, col} } };
-            view_2d<value_type> z{ ans.data(), row, col };
-            gemm( x, y, z );
-            return ans;
-        }
-
-        /*
-        if ( 3 == lhs.ndim() )
-        {
-            typedef typename Tsor::value_type value_type;
-            auto const& lhs_shape = lhs.shape();
-            auto const [batch_size, r, c] = std::make_tuple( lhs_shape[0], lhs_shape[1], lhs_shape[2] );
-            auto const& rhs_shape = rhs.shape();
-            auto const [_r, _c] = std::make_tuple( rhs_shape[0], rhs_shape[1]  );
-
-            better_assert( c == _r, "expecting dimension match, but last dim of lhs is ", c, ", and first dim of rhs is ", _r );
-
-            Tsor ans{ std::vector<unsigned long>{ {batch_size, r, _c} } };
-            view_2d<value_type> const y{ rhs.data(), _r, _c };
-            for ( auto bs : range( batch_size ) )
-            {
-                view_2d<value_type> const x{ lhs.data()+bs*r*c, r, c };
-                view_2d<value_type> z{ ans.data()+r*_c, r, _c };
-                gemm( x, y, z );
-            }
-
-            return ans;
-        }
-        */
-
-        better_assert( false, "dimension not match, lhs dimension is ", lhs.ndim() );
-
-        return Tsor{};
-#endif
     }
 
     template< Tensor Tsor >
@@ -747,7 +710,6 @@ namespace ceras
     {
         return multiply( lhs, rhs );
     }
-
 
     // caution: only valid for channel last case
     template< Tensor Tsor >
@@ -765,25 +727,10 @@ namespace ceras
             for ( auto jdx : range( r_size ) )
             {
                 ans[idx*r_size+jdx] *= rhs[jdx];
-                //ans[idx*r_size+jdx] *= rhs[jdx];
             }
 
         return ans;
     }
-
-    /*
-    template< Tensor Tsor >
-    Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
-    {
-        better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
-        better_assert( !has_nan( lhs ), "elementwise_product: lhs tensor contains Nan!" );
-        better_assert( !has_nan( rhs ), "elementwise_product: rhs tensor contains Nan!" );
-
-        Tsor ans{ lhs.shape() };
-        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x*y; } );
-        return ans;
-    }
-    */
 
     template< Tensor Tsor >
     Tsor hadamard_product( Tsor const& lhs, Tsor const& rhs ) noexcept
@@ -798,28 +745,6 @@ namespace ceras
         Tsor ans{ lhs.shape() };
         for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x/y; } );
         return ans;
-    }
-
-    template< Tensor Tsor > requires std::floating_point<typename Tsor::value_type>
-    Tsor operator / ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
-    {
-        Tsor ans = lhs.deep_copy();
-        for_each( ans.begin(), ans.end(), [&rhs]( auto& x ){ x /= rhs; } );
-        return ans;
-    }
-
-    template< Tensor Tsor >
-    Tsor operator * ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
-    {
-        auto ans = rhs.deep_copy();
-        ans *= lhs;
-        return ans;
-    }
-
-    template< Tensor Tsor >
-    Tsor operator * ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
-    {
-        return rhs * lhs;
     }
 
     template< Tensor Tsor >
@@ -1205,9 +1130,7 @@ namespace ceras
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
     Tsor variance( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
     {
-        //std::cerr << "variance input got:\n" << ts << std::endl;
         Tsor x = mean( ts, axis, true );
-        //std::cerr << "variance got:\n" << x << std::endl;
         x = x - ts;
         for_each( x.begin(), x.end(), [](auto& v){ v *= v; } );
         return mean( x, axis, keepdims );

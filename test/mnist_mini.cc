@@ -38,42 +38,16 @@ int main()
     std::vector<std::uint8_t> training_labels = load_binary( training_label_path ); // [u32, u32, uint8, uint8, ... ]
 
 
-    // define computation graph, a 3-layered dense net with topology 784x256x128x10
+    // define computation graph, a 3-layer dense net with topology 784x256x128x10
     using namespace ceras;
     typedef tensor<float> tensor_type;
     auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
 
-    /*
-    // 1st layer
-    auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    //auto b1 = variable{ zeros<float>( { 1, 256 } ) };
-    auto b1 = variable{ zeros<float>( { 256, } ) };
-    auto l1 = relu( input * w1 + b1 );
-    */
-
     auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
 
-    /*
-    // 2nd layer
-    auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    //auto b2 = variable{ zeros<float>( { 1, 128 } ) };
-    auto b2 = variable{ zeros<float>( { 128, } ) };
-    //auto l2 = relu( l1 * w2 + b2 );
-    auto l2 = sigmoid( l1 * w2 + b2 );
-    */
-
     auto output = Dense( 10, 128 )( l2 );
-
-
-    /*
-    // 3rd layer
-    auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
-    //auto b3 = variable{ zeros<float>( { 1, 10 } ) };
-    auto b3 = variable{ zeros<float>( { 10, } ) };
-    auto output = l2 * w3 + b3;
-    */
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
