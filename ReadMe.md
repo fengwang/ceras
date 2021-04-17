@@ -416,7 +416,8 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
 + [Losses](./include/loss.hpp):
     - [`mae`](#mae);
     - `mse`;
-    - `cross_entropy`.
+    - `cross_entropy`;
+    - `hinge_loss`.
 + [Optimizers](./include/optimizer.hpp):
     - `sgd`;
     - `adagrad`;
