@@ -19,6 +19,7 @@ namespace ceras
     // an operator is composed of
     // 1. a left operator, a right operator and a lambda function, OR
     // 2. an operator and a lambda function
+    //
 
     template< typename Operator, typename Forward_Action, typename Backward_Action >
     struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
@@ -488,14 +489,6 @@ namespace ceras
                     unsigned long const total_size = tsor.size();
                     unsigned long const batch_size = total_size / new_size;
 
-                    if constexpr( debug_mode )
-                    {
-                        debug_print( "The new_shape is " );
-                        for ( auto i : new_shape ) debug_print( i, " " );
-                        debug_print( "The tsor passed has the shape " );
-                        for ( auto i : tsor.shape() ) debug_print( i, " " );
-                        debug_print( "\n" );
-                    }
                     better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, expect ",  batch_size*new_size, " but total input size is ", total_size, ", where batch_size is ", batch_size );
 
                     if ( !include_batch_flag )

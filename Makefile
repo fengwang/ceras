@@ -7,8 +7,8 @@ OP            = -pg -O0 -DDEBUG# -ggdb3
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 #CXX           = clang++
 #CXXFLAGS      = -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 $(OP) # clang++
@@ -296,6 +296,10 @@ value: test/value.cc
 hinge_loss: test/hinge_loss.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_hinge_loss.o test/hinge_loss.cc
 	$(LINK) -o $(BIN_DIR)/test_hinge_loss $(OBJECTS_DIR)/test_hinge_loss.o $(LFLAGS)
+
+mnist_restore: test/mnist_restore.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_restore.o test/mnist_restore.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_restore $(OBJECTS_DIR)/test_mnist_restore.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

@@ -34,7 +34,6 @@ namespace ceras
         return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
                                         better_assert( !input.empty(), "softmax forward: input tensor is empty!" );
-                                        debug_print( "softmax forwarding, input tensor has ", input.size(),  " elements." );
                                         Tsor x = deep_copy( input );
                                         std::size_t const last_dim = *(x.shape().rbegin());
                                         std::size_t const rest_dim = x.size() / last_dim;
@@ -153,7 +152,6 @@ namespace ceras
         //TODO: optimize backward_cache out by reusing grad
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
-                                        debug_print( "Sigmoid operator forwarded with tensor ", input.id_ );
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
                                         std::copy( input.begin(), input.end(), ans.begin() );

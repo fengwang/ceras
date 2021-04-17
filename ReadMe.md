@@ -3,7 +3,7 @@
 ----
 
 
-__ceras__ is yet another tiny deep learning engine.  This library mimiks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional to _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
+__ceras__ is yet another tiny deep learning engine based on C++ expression templates.  This library mimicks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional to _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
 
 ----
 
