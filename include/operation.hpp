@@ -19,43 +19,8 @@ namespace ceras
     // 1. a left operator, a right operator and a lambda function, OR
     // 2. an operator and a lambda function
 
-    template< typename Unary_Operator >
-    struct enable_log
-    {
-        enable_log( )
-        {
-            auto& zen = static_cast<Unary_Operator&>(*this);
-            debug_print( zen.name_, " created with id ", zen.id_ );
-        }
-        enable_log( enable_log const& ) noexcept
-        {
-            auto& zen = static_cast<Unary_Operator&>(*this);
-            debug_print( zen.name_, " created by copying, get id ", zen.id_ );
-        }
-        enable_log( enable_log && ) noexcept
-        {
-            auto& zen = static_cast<Unary_Operator&>(*this);
-            debug_print( zen.name_, " created by moving, get id ", zen.id_ );
-        }
-
-        enable_log& operator = ( enable_log const& ) noexcept
-        {
-            auto& zen = static_cast<Unary_Operator&>(*this);
-            debug_print( zen.name_, " copy assignment, get id ", zen.id_ );
-            return *this;
-        }
-
-        enable_log& operator = ( enable_log && ) noexcept
-        {
-            auto& zen = static_cast<Unary_Operator&>(*this);
-            debug_print( zen.name_, " move assignment, get id ", zen.id_ );
-            return *this;
-        }
-    };
-
     template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">,
-                            enable_log<unary_operator<Operator, Forward_Action, Backward_Action>>
+    struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
     {
         Operator op_;
         Forward_Action forward_action_;
@@ -105,8 +70,7 @@ namespace ceras
     };
 
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">,
-                            enable_log<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>>//,
+    struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">
     {
         Lhs_Operator lhs_op_;
         Rhs_Operator rhs_op_;

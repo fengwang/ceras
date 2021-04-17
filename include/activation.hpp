@@ -51,10 +51,8 @@ namespace ceras
                                     []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
                                     {
                                         better_assert( !has_nan( grad ), "backprop: upcoming gradient for activation softmax contains NaN" );
-                                        //Tsor ans{ output.shape() };
-                                        //for_each( ans.begin(), ans.end(), output.begin(), grad.begin(), []( auto & a, auto o, auto g ){ a = g * o * ( typename Tsor::value_type{1} - o ); } );
                                         Tsor ans = grad;
-                                        for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ) { a *= o * ( typename Tsor::value_type{1} - 0 ); } );
+                                        for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ) { a *= o * ( typename Tsor::value_type{1} - o ); } );
                                         return ans;
                                     },
                                     "Softmax"
