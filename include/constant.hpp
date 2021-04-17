@@ -13,6 +13,26 @@ namespace ceras
     template< Tensor Tsor >
     struct constant// : enable_shared<constant<Tsor>>
     {
+        // Tsor is a shallow copy, and once an instance is initialized,it will never change
+        Tsor  data_;
+
+        void backward( auto ) const {}
+
+        Tsor forward() const
+        {
+            return data_;
+        }
+
+        auto shape() const
+        {
+            return data_.shape();
+        }
+    };
+
+    /*
+    template< Tensor Tsor >
+    struct constant// : enable_shared<constant<Tsor>>
+    {
         typedef Tsor tensor_type;
 
         std::shared_ptr<Tsor> data_;
@@ -35,6 +55,7 @@ namespace ceras
             return (*data_).shape();
         }
     };//struct constant
+    */
 
     template< typename T >
     struct is_constant : std::false_type {};
