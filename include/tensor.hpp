@@ -1246,37 +1246,6 @@ namespace ceras
         read_tensor( ifs, ans );
         ifs.close();
         return ans;
-
-#if 0
-        std::ifstream ifs( file_name );
-        better_assert( ifs.good(), "tensor::loadtxt: failed to open file ", file_name );
-
-        // read the first line to extract shape
-        std::vector<unsigned long> shape;
-        {
-            std::string s_shape;
-            std::getline( ifs, s_shape );
-            std::stringstream ss( s_shape );
-            std::copy( std::istream_iterator<unsigned long>( ss ), std::istream_iterator<unsigned long>(), std::back_inserter( shape ) );
-        }
-
-        // read the data
-        std::vector< T > buff;
-        {
-            std::stringstream iss;
-            std::copy( std::istreambuf_iterator< char >( ifs ), std::istreambuf_iterator< char >(), std::ostreambuf_iterator< char >( iss ) );
-            std::copy( std::istream_iterator< T >( iss ), std::istream_iterator< T >(), std::back_inserter( buff ) );
-        }
-
-
-        // copy and return
-        tensor<T,A> ans{ shape };
-        {
-            better_assert( ans.size() == buff.size(), "tensor::loadtxt: shape suggests size of ", ans.size(), " but got ", buff.size() );
-            std::copy( buff.begin(), buff.end(), ans.begin() );
-        }
-        return ans;
-#endif
     }
 
     template< Tensor Tsor >
@@ -1285,18 +1254,6 @@ namespace ceras
         std::ofstream ofs{ file_name };
         write_tensor( ofs, tsor );
         ofs.close();
-#if 0
-        std::ofstream ofs{ file_name };
-        {//write shape
-            auto const& shape = tsor.shape();
-            std::copy( shape.begin(), shape.end(), std::ostream_iterator<unsigned long>{ ofs, " " } );
-            ofs << "\n";
-        }
-        {//write data
-            std::copy( tsor.begin(), tsor.end(), std::ostream_iterator<typename Tsor::value_type>{ ofs, " " } );
-        }
-        ofs.close();
-#endif
     }
 
     template< typename T >
