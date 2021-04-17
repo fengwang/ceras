@@ -603,6 +603,20 @@ namespace ceras
     }
 
     template< Tensor Tsor >
+    Tsor operator + ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
+    {
+        auto ans = rhs.deep_copy();
+        ans.map( [lhs]( auto& v ){ v += lhs; } );
+        return ans;
+    }
+
+    template< Tensor Tsor >
+    Tsor operator + ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    {
+        return rhs + lhs;
+    }
+
+    template< Tensor Tsor >
     Tsor minus( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
         return add( lhs, -rhs );
@@ -620,21 +634,6 @@ namespace ceras
         auto ans = rhs.deep_copy();
         ans.map( [lhs]( auto& v ){ v = lhs - v; } );
         return ans;
-        /*
-        unsigned long const l_size = lhs.size();
-        unsigned long const r_size = rhs.size();
-        if ( l_size < r_size ) return (-rhs) + lhs;
-
-        unsigned long const repeats = l_size / r_size;
-        better_assert( (r_size * repeats) == l_size, "Dimension is not match!" );
-
-        Tsor ans = lhs.deep_copy();
-        for ( auto idx : range( repeats ) )
-            for ( auto jdx : range( r_size ) )
-                ans[idx*r_size+jdx] = lhs[idx*r_size+jdx] - rhs[jdx];
-
-        return ans;
-        */
     }
 
     template< Tensor Tsor >

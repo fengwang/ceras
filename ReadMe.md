@@ -596,7 +596,6 @@ The full code is [here](./test/optimize.cc).
 
 ## License
 
-+ AGPLv3
 + BSD
 
 

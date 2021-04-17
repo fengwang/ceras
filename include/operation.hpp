@@ -115,7 +115,6 @@ namespace ceras
         std::function<void()> reset_action_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
-        //typedef decltype( std::declval<Lhs_Operator>().forward() ) tensor_type;
 
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
@@ -380,6 +379,7 @@ namespace ceras
     {
         return minus( lhs_ex, rhs_ex );
     }
+
 
     template <Expression Ex>
     auto constexpr square( Ex const& ex ) noexcept
