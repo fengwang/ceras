@@ -81,6 +81,12 @@ namespace ceras
                 )( lhs_ex, rhs_ex );
     }
 
+    template < Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr hinge_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return mean_reduce( maximum( value{0.0f}, value{1.0f} - hadamard_product(lhs_ex, rhs_ex) ) );
+    }
+
 }//namespace ceras
 
 #endif//APWVIJWMXHAVXUGYGVNDSEFKTMBKLBMGLSHWUPRPGLFCHUBDRAHGSTDSEDNKOGTIBNQVNLXCD

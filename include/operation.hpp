@@ -99,7 +99,7 @@ namespace ceras
                 rhs_input_data_ = rhs_op_.forward();
                 lhs_input_data_ = lhs_op_.forward( rhs_input_data_ );
             }
-            if constexpr ( is_value_v<Rhs_Operator> )
+            else if constexpr ( is_value_v<Rhs_Operator> )
             {
                 lhs_input_data_ = lhs_op_.forward();
                 rhs_input_data_ = rhs_op_.forward( lhs_input_data_ );
