@@ -289,6 +289,10 @@ maximum: test/maximum.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_maximum.o test/maximum.cc
 	$(LINK) -o $(BIN_DIR)/test_maximum $(OBJECTS_DIR)/test_maximum.o $(LFLAGS)
 
+value: test/value.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_value.o test/value.cc
+	$(LINK) -o $(BIN_DIR)/test_value $(OBJECTS_DIR)/test_value.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

@@ -5,6 +5,7 @@
 #include "./place_holder.hpp"
 #include "./variable.hpp"
 #include "./constant.hpp"
+#include "./value.hpp"
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
 #include "./config.hpp"
@@ -42,8 +43,9 @@ namespace ceras
             return output_data_;
         }
 
-        template< Tensor Tsor>
-        void backward( Tsor const& grad )
+        //template< Tensor Tsor>
+        //void backward( Tsor const& grad )
+        void backward( tensor_type const& grad )
         {
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
             op_.backward( current_gradient );
@@ -78,7 +80,9 @@ namespace ceras
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
         std::function<void()> reset_action_;
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
+        //typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
+        using tensor_type = typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type;
+
 
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
@@ -89,14 +93,36 @@ namespace ceras
 
         auto forward()
         {
+#if 1
+            if constexpr ( is_value_v<Lhs_Operator> )
+            {
+                rhs_input_data_ = rhs_op_.forward();
+                lhs_input_data_ = lhs_op_.forward( rhs_input_data_ );
+            }
+            if constexpr ( is_value_v<Rhs_Operator> )
+            {
+                lhs_input_data_ = lhs_op_.forward();
+                rhs_input_data_ = rhs_op_.forward( lhs_input_data_ );
+            }
+            else
+            {
+                lhs_input_data_ = lhs_op_.forward();
+                rhs_input_data_ = rhs_op_.forward();
+            }
+            output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+            return output_data_;
+#endif
+#if 0
             lhs_input_data_ = lhs_op_.forward();
             rhs_input_data_ = rhs_op_.forward();
             output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
+#endif
         }
 
-        template< typename T, typename A >
-        void backward( tensor<T,A> const& grad )
+        //template< typename T, typename A >
+        //void backward( tensor<T,A> const& grad )
+        void backward( tensor_type const& grad )
         {
             auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
             lhs_op_.backward( current_gradient_lhs );
@@ -140,7 +166,7 @@ namespace ceras
     concept Operator = is_operator_v<T>;
 
     template< typename T >
-    concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T>;
+    concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
@@ -335,7 +361,14 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr minus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return plus( lhs_ex, negative(rhs_ex) );
+        if constexpr (is_value_v<Rhs_Expression>)
+        {
+            return negative( plus( negative(lhs_ex), rhs_ex ) );
+        }
+        else
+        {
+            return plus( lhs_ex, negative(rhs_ex) );
+        }
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
