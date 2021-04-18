@@ -65,61 +65,15 @@ int main()
 
     // preparing training
     std::size_t const batch_size = 10;
-    //std::size_t const batch_size = 10;
-    //std::size_t const batch_size = 20000;
     tensor_type input_images{ {batch_size, 28*28} };
     tensor_type output_labels{ {batch_size, 10} };
-
-    //std::size_t const epoch = 100;
-    //std::size_t const epoch = 1;
-    //std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
     session<tensor_type> s;
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 
-    // proceed training
-    float learning_rate = 1.0e-1f;
-    //float learning_rate = 1.0e-1f;
-    //float learning_rate = 5.0e-1f;
-    auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
-
-#if 0
-    for ( auto e : range( epoch ) )
-    {
-
-        for ( auto i : range( iteration_per_epoch ) )
-        {
-            // generate images
-            std::size_t const image_offset = 16 + i * batch_size * 28 * 28;
-            for ( auto j : range( batch_size * 28 * 28 ) )
-                input_images[j] = static_cast<float>(training_images[j+image_offset]) / 127.5f - 1.0f;
-            better_assert( !has_nan( input_images ), "input_images has nan at iteration ", i );
-
-            // generating labels
-            std::size_t const label_offset = 8 + i * batch_size * 1;
-            std::fill_n( output_labels.data(), output_labels.size(), 0.0f ); //reset
-            for ( auto j : range( batch_size * 1 ) )
-            {
-                std::size_t const label = static_cast<std::size_t>(training_labels[j+label_offset]);
-                output_labels[j*10+label] = 1.0f;
-            }
-            better_assert( !has_nan( output_labels ), "output_labels has nan at iteration ", i );
-
-            auto current_error = s.run( loss );
-            std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << current_error[0] << "\r" << std::flush;
-            better_assert( !has_nan(current_error), "Error in current loss." );
-            s.run( optimizer );
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-#endif
-
-
-    s.run( loss );
+    s.tap( loss ); // must tab/run before restore, otherwise the session have no idea about the variables
     s.restore( "./test/mnist.session" );
     std::cout << "Restored mnist model from file\n";
 

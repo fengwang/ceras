@@ -56,7 +56,24 @@ namespace ceras
             return op.forward();
         }
 
-        //std::unordered_map<int, variable_type> variables_;
+        // register variables associated to the op to this session
+        // usually being called before restoring a session from a file
+        template< typename Operation >
+        void tap( Operation& op ) const
+        {
+            run( op );
+        }
+
+        void deserialize( std::string const& file_path )
+        {
+            restore( file_path );
+        }
+
+        void serialize( std::string const& file_path ) const
+        {
+            save( file_path );
+        }
+
         void save( std::string const& file_path ) const
         {
             std::ofstream ofs{ file_path };

@@ -158,6 +158,32 @@ By design, an instance of an expression has a builtin `forward()` method. When a
 
 Please find the complete code from [this file](./test/session.cc).
 
+
+A `session` can be serialized to a file
+```cpp
+s.save( "./test/mnist.session" );
+// or
+s.serialize( "./test/mnist.session" );
+```
+
+Also it can be deserialized from a file
+```cpp
+s.restore( "./test/mnist.session" );
+// or
+s.deserialized( "./test/mnist.session" );
+```
+
+The `save`/`restore` method is convenient for saving and loading a model, but before using them, make sure the expression templates has been attached to the session. The attachment can be done automatically by running an expression
+```cpp
+s.run( z );
+```
+or simple taping an expression to the session
+```
+s.tap( z );
+```
+Then all the variables associated to the expression `z`, the variables `A` and `b`, are attached to session. Then it is possible to save/load the session by `save`/`restore` methods.
+
+
 ### [loss](./include/loss.hpp)
 
 A `loss` variable provides a metric between the expected output and the actual output of the computation graph. And a `loss` is implemented as an `Expression`. For example, the `mae` loss can be defined as

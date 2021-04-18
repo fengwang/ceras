@@ -49,6 +49,7 @@ namespace ceras
 
         Tsor const forward() const
         {
+            // attach current varialbe to a session, so this varialbe can be saved/restored by the session
             auto& ss = get_default_session<Tsor>().get();
             ss.remember( *this );
 
