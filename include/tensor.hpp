@@ -1244,22 +1244,61 @@ namespace ceras
         }
     };
 
+    ///
+    /// A class viewing a 1-D array as a 4-D tensor. This class is useful when treating an array as a typical 4-D tensor in a neural network, with a shape of [batch_size, row, column, channel].
+    ///
     template< typename T >
     struct view_4d
     {
-        T* data_;
-        unsigned long batch_size_;
-        unsigned long row_;
-        unsigned long col_;
-        unsigned long channel_;
+        T* data_; ///< The pointer to the start position of the 1-D array.
+        unsigned long batch_size_; ///< The batch size of the 4-D tensor, also the first dimension of the tensor.
+        unsigned long row_; ///< The row of the 4-D tensor, also the second dimension of the tensor.
+        unsigned long col_; ///< The column of the 4-D tensor, also the third dimension of the tensor.
+        unsigned long channel_; ///< The channel of the 4-D tensor, also the last dimension of the tensor.
 
+        ///
+        /// Constructor of view_4d
+        /// @param data The raw pointer to the start position of the 1-D array.
+        /// @param batch_size The first dimension of the 4-D tensor, also for the batch size in the CNN layers.
+        /// @param row The second dimension of the 4-D tensor, also for the row in the CNN layers.
+        /// @param col The third dimension of the 4-D tensor, also for the column in the CNN layers.
+        /// @param channel The last dimension of the 4-D tensor, also for the channel in the CNN layers.
+        ///
         constexpr view_4d( T* data, unsigned long batch_size, unsigned long row, unsigned long col, unsigned long channel ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
 
+        ///
+        /// Giving a view_3d interface for operator [].
+        /// @param index The first dimension of the 4-D tensor.
+        ///
+        /// Example usage:
+        ///
+        /// @code
+        ///     std::vector<float> array;
+        ///     array.resize( 16*8*8*3 );
+        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
+        ///     t[0][1][2][3] = 1.0;
+        /// @endcode
+        ///
         constexpr auto operator[]( unsigned long index ) noexcept
         {
             return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
         }
 
+
+        ///
+        /// Giving a view_3d interface for operator [].
+        /// @param index The first dimension of the 4-D tensor.
+        ///
+        /// Example usage:
+        ///
+        /// @code
+        ///     std::vector<float> array;
+        ///     array.resize( 16*8*8*3 );
+        ///     // operations on `array`
+        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
+        ///     float v0123 = t[0][1][2][3];
+        /// @endcode
+        ///
         constexpr auto operator[]( unsigned long index ) const noexcept
         {
             return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
