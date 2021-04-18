@@ -3,7 +3,7 @@
 ----
 
 
-__ceras__ is yet another tiny deep learning engine based on C++ expression templates.  This library mimicks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional to _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
+__ceras__ is yet another tiny deep learning engine based on C++ expression templates.  This library mimicks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional for _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
 
 ----
 
@@ -578,44 +578,43 @@ Fixing the random seed to 42 by `random_generator.seed( 42 );`, we can get outpu
 
 ```
 J at iteration 1: 8165.29
-J at iteration 2: 633.804
-J at iteration 3: 9.5146
-J at iteration 4: 3.41902
-J at iteration 5: 2.33691
-J at iteration 6: 1.8801
-J at iteration 7: 1.6095
-J at iteration 8: 1.41938
-J at iteration 9: 1.27353
-J at iteration 10: 1.1565
-J at iteration 11: 1.06044
-J at iteration 12: 0.980601
-J at iteration 13: 0.913777
-J at iteration 14: 0.857562
-J at iteration 15: 0.810077
-J at iteration 16: 0.769802
-J at iteration 17: 0.735497
-J at iteration 18: 0.706139
-J at iteration 19: 0.680886
-J at iteration 20: 0.65904
-J at iteration 21: 0.640021
-J at iteration 22: 0.623354
-J at iteration 23: 0.608642
-J at iteration 24: 0.595558
-J at iteration 25: 0.58383
-J at iteration 26: 0.573235
-J at iteration 27: 0.563587
-J at iteration 28: 0.554732
-J at iteration 29: 0.546542
-J at iteration 30: 0.538911
-J at iteration 31: 0.531752
-J at iteration 32: 0.524992
+J at iteration 2: 643.3
+J at iteration 3: 48.2642
+J at iteration 4: 43.2
+J at iteration 5: 39.3805
+J at iteration 6: 36.3763
+J at iteration 7: 33.9391
+J at iteration 8: 31.9142
+J at iteration 9: 30.1999
+J at iteration 10: 28.726
+J at iteration 11: 27.4427
+J at iteration 12: 26.3131
+J at iteration 13: 25.3096
+J at iteration 14: 24.4111
+J at iteration 15: 23.601
+J at iteration 16: 22.866
+J at iteration 17: 22.1955
+J at iteration 18: 21.5809
+J at iteration 19: 21.0151
+J at iteration 20: 20.492
+J at iteration 21: 20.0068
+J at iteration 22: 19.5551
+J at iteration 23: 19.1335
+J at iteration 24: 18.7387
+J at iteration 25: 18.3682
+J at iteration 26: 18.0197
+J at iteration 27: 17.691
+J at iteration 28: 17.3805
+J at iteration 29: 17.0865
+J at iteration 30: 16.8077
+J at iteration 31: 16.5429
+J at iteration 32: 16.2909
 ```
 
 The full code is [here](./test/optimize.cc).
 
 
 ## TODO
-+ save/load model
 + mimicking Tensorflow::Keras grammar
 + recurrent operations
 + provide a single-header file

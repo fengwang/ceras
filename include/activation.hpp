@@ -8,20 +8,6 @@
 #include "./utils/for_each.hpp"
 #include "./utils/context_cast.hpp"
 
-#if 0
-+ relu function
-+ sigmoid function
-+ softmax function
-+ tanh function
-+ softplus function
-+ softsign function
-+ selu function
-+ elu function
-+ gelu function
-exponential function
-#endif
-
-
 namespace ceras
 {
     // TODO:
