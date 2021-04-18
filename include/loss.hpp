@@ -67,7 +67,6 @@ namespace ceras
                                         for ( auto idx : range( ground_truth_input.size() ) )
                                             ans -= ground_truth_input[idx] * std::log( std::max( static_cast<typename Tsor::value_type>(eps), sm[idx] ) );
                                         auto result = as_tensor<typename Tsor::value_type, typename Tsor::allocator>(ans/(*(ground_truth_input.shape().begin())));
-                                        debug_print( "Cross entropy loss returns a result tensor with id ", result.id_, ", and the actual ans is ", result[0] );
                                         return result;
                                      },
                                      []<Tensor Tsor>( Tsor const& ground_truth_input, Tsor const& prediction_input, [[maybe_unused]]Tsor const& output_data, [[maybe_unused]]Tsor const& grad ) noexcept

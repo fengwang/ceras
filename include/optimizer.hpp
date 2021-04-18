@@ -45,9 +45,7 @@ namespace ceras
 
         void forward()
         {
-            debug_print( "SGD starts forwarding, the loss id is ", loss_.id_, " and the name is ", loss_.name_ );
             loss_.backward( ones<T>( {1, } ) );
-            debug_print( "forward is done, all gradients generated, starting backprop." );
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
             auto& ss = get_default_session<tensor_type>().get();
             for ( auto [id, v] : ss.variables_ )

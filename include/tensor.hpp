@@ -23,42 +23,10 @@ namespace ceras
     using default_allocator = std::allocator<T>;
     //
 
-    template< typename Tsor >
-    struct tensor_log
-    {
-        tensor_log() noexcept
-        {
-            auto& zen = static_cast<Tsor&>(*this);
-            debug_log( zen.name_, " created directly, with id ", zen.id_ );
-        }
-        tensor_log( tensor_log const& ) noexcept
-        {
-            auto& zen = static_cast<Tsor&>(*this);
-            debug_log( zen.name_, " created using copy ctor, id ", zen.id_, " and size ", zen.size() );
-        }
-        tensor_log( tensor_log && ) noexcept
-        {
-            auto& zen = static_cast<Tsor&>(*this);
-            debug_log( zen.name_, " created using move ctor, id ", zen.id_, " and size ", zen.size() );
-        }
-        tensor_log& operator = ( tensor_log const& ) noexcept
-        {
-            auto& zen = static_cast<Tsor&>(*this);
-            debug_log( zen.name_, " created from copy assignment, id ", zen.id_, " and size ", zen.size() );
-            return *this;
-        }
-        tensor_log& operator = ( tensor_log && ) noexcept
-        {
-            auto& zen = static_cast<Tsor&>(*this);
-            debug_log( zen.name_, " created from move assigment, id ", zen.id_, " and size ", zen.size() );
-            return *this;
-        }
-    };
-
     // Beware: shallow copy
     // TODO: impl tensor_view, enabling stride dataset
     template< typename T, typename Allocator = default_allocator<T> >
-    struct tensor : enable_id<tensor<T, Allocator>, "Tensor">//, tensor_log<tensor<T, Allocator>>
+    struct tensor : enable_id<tensor<T, Allocator>, "Tensor">
     {
         typedef T value_type;
         typedef Allocator allocator;
@@ -161,7 +129,6 @@ namespace ceras
 
         tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()}
         {
-            //debug_print( "Creating an empty tensor ", (*this).id_ );
         }
 
         //
@@ -1041,7 +1008,6 @@ namespace ceras
     template< Tensor Tsor >
     Tsor softmax( Tsor const& tsor )
     {
-        debug_print( "calling softmax(tsor) with tensor id ", tsor.id_ );
         typedef typename Tsor::value_type value_type;
         better_assert( !tsor.empty(), "softmax argument is an empty tensor. " );
         Tsor ans = tsor.deep_copy();
@@ -1055,7 +1021,6 @@ namespace ceras
             value_type const ac = std::accumulate( mat[idx], mat[idx+1], value_type{0}, []( value_type init, value_type val ){ return init + std::exp(val); } );
             for_each( mat[idx], mat[idx+1], [ac]( auto& v ){ v = std::exp(v) / (ac+eps); } );
         }
-        debug_print( "softmax(tsor) returns answer tensor with id ", ans.id_ );
         return ans;
     }
 
@@ -1171,7 +1136,6 @@ namespace ceras
         return ans;
     }
 
-
     template<class _Tp, class _CharT, class _Traits, class _Alloc>
     std::basic_istream<_CharT, _Traits>& read_tensor(std::basic_istream<_CharT, _Traits>& __is, tensor<_Tp, _Alloc>& __x)
     {
@@ -1189,9 +1153,13 @@ namespace ceras
         // read the data
         std::vector< _Tp > buff;
         {
-            std::stringstream iss;
-            std::copy( std::istreambuf_iterator< char >( __is ), std::istreambuf_iterator< char >(), std::ostreambuf_iterator< char >( iss ) );
-            std::copy( std::istream_iterator< _Tp >( iss ), std::istream_iterator< _Tp >(), std::back_inserter( buff ) );
+            //std::stringstream iss;
+            //std::copy( std::istreambuf_iterator< char >( __is ), std::istreambuf_iterator< char >(), std::ostreambuf_iterator< char >( iss ) );
+            //std::copy( std::istream_iterator< _Tp >( iss ), std::istream_iterator< _Tp >(), std::back_inserter( buff ) );
+            std::string cache;
+            std::getline( __is, cache );
+            std::stringstream ss( cache );
+            std::copy( std::istream_iterator< _Tp >( ss ), std::istream_iterator< _Tp >(), std::back_inserter( buff ) );
         }
 
         // copy and return
@@ -1221,11 +1189,10 @@ namespace ceras
         {//write data
             std::copy( __x.begin(), __x.end(), std::ostream_iterator<_Tp>{ __os, " " } );
         }
+        __os << "\n";
 
         return __os;
     }
-
-
 
     //
     // file format:

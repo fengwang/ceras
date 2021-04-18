@@ -20,8 +20,7 @@ namespace ceras
     };
 
     template< Tensor Tsor >
-    struct place_holder :   enable_id< place_holder<Tsor>, "Place Holder" >,
-                            enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
+    struct place_holder : enable_id< place_holder<Tsor>, "Place Holder" >, enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
     {
         typedef Tsor tensor_type;
 
@@ -43,7 +42,6 @@ namespace ceras
 
         void bind( Tsor data )
         {
-            // TODO: check data shape
             better_assert( (*this).state_, "Error with empty state." );
             (*((*this).state_)).data_ = data;
         }

@@ -23,31 +23,35 @@ namespace ceras
     {
         Tsor data_;
         Tsor gradient_;
-        std::vector<Tsor> contexts_;
     };
 
     template< Tensor Tsor >
-    struct variable : enable_id<variable<Tsor>>, enable_shared_state<variable<Tsor>, variable_state<Tsor>>
+    struct variable : enable_id<variable<Tsor>>//, enable_shared_state<variable<Tsor>, variable_state<Tsor>>
     {
         typedef Tsor tensor_type;
 
+        std::shared_ptr<variable_state<Tsor>> state_;
         bool trainable_;
         bool stateful_;
 
-        variable( Tsor const& data, bool trainable = true, bool stateful = false ) : trainable_{trainable}, stateful_{stateful}
+        variable( Tsor const& data, bool trainable = true, bool stateful = false ) : enable_id<variable<Tsor>>{}, trainable_{trainable}, stateful_{stateful}
         {
             (*this).state_ = std::make_shared<variable_state<Tsor>>();
             (*((*this).state_)).data_ = data;
             (*((*this).state_)).gradient_ = Tsor{ data.shape() };
         }
+
         variable() = delete;
-        variable( variable const& ) = default;
+        variable( variable const& other ) = default;
         variable( variable && ) = default;
         variable& operator=( variable&&) = default;
-        variable& operator=( variable const&) = default;
+        variable& operator=( variable const& other) = default;
 
         Tsor const forward() const
         {
+            auto& ss = get_default_session<Tsor>().get();
+            ss.remember( *this );
+
             auto& state = *((*this).state_);
 
             if ( learning_phase == 1 )
@@ -72,18 +76,6 @@ namespace ceras
         {
             auto& state = *((*this).state_);
             return state.data_.shape();
-        }
-
-        std::vector<Tsor>& contexts()
-        {
-            auto& state = *((*this).state_);
-            return state.contexts_;
-        }
-
-        std::vector<Tsor> contexts() const
-        {
-            auto& state = *((*this).state_);
-            return state.contexts_;
         }
 
         Tsor& data()
