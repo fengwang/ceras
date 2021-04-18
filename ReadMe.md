@@ -443,7 +443,7 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - [`mae`](#mae);
     - `mse`;
     - `cross_entropy`;
-    - `hinge_loss`.
+    - [`hinge_loss`](#hingeloss).
 + [Optimizers](./include/optimizer.hpp):
     - `sgd`;
     - `adagrad`;
@@ -517,6 +517,44 @@ this will produce a 2x2 matrix of [[0.5, 0.5], [0.5, 0.5]]. Full code is [here](
 ```
 
 this will produce a 1x1 matrix of [1]. Full code is [here](./test/layer_mae.cc).
+
+
+### hingeloss
+
+`hinge_loss` gives hinge loss between `y_true` and `y_pred`. For example:
+
+```cpp
+auto a = ceras::random<float>( {3, 3} );
+ceras::for_each( a.begin(), a.end(), []( auto& v ){ v = v > 0.5f ? 1.0 : -1.0; } );
+std::cout << "a created with:\n" << a << std::endl;
+
+auto b = ceras::random<float>( {3, 3} );
+ceras::for_each( b.begin(), b.end(), []( auto& v ){ v = v > 0.5f ? 1.0 : -1.0; } );
+std::cout << "b created with:\n" << b << std::endl;
+
+auto va = ceras::variable{ a };
+auto vb = ceras::variable{ b };
+auto diff = ceras::hinge_loss( va, vb );
+
+ceras::session<ceras::tensor<float>> s;
+auto d = s.run( diff );
+std::cout << "hinge loss is\n" << d << std::endl;
+```
+
+for an example tensor `a` =
+```
+1       1       1
+-1      -1      1
+1       1       -1
+```
+and `b` =
+```
+1       1       -1
+-1      1       -1
+-1      -1      -1
+```
+the computed hinge loss is 1.111.
+
 
 ### gradient_descent
 
