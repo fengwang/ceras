@@ -3,10 +3,25 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20210329UL;
+    inline constexpr unsigned long version = 20210418UL;
     inline constexpr unsigned long __version__ = version;
 
 
+    ///
+    /// @param is_windows_platform A constexpr helping ceras to select different behaviours. 1 for windows platform and 0 for non-windows platform.
+    ///
+    /// Example usage:
+    /// @code
+    /// if constexpr( is_windows_platform )
+    /// {
+    ///     call_windows_method();
+    /// }
+    /// else
+    /// {
+    ///     call_linux_method();
+    /// }
+    /// @endcode
+    ///
     #ifdef _MSC_VER
         inline constexpr unsigned long is_windows_platform = 1;
     #else
