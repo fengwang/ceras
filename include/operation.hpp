@@ -94,7 +94,6 @@ namespace ceras
 
         auto forward()
         {
-#if 1
             if constexpr ( is_value_v<Lhs_Operator> )
             {
                 rhs_input_data_ = rhs_op_.forward();
@@ -112,13 +111,6 @@ namespace ceras
             }
             output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
-#endif
-#if 0
-            lhs_input_data_ = lhs_op_.forward();
-            rhs_input_data_ = rhs_op_.forward();
-            output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
-            return output_data_;
-#endif
         }
 
         //template< typename T, typename A >
@@ -1428,6 +1420,39 @@ namespace ceras
             },
             "Maximum"
         )( lhs_ex, rhs_ex );
+    }
+
+    ///
+    /// `random_normal_like` produces random tensor from a normal distribution
+    /// @param mean Mean of the normal distribution, a scalar.
+    /// @param stddev Standard deviation of the normal distribution, a scalar.
+    /// @return An unary operator that takes an unary operator, and producing output tensor from a normal distribution. The shape of the output tensor has the same shape corresponding to the input unary operator.
+    ///
+    /// Example Code
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = random_normal_like( 1.0, 4.0 )( va ); // this expression will produces a tensor of shape (3, 3, 3) from a normal distribution with parameters (1.0, 4.0)
+    /// @endcode
+    ///
+    template< typename T > requires std::floating_point<T>
+    inline auto random_normal_like( T mean = 0.0, T stddev = 1.0 ) noexcept
+    {
+        return [=]<Expression Ex>(Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                {
+                    debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
+                    return randn_like( tsor, mean, stddev );
+                },
+                []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    return zeros_like( grad );
+                },
+                "RandomNormalLike"
+            )(ex);
+        };
     }
 
 }//namespace ceras

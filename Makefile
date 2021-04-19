@@ -307,6 +307,10 @@ mnist_model: test/mnist_model.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_model.o test/mnist_model.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_model $(OBJECTS_DIR)/test_mnist_model.o $(LFLAGS)
 
+layer_random_normal_like: test/layer_random_normal_like.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_random_normal_like.o test/layer_random_normal_like.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_random_normal_like $(OBJECTS_DIR)/test_layer_random_normal_like.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

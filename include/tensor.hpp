@@ -819,6 +819,12 @@ namespace ceras
         return random<typename Tsor::value_type, typename Tsor::allocator>( tsor.shape(), min, max );
     }
 
+    template< Tensor Tsor >
+    Tsor randn_like( Tsor const& tsor, typename Tsor::value_type mean = 0, typename Tsor::value_type stddev = 1 )
+    {
+        return randn<typename Tsor::value_type, typename Tsor::allocator>( tsor.shape(), mean, stddev );
+    }
+
     // TODO glorot_normal
     //
     // Glorot, Xavier, and Yoshua Bengio. “Understanding the Difficulty of Training Deep Feedforward Neural Networks.” In Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics, 249–256, 2010.
