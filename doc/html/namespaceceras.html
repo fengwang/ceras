@@ -338,6 +338,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ad07235450ed445488a40e5fe6c86ccf8"><td class="memTemplParams" colspan="2">template&lt;Expression Lhs_Expression, Expression Rhs_Expression&gt; </td></tr>
 <tr class="memitem:ad07235450ed445488a40e5fe6c86ccf8"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ad07235450ed445488a40e5fe6c86ccf8">maximum</a> (Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</td></tr>
 <tr class="separator:ad07235450ed445488a40e5fe6c86ccf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memTemplItemLeft" align="right" valign="top">requires std::floating_point&lt; T &gt; auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a5ee3b25632e70da4c9b0dc8e5267e69b">random_normal_like</a> (T <a class="el" href="namespaceceras.html#ab8c6a1358b98df592329dbde6dafe2be">mean</a>=0.0, T stddev=1.0) noexcept</td></tr>
+<tr class="separator:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae180e70502a139fc8c6f24020d393721"><td class="memTemplParams" colspan="2">template&lt;Expression Lhs_Expression, Variable Rhs_Variable&gt; </td></tr>
 <tr class="memitem:ae180e70502a139fc8c6f24020d393721"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ae180e70502a139fc8c6f24020d393721">copy</a> (Lhs_Expression const &amp;lhs_ex, Rhs_Variable const &amp;rhs_va) noexcept</td></tr>
 <tr class="separator:ae180e70502a139fc8c6f24020d393721"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -442,6 +445,9 @@ Functions</h2></td></tr>
 <tr class="memitem:aa3a2e7c07b75ff47e0b5cbf20147f063"><td class="memTemplParams" colspan="2">template&lt;Tensor Tsor&gt; </td></tr>
 <tr class="memitem:aa3a2e7c07b75ff47e0b5cbf20147f063"><td class="memTemplItemLeft" align="right" valign="top">Tsor&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#aa3a2e7c07b75ff47e0b5cbf20147f063">random_like</a> (Tsor const &amp;tsor, typename Tsor::value_type <a class="el" href="namespaceceras.html#a021d1d9a3342beef539c33d7af503106">min</a>=0, typename Tsor::value_type <a class="el" href="namespaceceras.html#ace1369621686ba020135994c415c9031">max</a>=1)</td></tr>
 <tr class="separator:aa3a2e7c07b75ff47e0b5cbf20147f063"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2f293aaead8678738162c049594e51a"><td class="memTemplParams" colspan="2">template&lt;Tensor Tsor&gt; </td></tr>
+<tr class="memitem:ad2f293aaead8678738162c049594e51a"><td class="memTemplItemLeft" align="right" valign="top">Tsor&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ad2f293aaead8678738162c049594e51a">randn_like</a> (Tsor const &amp;tsor, typename Tsor::value_type <a class="el" href="namespaceceras.html#ab8c6a1358b98df592329dbde6dafe2be">mean</a>=0, typename Tsor::value_type stddev=1)</td></tr>
+<tr class="separator:ad2f293aaead8678738162c049594e51a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8594324b0f114a2f1e216d077a50c8e3"><td class="memTemplParams" colspan="2">template&lt;typename T , typename A  = default_allocator&lt;T&gt;&gt; </td></tr>
 <tr class="memitem:a8594324b0f114a2f1e216d077a50c8e3"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1tensor.html">tensor</a>&lt; T, A &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a8594324b0f114a2f1e216d077a50c8e3">glorot_uniform</a> (std::initializer_list&lt; unsigned long &gt; shape)</td></tr>
 <tr class="separator:a8594324b0f114a2f1e216d077a50c8e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -3978,6 +3984,42 @@ template&lt;typename T , typename A  = default_allocator&lt;T&gt;&gt; </div>
 
 </div>
 </div>
+<a id="ad2f293aaead8678738162c049594e51a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2f293aaead8678738162c049594e51a">&#9670;&nbsp;</a></span>randn_like()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;Tensor Tsor&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Tsor ceras::randn_like </td>
+          <td>(</td>
+          <td class="paramtype">Tsor const &amp;&#160;</td>
+          <td class="paramname"><em>tsor</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">typename Tsor::value_type&#160;</td>
+          <td class="paramname"><em>mean</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">typename Tsor::value_type&#160;</td>
+          <td class="paramname"><em>stddev</em> = <code>1</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a2e4fd6b931eb2ea839d39e468cce1c10"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2e4fd6b931eb2ea839d39e468cce1c10">&#9670;&nbsp;</a></span>random()</h2>
 
@@ -4048,6 +4090,55 @@ template&lt;Tensor Tsor&gt; </div>
       </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<a id="a5ee3b25632e70da4c9b0dc8e5267e69b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ee3b25632e70da4c9b0dc8e5267e69b">&#9670;&nbsp;</a></span>random_normal_like()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">requires std::floating_point&lt;T&gt; auto ceras::random_normal_like </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>mean</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>stddev</em> = <code>1.0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p><code>random_normal_like</code> produces random tensor from a normal distribution </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">mean</td><td>Mean of the normal distribution, a scalar. </td></tr>
+    <tr><td class="paramname">stddev</td><td>Standard deviation of the normal distribution, a scalar. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>An unary operator that takes an unary operator, and producing output tensor from a normal distribution. The shape of the output tensor has the same shape corresponding to the input unary operator.</dd></dl>
+<p>Example Code </p><div class="fragment"><div class="line"><span class="keyword">auto</span> va = variable{ ones&lt;float&gt;({3, 3, 3}) };</div>
+<div class="line"><span class="keyword">auto</span> v_rand = <a class="code" href="namespaceceras.html#a5ee3b25632e70da4c9b0dc8e5267e69b">random_normal_like</a>( 1.0, 4.0 )( va ); <span class="comment">// this expression will produces a tensor of shape (3, 3, 3) from a normal distribution with parameters (1.0, 4.0)</span></div>
+<div class="ttc" id="anamespaceceras_html_a5ee3b25632e70da4c9b0dc8e5267e69b"><div class="ttname"><a href="namespaceceras.html#a5ee3b25632e70da4c9b0dc8e5267e69b">ceras::random_normal_like</a></div><div class="ttdeci">requires std::floating_point&lt; T &gt; auto random_normal_like(T mean=0.0, T stddev=1.0) noexcept</div><div class="ttdef"><b>Definition:</b> operation.hpp:1438</div></div>
+</div><!-- fragment --> 
 </div>
 </div>
 <a id="a4c595ab127344166cec13aea468c5839"></a>
