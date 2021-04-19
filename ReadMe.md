@@ -456,7 +456,8 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `batch_normalization`;
     - `instance_normalization`;
     - `concatenate`, or `concat`;
-    - `maximum`.
+    - `maximum`;
+    - `random_normal_like`.
 + [Activations](./include/activation.hpp):
     - [`softmax`](#softmax);
     - `selu`;
