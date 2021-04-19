@@ -9,6 +9,7 @@ OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -D
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
 
 CXX           = g++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=2 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
@@ -310,6 +311,10 @@ mnist_model: test/mnist_model.cc
 layer_random_normal_like: test/layer_random_normal_like.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_random_normal_like.o test/layer_random_normal_like.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_random_normal_like $(OBJECTS_DIR)/test_layer_random_normal_like.o $(LFLAGS)
+
+mnist_vae: test/mnist_vae.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_vae.o test/mnist_vae.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_vae $(OBJECTS_DIR)/test_mnist_vae.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

@@ -1434,7 +1434,7 @@ namespace ceras
     /// auto v_rand = random_normal_like( 1.0, 4.0 )( va ); // this expression will produces a tensor of shape (3, 3, 3) from a normal distribution with parameters (1.0, 4.0)
     /// @endcode
     ///
-    template< typename T > requires std::floating_point<T>
+    template< typename T=float > requires std::floating_point<T>
     inline auto random_normal_like( T mean = 0.0, T stddev = 1.0 ) noexcept
     {
         return [=]<Expression Ex>(Ex const& ex ) noexcept
