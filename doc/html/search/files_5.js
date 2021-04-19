@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['operation_2ehpp_315',['operation.hpp',['../operation_8hpp.html',1,'']]],
-  ['optimizer_2ehpp_316',['optimizer.hpp',['../optimizer_8hpp.html',1,'']]]
+  ['model_2ehpp_322',['model.hpp',['../model_8hpp.html',1,'']]]
 ];

@@ -81,6 +81,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__constant_3_01constant_3_01Tsor_01_4_01_4.html">is_constant&lt; constant&lt; Tsor &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1model.html">model</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1unary__operator.html">unary_operator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html">binary_operator</a></td></tr>
@@ -183,6 +185,9 @@ Functions</h2></td></tr>
 <tr class="memitem:af5ab315c6cb7047f8fa7e6b50a6f264c"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:af5ab315c6cb7047f8fa7e6b50a6f264c"><td class="memTemplItemLeft" align="right" valign="top">requires std::floating_point&lt; T &gt; auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#af5ab315c6cb7047f8fa7e6b50a6f264c">leaky_relu</a> (T const factor) noexcept</td></tr>
 <tr class="separator:af5ab315c6cb7047f8fa7e6b50a6f264c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06b05e9d968b14f35ce88beacdf09991"><td class="memTemplParams" colspan="2">template&lt;Expression Ex&gt; </td></tr>
+<tr class="memitem:a06b05e9d968b14f35ce88beacdf09991"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a06b05e9d968b14f35ce88beacdf09991">negative_relu</a> (Ex const &amp;ex) noexcept</td></tr>
+<tr class="separator:a06b05e9d968b14f35ce88beacdf09991"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a690e328bec70de5c5746f9d15bdc21ce"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a690e328bec70de5c5746f9d15bdc21ce"><td class="memTemplItemLeft" align="right" valign="top">requires std::floating_point&lt; T &gt; auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a690e328bec70de5c5746f9d15bdc21ce">elu</a> (T const alpha) noexcept</td></tr>
 <tr class="separator:a690e328bec70de5c5746f9d15bdc21ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -3171,6 +3176,34 @@ template&lt;Expression Ex&gt; </div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">constexpr</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a06b05e9d968b14f35ce88beacdf09991"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06b05e9d968b14f35ce88beacdf09991">&#9670;&nbsp;</a></span>negative_relu()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;Expression Ex&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::negative_relu </td>
+          <td>(</td>
+          <td class="paramtype">Ex const &amp;&#160;</td>
+          <td class="paramname"><em>ex</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

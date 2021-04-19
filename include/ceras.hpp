@@ -15,6 +15,7 @@
 #include "./variable.hpp"
 #include "./constant.hpp"
 #include "./layer.hpp"
+#include "./model.hpp"
 
 #endif//AOXWQXCBBVJUJJSDTMLRNOHUNBOARCNCRGBTAHMIKSULFJOIUGCEEGXXVRUVWTOSKPYWDJOKQ
 

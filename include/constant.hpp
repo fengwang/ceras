@@ -14,7 +14,9 @@ namespace ceras
     struct constant// : enable_shared<constant<Tsor>>
     {
         // Tsor is a shallow copy, and once an instance is initialized,it will never change
-        Tsor  data_;
+        Tsor data_;
+
+        constant( Tsor const& data ) : data_{data} {}
 
         void backward( auto ) const {}
 

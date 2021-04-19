@@ -251,6 +251,10 @@ mnist_conv2d_mini: test/mnist_conv2d_mini.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_mini.o test/mnist_conv2d_mini.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_mini $(OBJECTS_DIR)/test_mnist_conv2d_mini.o $(LFLAGS)
 
+mnist_conv2d_mini_negative: test/mnist_conv2d_mini_negative.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_mini_negative.o test/mnist_conv2d_mini_negative.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_mini_negative $(OBJECTS_DIR)/test_mnist_conv2d_mini_negative.o $(LFLAGS)
+
 mnist_bn_mini: test/mnist_bn_mini.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_bn_mini.o test/mnist_bn_mini.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_bn_mini $(OBJECTS_DIR)/test_mnist_bn_mini.o $(LFLAGS)
@@ -298,6 +302,10 @@ hinge_loss: test/hinge_loss.cc
 mnist_restore: test/mnist_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_restore.o test/mnist_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_restore $(OBJECTS_DIR)/test_mnist_restore.o $(LFLAGS)
+
+mnist_model: test/mnist_model.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_model.o test/mnist_model.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_model $(OBJECTS_DIR)/test_mnist_model.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

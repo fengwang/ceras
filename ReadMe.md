@@ -229,6 +229,37 @@ s.run(optimizer);
 By repeating forward pass and backward pass multiple times, the weights A and the bias b can be gradually updated.
 
 
+### [model](./include/model.hpp)
+
+`model` groups an expression template into an object with training and inference features.
+
+We can first define an expression template
+```cpp
+auto input = Input();
+auto l1 = relu( Dense( 512, 28*28 )( input ) );
+auto l2 = relu( Dense( 256, 512 )( l1 ) );
+auto output = sigmoid( Dense( 10, 256 )( l2 ) );
+```
+
+Then we train this little model by defining a loss and an optimizer
+```cpp
+// training
+```
+
+Afterwards, we can build a model for later use,
+
+```cpp
+auto m = model{ input, output };
+```
+
+Then we can make some predictions using this model
+```cpp
+auto prediction = m.predict( some_input_dataset );
+```
+
+
+
+
 ### more details
 
 __TODO__

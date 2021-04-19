@@ -222,7 +222,6 @@ namespace ceras
                                         {
                                             Tsor& ans = context_cast<Tsor>( forward_cache );
                                             ans.resize( input.shape()  );
-                                            //Tsor ans{ input.shape() };
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( auto& v_out, auto v_in ){ v_out = std::max( T{v_in}, T{factor*v_in} ); } );
                                             return ans;
                                         },
@@ -236,6 +235,12 @@ namespace ceras
                                         "Leaky Relu"
                     )( ex );
         };
+    }
+
+    template <Expression Ex>
+    auto negative_relu( Ex const& ex ) noexcept
+    {
+        return negative( relu( ex ) );
     }
 
     template< typename T > requires std::floating_point<T>

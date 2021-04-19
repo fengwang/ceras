@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['place_5fholder_2ehpp_317',['place_holder.hpp',['../place__holder_8hpp.html',1,'']]]
+  ['operation_2ehpp_323',['operation.hpp',['../operation_8hpp.html',1,'']]],
+  ['optimizer_2ehpp_324',['optimizer.hpp',['../optimizer_8hpp.html',1,'']]]
 ];
