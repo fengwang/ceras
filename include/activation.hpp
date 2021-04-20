@@ -279,6 +279,8 @@ namespace ceras
                                         ans.resize( input.shape() );
                                         std::copy( input.begin(), input.end(), ans.begin() );
                                         ans.map( [](auto& x){ x = std::exp(x); } ); // exp(x)
+                                        better_assert( !has_nan( ans ), "exponential operator forward output contains nan." );
+                                        better_assert( !has_inf( ans ), "exponential operator forward output contains inf." );
                                         return ans;
                                     },
                                     []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept

@@ -237,7 +237,9 @@ namespace ceras
                                     {
                                         better_assert( !has_nan( input ), "forward propagation for operator log: input contains Nan!" );
                                         auto ans = input.deep_copy();
-                                        ans.map( [](auto & x){ x = std::log(x); } );
+                                        ans.map( [](auto & x){ better_assert( x+eps > 0, "log forward propagation, found an invalid value ", x ); x = std::log(x+eps); } );
+                                        better_assert( !has_nan( ans ), "forward propagation for operator log: output contains Nan!" );
+                                        better_assert( !has_inf( ans ), "forward propagation for operator log: output contains Inf!" );
                                         return ans;
                                     },
                                     []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
@@ -271,7 +273,11 @@ namespace ceras
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
-                                        return elementwise_product( lhs_tensor, rhs_tensor );
+                                        better_assert( !has_nan(lhs_tensor), "forward propagation with elementwise_product: the lhs_tensor has nan!" );
+                                        better_assert( !has_nan(rhs_tensor), "forward propagation with elementwise_product: the rhs_tensor has nan!" );
+                                        auto const& ans = elementwise_product( lhs_tensor, rhs_tensor );
+                                        better_assert( !has_nan(ans), "forward propagation with elementwise_product: the output ans has nan!" );
+                                        return ans;
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
@@ -415,6 +421,7 @@ namespace ceras
     }//;
 
     template <Expression Ex>
+    [[deprecated("GCC might die here. Use exponential instead.")]]
     auto constexpr exp( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
@@ -432,12 +439,6 @@ namespace ceras
                                         return ans;
                                     }
                 )( ex );
-    }
-
-    template <Expression Ex>
-    auto constexpr elementwise_exp( Ex const& ex ) noexcept
-    {
-        return exp( ex );
     }
 
     template <typename Float> requires std::floating_point<Float>
@@ -1449,7 +1450,7 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
+                    //debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
                     return randn_like( tsor, mean, stddev );
                 },
                 []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept

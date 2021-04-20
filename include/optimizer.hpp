@@ -336,6 +336,7 @@ namespace ceras
                 if (v.trainable_)
                 {
                     //v.data() -= learning_rate_ * (v.gradient());
+                    better_assert( !has_nan(v.gradient()), "gradient_descent error, tensor with id ", id, " has a nan value." );
                     v.data() -= learning_rate_ * v.gradient();
                 }
             }

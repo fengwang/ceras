@@ -8,8 +8,9 @@ OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -D
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
+OP            = -fconcepts-diagnostics-depth=4  -O2 -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=2 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)

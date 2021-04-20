@@ -645,6 +645,10 @@ namespace ceras
         if ( 1 == rhs.ndim() )
             return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ), ans );
 
+
+        //debug_log( "matrix multiplication with lhs ", *(lhs.shape().begin()), " by ", *(lhs.shape().rbegin()) );
+        //debug_log( "matrix multiplication with rhs ", *(rhs.shape().begin()), " by ", *(rhs.shape().rbegin()), "\n" );
+
         better_assert( 2 == rhs.ndim(), "expecting rhs tensor has 2 dimensions, but got ", rhs.ndim() );
 
         if ( 2 == lhs.ndim() )
@@ -682,6 +686,20 @@ namespace ceras
     template< Tensor Tsor >
     Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
+        better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
+        better_assert( !has_nan( lhs ), "lhs parameter for elementwise_product has nan!" );
+        better_assert( !has_nan( rhs ), "rhs parameter for elementwise_product has nan!" );
+        Tsor ans{ lhs.shape() };
+        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z )
+                  {
+                    z = x*y;
+                    //better_assert( !std::isnan( z ), "Got nan product with x=", x, " and y=", y  );
+                  }
+                );
+        better_assert( !has_nan(ans), "result for elementwise product has nan. The shape is ", *(lhs.shape().begin()), " x ", *(lhs.shape().rbegin()) );
+        return ans;
+
+#if 0
         unsigned long const l_size = lhs.size();
         unsigned long const r_size = rhs.size();
         if ( l_size < r_size ) return elementwise_product(rhs, lhs);
@@ -697,6 +715,7 @@ namespace ceras
             }
 
         return ans;
+#endif
     }
 
     template< Tensor Tsor >
