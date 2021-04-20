@@ -44,15 +44,19 @@ int main()
     auto l2 = relu( Dense( 128, 256 )( l1 ) );
     auto z_mean = Dense( latent_dim, 256 )( l2 );
     auto z_log_var = Dense( latent_dim, 256 )( l2 );
-    auto z = z_mean + exp(z_log_var) * random_normal_like(0.0f, 1.0f)( z_mean );
+    //auto z = z_mean + hadamard_product( exp(z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
+    //auto z = z_mean;// + hadamard_product( exp(z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
+    //auto z = elementwise_exp( z_log_var );
+    auto z = exp( z_log_var );
 
     auto z_decoder_1 = relu( Dense( 128, latent_dim )( z ) );
     auto z_decoder_2 = relu( Dense( 256, 128 )( z_decoder_1 ) );
     auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
 
-    auto reconstruction_loss = cross_entropy_loss( x, y );
+    auto reconstruction_loss = sum_reduce( cross_entropy( x, y ) );
     auto kl_loss = sum_reduce( value{-0.5} * (value{1.0} + z_log_var - square(z_mean) - exp(z_log_var)) ) ;
-    auto loss = reconstruction_loss + kl_loss;
+    //auto loss = reconstruction_loss + kl_loss;
+    auto loss = reconstruction_loss;
 
     // preparing training
     std::size_t const batch_size = 10;
@@ -69,6 +73,8 @@ int main()
 
     float learning_rate = 1.0e-1f;
     auto optimizer = gradient_descent{ loss, batch_size, learning_rate };
+
+#if 1
 
     for ( [[maybe_unused]] auto e : range( epoch ) )
     {
@@ -89,7 +95,7 @@ int main()
     }
 
     std::cout << std::endl;
-
+#endif
 
 #if 0
     unsigned long const new_batch_size = 1;

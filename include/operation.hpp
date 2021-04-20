@@ -434,6 +434,12 @@ namespace ceras
                 )( ex );
     }
 
+    template <Expression Ex>
+    auto constexpr elementwise_exp( Ex const& ex ) noexcept
+    {
+        return exp( ex );
+    }
+
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
     {

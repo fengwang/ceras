@@ -316,6 +316,10 @@ mnist_vae: test/mnist_vae.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_vae.o test/mnist_vae.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_vae $(OBJECTS_DIR)/test_mnist_vae.o $(LFLAGS)
 
+layer_exp: test/layer_exp.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_exp.o test/layer_exp.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_exp $(OBJECTS_DIR)/test_layer_exp.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
