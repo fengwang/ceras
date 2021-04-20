@@ -30,6 +30,24 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
     return ans;
 }
 
+auto make_encoder( auto input )
+{
+    auto l1 = relu( Dense( 256, 28*28 )( input ) );
+    auto l2 = relu( Dense( 128, 256 )( l1 ) );
+    auto z_mean = Dense( latent_dim, 128 )( l2 );
+    auto z_log_var = Dense( latent_dim, 128 )( l2 );
+    auto z = z_mean + hadamard_product( exponential(z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
+    return model( input, z );
+}
+
+auto make_decoder( auto z )
+{
+    auto z_decoder_1 = relu( Dense( 128, latent_dim )( z ) );
+    auto z_decoder_2 = relu( Dense( 256, 128 )( z_decoder_1 ) );
+    auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
+    return model( z, y );
+}
+
 int main()
 {
     ceras::random_generator.seed( 42 );
@@ -40,6 +58,9 @@ int main()
     typedef tensor<float> tensor_type;
     unsigned long latent_dim = 2;
     auto x = Input(); // 1-D, 28x28 pixels
+
+    // TODO
+
     auto l1 = relu( Dense( 256, 28*28 )( x ) );
     auto l2 = relu( Dense( 128, 256 )( l1 ) );
     auto z_mean = Dense( latent_dim, 128 )( l2 );
