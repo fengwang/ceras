@@ -20,7 +20,7 @@ namespace ceras
     };
 
     template< Tensor Tsor >
-    struct place_holder : enable_id< place_holder<Tsor>, "Place Holder" >, enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
+    struct place_holder : enable_id< place_holder<Tsor>, "PlaceHolder" >, enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
     {
         typedef Tsor tensor_type;
 
@@ -69,6 +69,42 @@ namespace ceras
 
     template< typename T >
     concept Place_Holder = is_place_holder_v<T>;
+
+    template< Place_Holder Ph >
+    bool operator == ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() == rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator != ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() != rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator < ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() < rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator > ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() < rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator <= ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() <= rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator >= ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() >= rhs.id();
+    }
 
 }//namespace ceras
 

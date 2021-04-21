@@ -31,6 +31,11 @@ namespace ceras
         std::string name_ = std::string{Name};
         int id_;
         enable_id() noexcept : id_ { generate_uid() } {}
+
+        int id() const noexcept
+        {
+            return id_;
+        }
     };
 
 }//namespace ceras

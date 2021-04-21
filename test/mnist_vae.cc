@@ -107,7 +107,7 @@ int main()
             better_assert( !has_nan( input_images ), "input_images has nan at iteration ", i );
 
             auto current_error = s.run( loss );
-            std::cout << "Error at epoch " << e << " iteration " << i << ": " << current_error[0] << std::endl;
+            std::cout << "Error at epoch " << e << " iteration " << i << ": " << current_error[0] << "\r" << std::flush;
             better_assert( !has_nan(current_error), "Error in current loss." );
             s.run( optimizer );
         }

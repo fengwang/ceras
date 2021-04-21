@@ -16,6 +16,7 @@
 
 namespace ceras
 {
+    //
     // an operator is composed of
     // 1. a left operator, a right operator and a lambda function, OR
     // 2. an operator and a lambda function
@@ -53,7 +54,7 @@ namespace ceras
         void reset_states()
         {
             reset_action_();
-            if constexpr( !( is_place_holder_v<Operator> || is_constant_v<Operator>  ) )
+            if constexpr( !( is_place_holder_v<Operator> || is_constant_v<Operator>  ) ) // only variables  have states?
                 op_.reset_states();
         }
 
@@ -79,8 +80,7 @@ namespace ceras
         std::function<void()> reset_action_;
 
         //typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
-        using tensor_type = typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type;
-
+        using tensor_type = typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type; // defined in value.hpp
 
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
@@ -91,6 +91,8 @@ namespace ceras
 
         auto forward()
         {
+            static_assert( !(is_value_v<Lhs_Operator> && is_value_v<Rhs_Operator>), "Not valid for two values" );
+
             if constexpr ( is_value_v<Lhs_Operator> )
             {
                 rhs_input_data_ = rhs_op_.forward();
@@ -195,15 +197,14 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        //
-        // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
-        //
+        // case of Value * Operator and Operator * Value
         if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
         {
             return elementwise_product( lhs_ex, rhs_ex );
         }
         else
         {
+            // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
             return make_binary_operator
             (
                 []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
