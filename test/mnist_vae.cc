@@ -30,6 +30,7 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
     return ans;
 }
 
+/*
 auto make_encoder( auto input )
 {
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
@@ -47,6 +48,7 @@ auto make_decoder( auto z )
     auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
     return model( z, y );
 }
+*/
 
 int main()
 {
@@ -72,7 +74,8 @@ int main()
     auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
 
     auto reconstruction_loss = cross_entropy( x, y );
-    auto kl_loss = sum_reduce( hadamard_product( value{-0.5}, (value{1.0} + z_log_var - square(z_mean) - exponential(z_log_var))) );
+    //auto kl_loss = sum_reduce( hadamard_product( value{-0.5}, (value{1.0} + z_log_var - square(z_mean) - exponential(z_log_var))) );
+    auto kl_loss = sum_reduce(  value{-0.5} * (value{1.0} + z_log_var - square(z_mean) - exponential(z_log_var)) );
     auto loss = reconstruction_loss + kl_loss;
     //auto loss = reconstruction_loss;
 

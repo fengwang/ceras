@@ -44,15 +44,12 @@ namespace ceras
             return output_data_;
         }
 
-        //template< Tensor Tsor>
-        //void backward( Tsor const& grad )
         void backward( tensor_type const& grad )
         {
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
             op_.backward( current_gradient );
         }
 
-        // designed for recurrent layers
         void reset_states()
         {
             reset_action_();
@@ -113,8 +110,6 @@ namespace ceras
             return output_data_;
         }
 
-        //template< typename T, typename A >
-        //void backward( tensor<T,A> const& grad )
         void backward( tensor_type const& grad )
         {
             auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
@@ -203,31 +198,38 @@ namespace ceras
         //
         // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
         //
-        return make_binary_operator
-        (
-            []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-            {
-                return multiply( lhs_tensor, rhs_tensor );
-            },
-            []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
-            {
-               // left branch <-- grad * rhs^T
-               auto const& g_shape = grad.shape();
-               auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
-               auto const k = *(lhs_input.shape().rbegin()); // 13
+        if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
+        {
+            return elementwise_product( lhs_ex, rhs_ex );
+        }
+        else
+        {
+            return make_binary_operator
+            (
+                []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                {
+                    return multiply( lhs_tensor, rhs_tensor );
+                },
+                []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                   // left branch <-- grad * rhs^T
+                   auto const& g_shape = grad.shape();
+                   auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
+                   auto const k = *(lhs_input.shape().rbegin()); // 13
 
-               Tsor lhs_grad{ lhs_input.shape() };
+                   Tsor lhs_grad{ lhs_input.shape() };
 
-               gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
+                   gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
-               // right branch <-- lhs^T * grad
-               Tsor rhs_grad{ rhs_input.shape() };
-               gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
+                   // right branch <-- lhs^T * grad
+                   Tsor rhs_grad{ rhs_input.shape() };
+                   gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
 
-               return std::make_tuple( lhs_grad, rhs_grad );
-            },
-            "Multiply"
-        )( lhs_ex, rhs_ex );
+                   return std::make_tuple( lhs_grad, rhs_grad );
+                },
+                "Multiply"
+            )( lhs_ex, rhs_ex );
+        }
     }
 
     template <Expression Ex>

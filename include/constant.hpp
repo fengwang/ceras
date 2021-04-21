@@ -31,34 +31,6 @@ namespace ceras
         }
     };
 
-    /*
-    template< Tensor Tsor >
-    struct constant// : enable_shared<constant<Tsor>>
-    {
-        typedef Tsor tensor_type;
-
-        std::shared_ptr<Tsor> data_;
-
-        constant() = delete;
-        constant( Tsor const& data ) : data_{ std::make_shared<Tsor>( data ) } {}
-        constant( constant const& ) = default;
-        constant( constant && ) = default;
-
-        void backward( auto const& ) { }
-
-        Tsor const forward() const
-        {
-            better_assert( data_, "Error: data is empty." );
-            return *data_;
-        }
-
-        std::vector<std::size_t> shape() const noexcept
-        {
-            return (*data_).shape();
-        }
-    };//struct constant
-    */
-
     template< typename T >
     struct is_constant : std::false_type {};
 
@@ -70,8 +42,6 @@ namespace ceras
 
     template< typename T >
     concept Constant = is_constant_v<T>;
-
-
 
 }//namespace ceras
 

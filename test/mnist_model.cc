@@ -72,7 +72,6 @@ auto train_model()
 
     for ( [[maybe_unused]] auto e : range( epoch ) )
     {
-
         for ( [[maybe_unused]] auto i : tq::trange( iteration_per_epoch ) )
         {
             // generate images
@@ -80,7 +79,6 @@ auto train_model()
             for ( auto j : range( batch_size * 28 * 28 ) )
                 input_images[j] = static_cast<float>(training_images[j+image_offset]) / 127.5f - 1.0f;
             better_assert( !has_nan( input_images ), "input_images has nan at iteration ", i );
-
             // generating labels
             std::size_t const label_offset = 8 + i * batch_size * 1;
             std::fill_n( output_labels.data(), output_labels.size(), 0.0f ); //reset
@@ -90,7 +88,6 @@ auto train_model()
                 output_labels[j*10+label] = 1.0f;
             }
             better_assert( !has_nan( output_labels ), "output_labels has nan at iteration ", i );
-
             auto current_error = s.run( loss );
             //std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << current_error[0] << "\r" << std::flush;
             better_assert( !has_nan(current_error), "Error in current loss." );
