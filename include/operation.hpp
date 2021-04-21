@@ -141,6 +141,36 @@ namespace ceras
     };
 
     template< typename T >
+    struct is_unary_operator : std::false_type{};
+
+    template< typename Operator, typename Forward_Action, typename Backward_Action >
+    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
+
+    template< class T >
+    inline constexpr bool is_unary_operator_v = is_unary_operator<T>::value;
+
+    template< typename T >
+    concept Unary_Operator = is_unary_operator_v<T>;
+
+
+    template< typename T >
+    struct is_binary_operator : std::false_type{};
+
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
+    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
+
+    template< class T >
+    inline constexpr bool is_binary_operator_v = is_binary_operator<T>::value;
+
+    template< typename T >
+    concept Binary_Operator = is_binary_operator_v<T>;
+
+
+    template< typename T >
+    concept Operator = Unary_Operator<T> || Binary_Operator<T>;
+
+    /*
+    template< typename T >
     struct is_operator : std::false_type {};
 
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
@@ -154,6 +184,7 @@ namespace ceras
 
     template< typename T >
     concept Operator = is_operator_v<T>;
+    */
 
     template< typename T >
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
