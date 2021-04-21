@@ -321,6 +321,10 @@ layer_exp: test/layer_exp.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_exp.o test/layer_exp.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_exp $(OBJECTS_DIR)/test_layer_exp.o $(LFLAGS)
 
+model: test/model.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_model.o test/model.cc
+	$(LINK) -o $(BIN_DIR)/test_model $(OBJECTS_DIR)/test_model.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

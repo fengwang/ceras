@@ -36,6 +36,11 @@ namespace ceras
         {
             return id_;
         }
+
+        std::string name() const noexcept
+        {
+            return name_;
+        }
     };
 
 }//namespace ceras

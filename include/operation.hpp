@@ -30,6 +30,7 @@ namespace ceras
         Backward_Action backward_action_;
         std::function<void()> reset_action_;
 
+        typedef Operator wrapped_operator_type;
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
@@ -79,8 +80,10 @@ namespace ceras
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
         std::function<void()> reset_action_;
 
-        //typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(lhs_op_)>().forward(), std::declval<decltype(rhs_op_)>().forward() ) ) tensor_type;
-        using tensor_type = typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type; // defined in value.hpp
+        typedef Lhs_Operator wrapped_lhs_operator_type;
+        typedef Rhs_Operator wrapped_rhs_operator_type;
+        typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
+        //using tensor_type = typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type; // defined in value.hpp
 
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
@@ -146,9 +149,16 @@ namespace ceras
     template< typename Operator, typename Forward_Action, typename Backward_Action >
     struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
 
+    ///
+    /// If T is an instance of a unary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    ///
     template< class T >
     inline constexpr bool is_unary_operator_v = is_unary_operator<T>::value;
 
+    ///
+    /// @concept Unary_Operator<>
+    /// @brief A type that represents an unary operator.
+    ///
     template< typename T >
     concept Unary_Operator = is_unary_operator_v<T>;
 
@@ -159,33 +169,30 @@ namespace ceras
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
     struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
 
+    ///
+    /// If T is an instance of a binary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    ///
     template< class T >
     inline constexpr bool is_binary_operator_v = is_binary_operator<T>::value;
 
+    ///
+    /// @concept Binary_Operator<>
+    /// @brief A type that represents a binary operator.
+    ///
     template< typename T >
     concept Binary_Operator = is_binary_operator_v<T>;
 
-
+    ///
+    /// @concept Operator<>
+    /// @brief A type that represents an unary or a binary operator.
+    ///
     template< typename T >
     concept Operator = Unary_Operator<T> || Binary_Operator<T>;
 
-    /*
-    template< typename T >
-    struct is_operator : std::false_type {};
-
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct is_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
-
-    template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct is_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
-
-    template< class T >
-    inline constexpr bool is_operator_v = is_operator<T>::value;
-
-    template< typename T >
-    concept Operator = is_operator_v<T>;
-    */
-
+    ///
+    /// @concept Expression<>
+    /// @brief A type that represents a unary operator, a binary operator, a variable, a place_holder, a constant or a value
+    ///
     template< typename T >
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
 
