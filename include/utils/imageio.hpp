@@ -39,7 +39,7 @@ namespace ceras::imageio
     }
 
     template< Tensor Tsor >
-    inline bool imwrite( std::string const& path, Tsor const& image )
+    inline bool direct_imwrite( std::string const& path, Tsor const& image )
     {
         better_assert( image.ndim() == 2 || image.ndim() == 3, "Expecting an input tensor of 2D or 3D, but got ", image.ndim() );
 
@@ -77,6 +77,23 @@ namespace ceras::imageio
         // reaching here, the extension is unknown, png is the last chance
         full_path += std::string{".png"};
         return 0 != stbi_write_png( full_path.c_str(), w, h, ch, reinterpret_cast<const void*>( image.data() ), 0 );
+    }
+
+    template< Tensor Tsor >
+    inline bool imwrite( std::string const& path, Tsor const& image )
+    {
+        typedef typename Tsor::value_type value_type;
+        if (sizeof(value_type) == 1)
+        {
+            return direct_imwrite( path, image );
+        }
+
+        value_type const mx = amax( image );
+        value_type const mn = amin( image );
+
+        tensor<std::uint8_t> image_{ image.shape() };
+        for_each( image.begin(), image.end(), image_.begin(), [mx, mn]( value_type x, std::uint8_t& v ) { v = static_cast<std::uint8_t>( 255.0 * (x - mn) / (mx-mn+1.0e-10) ); } );
+        return direct_imwrite( path, image_ );
     }
 
 }//namespace ceras::imageio

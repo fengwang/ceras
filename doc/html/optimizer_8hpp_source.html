@@ -409,23 +409,25 @@ $(function() {
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                <span class="keywordflow">if</span> (v.trainable_)</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                {</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                    <span class="comment">//v.data() -= learning_rate_ * (v.gradient());</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                    v.data() -= <a class="code" href="structceras_1_1gradient__descent.html#abb64bb342efd0c885a27646ebeeeb4e3">learning_rate_</a> * v.gradient();</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                }</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;            }</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        }</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160; </div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    };</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160; </div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="comment">// TODO: adamax, nadam, ftrl</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;}<span class="comment">//namespace ceras</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="preprocessor">#endif</span><span class="comment">//XNRPSJMCYFXBDGNRJAWDNDIYQNGNXMRVLEHGNQWILKMTHGNOVHODLLXCCNIMUUFQSMOIYHDUD</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                    better_assert( !<a class="code" href="namespaceceras.html#a75a6f43587550568e76d30a9403c6c8e">has_nan</a>(v.gradient()), <span class="stringliteral">&quot;gradient_descent error, tensor with id &quot;</span>, <span class="keywordtype">id</span>, <span class="stringliteral">&quot; has a nan value.&quot;</span> );</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                    v.data() -= <a class="code" href="structceras_1_1gradient__descent.html#abb64bb342efd0c885a27646ebeeeb4e3">learning_rate_</a> * v.gradient();</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                }</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            }</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        }</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160; </div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    };</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160; </div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    <span class="comment">// TODO: adamax, nadam, ftrl</span></div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160; </div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;}<span class="comment">//namespace ceras</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; </div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#endif</span><span class="comment">//XNRPSJMCYFXBDGNRJAWDNDIYQNGNXMRVLEHGNQWILKMTHGNOVHODLLXCCNIMUUFQSMOIYHDUD</span></div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
 <div class="ttc" id="aconfig_8hpp_html"><div class="ttname"><a href="config_8hpp.html">config.hpp</a></div></div>
 <div class="ttc" id="anamespaceceras_html"><div class="ttname"><a href="namespaceceras.html">ceras</a></div><div class="ttdef"><b>Definition:</b> activation.hpp:12</div></div>
-<div class="ttc" id="anamespaceceras_html_ace1369621686ba020135994c415c9031"><div class="ttname"><a href="namespaceceras.html#ace1369621686ba020135994c415c9031">ceras::max</a></div><div class="ttdeci">auto max(Tsor const &amp;tsor)</div><div class="ttdef"><b>Definition:</b> tensor.hpp:947</div></div>
-<div class="ttc" id="anamespaceceras_html_ad46471f8220a1f5fc4dbeb8a857ad973"><div class="ttname"><a href="namespaceceras.html#ad46471f8220a1f5fc4dbeb8a857ad973">ceras::zeros_like</a></div><div class="ttdeci">constexpr Tsor zeros_like(Tsor const &amp;tsor)</div><div class="ttdef"><b>Definition:</b> tensor.hpp:927</div></div>
+<div class="ttc" id="anamespaceceras_html_a75a6f43587550568e76d30a9403c6c8e"><div class="ttname"><a href="namespaceceras.html#a75a6f43587550568e76d30a9403c6c8e">ceras::has_nan</a></div><div class="ttdeci">bool has_nan(Tsor const &amp;tsor)</div><div class="ttdef"><b>Definition:</b> tensor.hpp:1061</div></div>
+<div class="ttc" id="anamespaceceras_html_ace1369621686ba020135994c415c9031"><div class="ttname"><a href="namespaceceras.html#ace1369621686ba020135994c415c9031">ceras::max</a></div><div class="ttdeci">auto max(Tsor const &amp;tsor)</div><div class="ttdef"><b>Definition:</b> tensor.hpp:974</div></div>
+<div class="ttc" id="anamespaceceras_html_ad46471f8220a1f5fc4dbeb8a857ad973"><div class="ttname"><a href="namespaceceras.html#ad46471f8220a1f5fc4dbeb8a857ad973">ceras::zeros_like</a></div><div class="ttdeci">constexpr Tsor zeros_like(Tsor const &amp;tsor)</div><div class="ttdef"><b>Definition:</b> tensor.hpp:954</div></div>
 <div class="ttc" id="aoperation_8hpp_html"><div class="ttname"><a href="operation_8hpp.html">operation.hpp</a></div></div>
 <div class="ttc" id="aplace__holder_8hpp_html"><div class="ttname"><a href="place__holder_8hpp.html">place_holder.hpp</a></div></div>
 <div class="ttc" id="asession_8hpp_html"><div class="ttname"><a href="session_8hpp.html">session.hpp</a></div></div>

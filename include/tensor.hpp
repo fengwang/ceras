@@ -41,7 +41,6 @@ namespace ceras
         tensor slice( unsigned long m, unsigned long n ) const noexcept
         {
             better_assert( m < n, "starting dimension larger than then ending dimension." );
-
             better_assert( !shape_.empty(), "Cannot slice an empty tensor." );
 
             unsigned long first_dim = shape_[0];
@@ -311,6 +310,12 @@ namespace ceras
             return  ans;
         }
 
+        constexpr value_type as_scalar() const noexcept
+        {
+            better_assert( size() == 1, "Expecting tensor has a single value, but got ", size() );
+            return *begin();
+        }
+
     };
 
     template <typename T, typename A=default_allocator<T> >
@@ -421,6 +426,9 @@ namespace ceras
             return data_;
         }
     };
+
+    template< typename T >
+    using matrix = view_2d<T>;
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
@@ -1175,12 +1183,9 @@ namespace ceras
             std::copy( std::istream_iterator<unsigned long>( ss ), std::istream_iterator<unsigned long>(), std::back_inserter( shape ) );
         }
 
-        // read the data
+        // read data
         std::vector< _Tp > buff;
         {
-            //std::stringstream iss;
-            //std::copy( std::istreambuf_iterator< char >( __is ), std::istreambuf_iterator< char >(), std::ostreambuf_iterator< char >( iss ) );
-            //std::copy( std::istream_iterator< _Tp >( iss ), std::istream_iterator< _Tp >(), std::back_inserter( buff ) );
             std::string cache;
             std::getline( __is, cache );
             std::stringstream ss( cache );
@@ -1269,6 +1274,9 @@ namespace ceras
         }
     };
 
+    template< typename T >
+    using cube = view_3d<T>;
+
     ///
     /// A class viewing a 1-D array as a 4-D tensor. This class is useful when treating an array as a typical 4-D tensor in a neural network, with a shape of [batch_size, row, column, channel].
     ///
@@ -1328,7 +1336,10 @@ namespace ceras
         {
             return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
         }
-    };
+    }; // struct view_4d
+
+    template<typename T >
+    using tesseract = view_4d<T>;
 
 }//namespace ceras
 

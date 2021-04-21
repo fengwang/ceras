@@ -6,7 +6,7 @@ int main()
     using namespace ceras;
 
     auto a = Input(); // (4,)
-    auto b = Dense( 16, 4 )( a );
+    auto b = Dense( 11, 4 )( a );
     auto m1 = model{ a, b }; // 4->16
 
     auto x = Input(); // ( 7, )

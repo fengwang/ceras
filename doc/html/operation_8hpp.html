@@ -97,11 +97,13 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__operator.html">ceras::is_operator&lt; T &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__unary__operator.html">ceras::is_unary_operator&lt; T &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__operator_3_01binary__operator_3_01Lhs__Operator_00_01Rhs__Operator_00_01Forwaafbd2820ba41d62398bf94e9fcde2341.html">ceras::is_operator&lt; binary_operator&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt; &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__unary__operator_3_01unary__operator_3_01Operator_00_01Forward__Action_00_01Backward__Action_01_4_01_4.html">ceras::is_unary_operator&lt; unary_operator&lt; Operator, Forward_Action, Backward_Action &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__operator_3_01unary__operator_3_01Operator_00_01Forward__Action_00_01Backward__Action_01_4_01_4.html">ceras::is_operator&lt; unary_operator&lt; Operator, Forward_Action, Backward_Action &gt; &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__binary__operator.html">ceras::is_binary_operator&lt; T &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__binary__operator_3_01binary__operator_3_01Lhs__Operator_00_01Rhs__Operator_005b79be872a28009617621f04231b6ae7.html">ceras::is_binary_operator&lt; binary_operator&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
@@ -211,7 +213,7 @@ Functions</h2></td></tr>
 <tr class="memitem:ad07235450ed445488a40e5fe6c86ccf8"><td class="memTemplParams" colspan="2">template&lt;Expression Lhs_Expression, Expression Rhs_Expression&gt; </td></tr>
 <tr class="memitem:ad07235450ed445488a40e5fe6c86ccf8"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ad07235450ed445488a40e5fe6c86ccf8">ceras::maximum</a> (Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</td></tr>
 <tr class="separator:ad07235450ed445488a40e5fe6c86ccf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memTemplParams" colspan="2">template&lt;typename T  = float&gt; </td></tr>
 <tr class="memitem:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memTemplItemLeft" align="right" valign="top">requires std::floating_point&lt; T &gt; auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a5ee3b25632e70da4c9b0dc8e5267e69b">ceras::random_normal_like</a> (T mean=0.0, T stddev=1.0) noexcept</td></tr>
 <tr class="separator:a5ee3b25632e70da4c9b0dc8e5267e69b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -221,14 +223,27 @@ Variables</h2></td></tr>
 <tr class="separator:ac6ac38e73de3aafab36b36bbb617b0ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07817785d54e9eb33d2355320b328543"><td class="memItemLeft" align="right" valign="top">static constexpr auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a07817785d54e9eb33d2355320b328543">ceras::make_binary_operator</a></td></tr>
 <tr class="separator:a07817785d54e9eb33d2355320b328543"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1bbad9087119163f72e18ac8842fe362"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
-<tr class="memitem:a1bbad9087119163f72e18ac8842fe362"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a1bbad9087119163f72e18ac8842fe362">ceras::is_operator_v</a> = is_operator&lt;T&gt;::value</td></tr>
-<tr class="separator:a1bbad9087119163f72e18ac8842fe362"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbec4790848ea3b168792a4cfd3d1460"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:acbec4790848ea3b168792a4cfd3d1460"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#acbec4790848ea3b168792a4cfd3d1460">ceras::is_unary_operator_v</a> = is_unary_operator&lt;T&gt;::value</td></tr>
+<tr class="separator:acbec4790848ea3b168792a4cfd3d1460"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65baaccb21617f276a6e9ac0640d468f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a65baaccb21617f276a6e9ac0640d468f"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a65baaccb21617f276a6e9ac0640d468f">ceras::Unary_Operator</a> = is_unary_operator_v&lt;T&gt;</td></tr>
+<tr class="memdesc:a65baaccb21617f276a6e9ac0640d468f"><td class="mdescLeft">&#160;</td><td class="mdescRight">A type that represents an unary operator.  <a href="namespaceceras.html#a65baaccb21617f276a6e9ac0640d468f">More...</a><br /></td></tr>
+<tr class="separator:a65baaccb21617f276a6e9ac0640d468f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e73c859d6cb548751c183c0f765eb31"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a4e73c859d6cb548751c183c0f765eb31"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a4e73c859d6cb548751c183c0f765eb31">ceras::is_binary_operator_v</a> = is_binary_operator&lt;T&gt;::value</td></tr>
+<tr class="separator:a4e73c859d6cb548751c183c0f765eb31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a750c4d7c7f4819e942ce5d12925adcae"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a750c4d7c7f4819e942ce5d12925adcae"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a750c4d7c7f4819e942ce5d12925adcae">ceras::Binary_Operator</a> = is_binary_operator_v&lt;T&gt;</td></tr>
+<tr class="memdesc:a750c4d7c7f4819e942ce5d12925adcae"><td class="mdescLeft">&#160;</td><td class="mdescRight">A type that represents a binary operator.  <a href="namespaceceras.html#a750c4d7c7f4819e942ce5d12925adcae">More...</a><br /></td></tr>
+<tr class="separator:a750c4d7c7f4819e942ce5d12925adcae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64ede146ebe135d256ac4688959c059a"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a64ede146ebe135d256ac4688959c059a"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a64ede146ebe135d256ac4688959c059a">ceras::Operator</a> = is_operator_v&lt;T&gt;</td></tr>
+<tr class="memitem:a64ede146ebe135d256ac4688959c059a"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a64ede146ebe135d256ac4688959c059a">ceras::Operator</a> = Unary_Operator&lt;T&gt; || Binary_Operator&lt;T&gt;</td></tr>
+<tr class="memdesc:a64ede146ebe135d256ac4688959c059a"><td class="mdescLeft">&#160;</td><td class="mdescRight">A type that represents an unary or a binary operator.  <a href="namespaceceras.html#a64ede146ebe135d256ac4688959c059a">More...</a><br /></td></tr>
 <tr class="separator:a64ede146ebe135d256ac4688959c059a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa715d4495f1a4100e9afcf1aac369afe"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:aa715d4495f1a4100e9afcf1aac369afe"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">ceras::Expression</a> = Operator&lt;T&gt; || Variable&lt;T&gt; || Place_Holder&lt;T&gt; || Constant&lt;T&gt; || Value&lt;T&gt;</td></tr>
+<tr class="memdesc:aa715d4495f1a4100e9afcf1aac369afe"><td class="mdescLeft">&#160;</td><td class="mdescRight">A type that represents a unary operator, a binary operator, a variable, a <a class="el" href="structceras_1_1place__holder.html">place_holder</a>, a constant or a value.  <a href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">More...</a><br /></td></tr>
 <tr class="separator:aa715d4495f1a4100e9afcf1aac369afe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->

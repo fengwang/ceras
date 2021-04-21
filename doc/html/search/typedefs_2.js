@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['op_5ftype_564',['op_type',['../structceras_1_1tensor__deduction.html#a56795d08fa258e2231fdde5b215c87c3',1,'ceras::tensor_deduction']]]
+  ['default_5fallocator_595',['default_allocator',['../namespaceceras.html#a8b9685f88a2a9e1faae484d271214494',1,'ceras']]]
 ];

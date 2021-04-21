@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['rms_5fprop_566',['rms_prop',['../namespaceceras.html#a2c06c2ff6f5dd6195a45300a96a9c94c',1,'ceras']]]
+  ['op_5ftype_597',['op_type',['../structceras_1_1tensor__deduction.html#a56795d08fa258e2231fdde5b215c87c3',1,'ceras::tensor_deduction']]]
 ];

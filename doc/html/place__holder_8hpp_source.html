@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    };</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keyword">template</span>&lt; Tensor Tsor &gt;</div>
-<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="structceras_1_1place__holder.html">   23</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structceras_1_1place__holder.html">place_holder</a> : enable_id&lt; place_holder&lt;Tsor&gt;, &quot;Place Holder&quot; &gt;, enable_shared_state&lt;place_holder&lt;Tsor&gt;, place_holder_state&lt;Tsor&gt;&gt;</div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="structceras_1_1place__holder.html">   23</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structceras_1_1place__holder.html">place_holder</a> : enable_id&lt; place_holder&lt;Tsor&gt;, &quot;PlaceHolder&quot; &gt;, enable_shared_state&lt;place_holder&lt;Tsor&gt;, place_holder_state&lt;Tsor&gt;&gt;</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    {</div>
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="structceras_1_1place__holder.html#a847e8d8bcb7c205775b9aac6a109abb8">   25</a></span>&#160;        <span class="keyword">typedef</span> Tsor <a class="code" href="structceras_1_1place__holder.html#a847e8d8bcb7c205775b9aac6a109abb8">tensor_type</a>;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
@@ -143,14 +143,56 @@ $(function() {
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
 <div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">   71</a></span>&#160;    concept <a class="code" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">Place_Holder</a> = is_place_holder_v&lt;T&gt;;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}<span class="comment">//namespace ceras</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif</span><span class="comment">//JPSBQEEADUPURARCCBVXOLXVMQHTNWCQWXUKKHCOTWFGOGXSODKEEYLSSTFGTVXNBROLKKEJM</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="namespaceceras.html#ad6e225ca3a541d36c0766b1ca0c7f8e8">   74</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#ad6e225ca3a541d36c0766b1ca0c7f8e8">operator == </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    {</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <span class="keywordflow">return</span> lhs.id() == rhs.id();</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    }</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="namespaceceras.html#abbf53a82f0b7a0654df1db3045d44ada">   80</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#abbf53a82f0b7a0654df1db3045d44ada">operator != </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    {</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">return</span> lhs.id() != rhs.id();</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="namespaceceras.html#abf96b03ab2dd0c607a923aefaff43cec">   86</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#abf96b03ab2dd0c607a923aefaff43cec">operator &lt; </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    {</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordflow">return</span> lhs.id() &lt; rhs.id();</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    }</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="namespaceceras.html#ab744f6fffcdba65e06e983fa7a16ad26">   92</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#ab744f6fffcdba65e06e983fa7a16ad26">operator &gt; </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    {</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordflow">return</span> lhs.id() &lt; rhs.id();</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    }</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="namespaceceras.html#aef1a77c2a248205fc6bbe2c7e50856e4">   98</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#aef1a77c2a248205fc6bbe2c7e50856e4">operator &lt;= </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    {</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">return</span> lhs.id() &lt;= rhs.id();</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    }</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">template</span>&lt; Place_Holder Ph &gt;</div>
+<div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="namespaceceras.html#ac83f7d960e45cf6c8fe94b5217515b67">  104</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="namespaceceras.html#ac83f7d960e45cf6c8fe94b5217515b67">operator &gt;= </a>( Ph <span class="keyword">const</span>&amp; lhs, Ph <span class="keyword">const</span>&amp; rhs )</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    {</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keywordflow">return</span> lhs.id() &gt;= rhs.id();</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    }</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;}<span class="comment">//namespace ceras</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="preprocessor">#endif</span><span class="comment">//JPSBQEEADUPURARCCBVXOLXVMQHTNWCQWXUKKHCOTWFGOGXSODKEEYLSSTFGTVXNBROLKKEJM</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
 <div class="ttc" id="aincludes_8hpp_html"><div class="ttname"><a href="includes_8hpp.html">includes.hpp</a></div></div>
 <div class="ttc" id="anamespaceceras_html"><div class="ttname"><a href="namespaceceras.html">ceras</a></div><div class="ttdef"><b>Definition:</b> activation.hpp:12</div></div>
 <div class="ttc" id="anamespaceceras_html_a514bfbcf1a92e44dab273c1e847767f4"><div class="ttname"><a href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">ceras::Place_Holder</a></div><div class="ttdeci">concept Place_Holder</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:71</div></div>
 <div class="ttc" id="anamespaceceras_html_a86046751dc350fda0d1fbec40f23532e"><div class="ttname"><a href="namespaceceras.html#a86046751dc350fda0d1fbec40f23532e">ceras::is_place_holder_v</a></div><div class="ttdeci">constexpr bool is_place_holder_v</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:68</div></div>
+<div class="ttc" id="anamespaceceras_html_ab744f6fffcdba65e06e983fa7a16ad26"><div class="ttname"><a href="namespaceceras.html#ab744f6fffcdba65e06e983fa7a16ad26">ceras::operator&gt;</a></div><div class="ttdeci">bool operator&gt;(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:92</div></div>
+<div class="ttc" id="anamespaceceras_html_abbf53a82f0b7a0654df1db3045d44ada"><div class="ttname"><a href="namespaceceras.html#abbf53a82f0b7a0654df1db3045d44ada">ceras::operator!=</a></div><div class="ttdeci">bool operator!=(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:80</div></div>
+<div class="ttc" id="anamespaceceras_html_abf96b03ab2dd0c607a923aefaff43cec"><div class="ttname"><a href="namespaceceras.html#abf96b03ab2dd0c607a923aefaff43cec">ceras::operator&lt;</a></div><div class="ttdeci">bool operator&lt;(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:86</div></div>
+<div class="ttc" id="anamespaceceras_html_ac83f7d960e45cf6c8fe94b5217515b67"><div class="ttname"><a href="namespaceceras.html#ac83f7d960e45cf6c8fe94b5217515b67">ceras::operator&gt;=</a></div><div class="ttdeci">bool operator&gt;=(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:104</div></div>
+<div class="ttc" id="anamespaceceras_html_ad6e225ca3a541d36c0766b1ca0c7f8e8"><div class="ttname"><a href="namespaceceras.html#ad6e225ca3a541d36c0766b1ca0c7f8e8">ceras::operator==</a></div><div class="ttdeci">bool operator==(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:74</div></div>
+<div class="ttc" id="anamespaceceras_html_aef1a77c2a248205fc6bbe2c7e50856e4"><div class="ttname"><a href="namespaceceras.html#aef1a77c2a248205fc6bbe2c7e50856e4">ceras::operator&lt;=</a></div><div class="ttdeci">bool operator&lt;=(Ph const &amp;lhs, Ph const &amp;rhs)</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:98</div></div>
 <div class="ttc" id="astructceras_1_1is__place__holder_html"><div class="ttname"><a href="structceras_1_1is__place__holder.html">ceras::is_place_holder</a></div><div class="ttdef"><b>Definition:</b> place_holder.hpp:62</div></div>
 <div class="ttc" id="astructceras_1_1place__holder__state_html"><div class="ttname"><a href="structceras_1_1place__holder__state.html">ceras::place_holder_state</a></div><div class="ttdef"><b>Definition:</b> place_holder.hpp:17</div></div>
 <div class="ttc" id="astructceras_1_1place__holder__state_html_a7fc1d312aab48a6d04c1355af6c494fa"><div class="ttname"><a href="structceras_1_1place__holder__state.html#a7fc1d312aab48a6d04c1355af6c494fa">ceras::place_holder_state::shape_hint_</a></div><div class="ttdeci">std::vector&lt; unsigned long &gt; shape_hint_</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:19</div></div>

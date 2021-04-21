@@ -4,6 +4,7 @@
 #include "../include/utils/better_assert.hpp"
 #include "../include/utils/color.hpp"
 #include "../include/utils/tqdm.hpp"
+#include "../include/utils/imageio.hpp"
 
 #include <fstream>
 #include <string>
@@ -30,25 +31,24 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
     return ans;
 }
 
-/*
-auto make_encoder( auto input )
+auto make_encoder()
 {
+    using namespace ceras;
+    auto input = Input();// (28*28, )
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
     auto l2 = relu( Dense( 128, 256 )( l1 ) );
-    auto z_mean = Dense( latent_dim, 128 )( l2 );
-    auto z_log_var = Dense( latent_dim, 128 )( l2 );
-    auto z = z_mean + hadamard_product( exponential(z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
-    return model( input, z );
+    return model( input, l2 );
 }
 
-auto make_decoder( auto z )
+auto make_decoder( unsigned long const latent_dim )
 {
+    using namespace ceras;
+    auto z = Input(); // (latent_dim, ) -> (28*28,)
     auto z_decoder_1 = relu( Dense( 128, latent_dim )( z ) );
     auto z_decoder_2 = relu( Dense( 256, 128 )( z_decoder_1 ) );
     auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
     return model( z, y );
 }
-*/
 
 int main()
 {
@@ -58,33 +58,29 @@ int main()
 
     using namespace ceras;
     typedef tensor<float> tensor_type;
-    unsigned long latent_dim = 2;
-    auto x = Input(); // 1-D, 28x28 pixels
+    unsigned long const latent_dim = 2;
 
-    // TODO
+    auto encoder = make_encoder();
+    auto decoder = make_decoder( latent_dim );
 
-    auto l1 = relu( Dense( 256, 28*28 )( x ) );
-    auto l2 = relu( Dense( 128, 256 )( l1 ) );
+    auto x = Input();
+    auto l2 = encoder( x );
     auto z_mean = Dense( latent_dim, 128 )( l2 );
     auto z_log_var = Dense( latent_dim, 128 )( l2 );
-    auto z = z_mean + hadamard_product( exponential(z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
+    auto z = z_mean + hadamard_product( exponential(value(0.5f)*z_log_var), random_normal_like(0.0f, 1.0f)( z_mean ) );
+    auto y = decoder( z );
 
-    auto z_decoder_1 = relu( Dense( 128, latent_dim )( z ) );
-    auto z_decoder_2 = relu( Dense( 256, 128 )( z_decoder_1 ) );
-    auto y = sigmoid( Dense( 28*28, 256 )( z_decoder_2 ) );
 
     auto reconstruction_loss = cross_entropy( x, y );
-    //auto kl_loss = sum_reduce( hadamard_product( value{-0.5}, (value{1.0} + z_log_var - square(z_mean) - exponential(z_log_var))) );
     auto kl_loss = sum_reduce(  value{-0.5} * (value{1.0} + z_log_var - square(z_mean) - exponential(z_log_var)) );
     auto loss = reconstruction_loss + kl_loss;
-    //auto loss = reconstruction_loss;
 
     // preparing training
     std::size_t const batch_size = 10;
     tensor_type input_images{ {batch_size, 28*28} };
-    //tensor_type output_labels{ {batch_size, 10} };
 
     //std::size_t const epoch = 100;
+    //std::size_t const epoch = 10;
     std::size_t const epoch = 10;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
@@ -115,6 +111,30 @@ int main()
     }
 
     std::cout << std::endl;
+
+
+    unsigned long const n = 30;
+
+    auto grid = linspace( -1.0f, 1.0f, n );
+    auto input_data = tensor<float>{ {1, 2,} };
+    std::vector<tensor<float>> results;
+
+    for ( auto r : range( n ) )
+        for ( auto c : range( n ) )
+        {
+            input_data[0] = grid[r];
+            input_data[1] = grid[c];
+
+            auto result = squeeze( decoder.predict( input_data ) );
+            result.reshape( {28, 28} );
+            results.push_back( result * 255.0f );
+        }
+
+    for ( auto idx : range( results.size() ) )
+    {
+        std::string const file_name = std::string{"./test/mnist_vae_"} + std::to_string( idx ) + std::string{".png"};
+        imageio::imwrite( file_name, results[idx] );
+    }
 
 #if 0
     unsigned long const new_batch_size = 1;

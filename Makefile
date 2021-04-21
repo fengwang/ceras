@@ -325,6 +325,10 @@ model: test/model.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_model.o test/model.cc
 	$(LINK) -o $(BIN_DIR)/test_model $(OBJECTS_DIR)/test_model.o $(LFLAGS)
 
+mnist_autoencoder: test/mnist_autoencoder.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_autoencoder.o test/mnist_autoencoder.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_autoencoder $(OBJECTS_DIR)/test_mnist_autoencoder.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

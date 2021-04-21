@@ -13,6 +13,7 @@ var searchData=
   ['amax_11',['amax',['../namespaceceras.html#a0c7b826857370fb2d9b1ffb30af530f9',1,'ceras']]],
   ['amin_12',['amin',['../namespaceceras.html#ab39354aee259c6df87582821a0399585',1,'ceras']]],
   ['amsgrad_5f_13',['amsgrad_',['../structceras_1_1adam.html#a745f12db2c2408c14467d389c50e5c9b',1,'ceras::adam']]],
-  ['as_5ftensor_14',['as_tensor',['../namespaceceras.html#a906189c60c86fb821cc6a249077a3ea7',1,'ceras']]],
-  ['average_5fpooling_5f2d_15',['average_pooling_2d',['../namespaceceras.html#aed527af6033d052ead3cd9ae25144958',1,'ceras']]]
+  ['as_5fscalar_14',['as_scalar',['../structceras_1_1tensor.html#a0369c3b29f8d12562faf185945761322',1,'ceras::tensor']]],
+  ['as_5ftensor_15',['as_tensor',['../namespaceceras.html#a906189c60c86fb821cc6a249077a3ea7',1,'ceras']]],
+  ['average_5fpooling_5f2d_16',['average_pooling_2d',['../namespaceceras.html#aed527af6033d052ead3cd9ae25144958',1,'ceras']]]
 ];

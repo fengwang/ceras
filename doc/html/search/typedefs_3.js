@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['place_5fholder_5ftype_565',['place_holder_type',['../structceras_1_1session.html#ac4c75ae3dae37ef8465bfed950d0f1e2',1,'ceras::session']]]
+  ['matrix_596',['matrix',['../namespaceceras.html#ad22edfae47c664fbe64b3e80513e4a3d',1,'ceras']]]
 ];

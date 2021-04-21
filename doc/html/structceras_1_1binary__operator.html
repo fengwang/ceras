@@ -87,8 +87,12 @@ Inheritance diagram for ceras::binary_operator&lt; Lhs_Operator, Rhs_Operator, F
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a4ca7378f8fc9cb69c9374f0f5d3202cc"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> = typename <a class="el" href="structceras_1_1tensor__deduction.html">tensor_deduction</a>&lt; Lhs_Operator, Rhs_Operator &gt;::<a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a></td></tr>
-<tr class="separator:a4ca7378f8fc9cb69c9374f0f5d3202cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0990b1a1683b167f00f49d4ecdd6f14f"><td class="memItemLeft" align="right" valign="top">typedef Lhs_Operator&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a0990b1a1683b167f00f49d4ecdd6f14f">wrapped_lhs_operator_type</a></td></tr>
+<tr class="separator:a0990b1a1683b167f00f49d4ecdd6f14f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3e880fee771d28e7d2e272815a95860"><td class="memItemLeft" align="right" valign="top">typedef Rhs_Operator&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#ad3e880fee771d28e7d2e272815a95860">wrapped_rhs_operator_type</a></td></tr>
+<tr class="separator:ad3e880fee771d28e7d2e272815a95860"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa565c4a0185a1da139b40f027abd853b"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="structceras_1_1tensor__deduction.html">tensor_deduction</a>&lt; Lhs_Operator, Rhs_Operator &gt;::<a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a></td></tr>
+<tr class="separator:aa565c4a0185a1da139b40f027abd853b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -96,7 +100,7 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aff8e7ea2bd4571334e2584d0700ec088"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb3a550917e0b5e2ffa25fd506333c5c"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#afb3a550917e0b5e2ffa25fd506333c5c">forward</a> ()</td></tr>
 <tr class="separator:afb3a550917e0b5e2ffa25fd506333c5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3dc544172c21eb70a4e472a1bbb1732"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#aa3dc544172c21eb70a4e472a1bbb1732">backward</a> (<a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> const &amp;grad)</td></tr>
+<tr class="memitem:aa3dc544172c21eb70a4e472a1bbb1732"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#aa3dc544172c21eb70a4e472a1bbb1732">backward</a> (<a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> const &amp;grad)</td></tr>
 <tr class="separator:aa3dc544172c21eb70a4e472a1bbb1732"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcf0b592ef8d907c2452fa83f18e2f7b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#afcf0b592ef8d907c2452fa83f18e2f7b">reset_states</a> ()</td></tr>
 <tr class="separator:afcf0b592ef8d907c2452fa83f18e2f7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -113,16 +117,16 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a676ac99d1fbda287a55e97c24a4c3752"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6607cfd0f59b2349a03bd63b78f3a748"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a6607cfd0f59b2349a03bd63b78f3a748">reset_action_</a></td></tr>
 <tr class="separator:a6607cfd0f59b2349a03bd63b78f3a748"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf9e41e083058284cf187e0b1f8b454a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#adf9e41e083058284cf187e0b1f8b454a">lhs_input_data_</a></td></tr>
+<tr class="memitem:adf9e41e083058284cf187e0b1f8b454a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#adf9e41e083058284cf187e0b1f8b454a">lhs_input_data_</a></td></tr>
 <tr class="separator:adf9e41e083058284cf187e0b1f8b454a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16e1012b7bb952fb5e423463f5a6377e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a16e1012b7bb952fb5e423463f5a6377e">rhs_input_data_</a></td></tr>
+<tr class="memitem:a16e1012b7bb952fb5e423463f5a6377e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a16e1012b7bb952fb5e423463f5a6377e">rhs_input_data_</a></td></tr>
 <tr class="separator:a16e1012b7bb952fb5e423463f5a6377e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f3f1793b6bc24840e4ebc11bdba3310"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a4f3f1793b6bc24840e4ebc11bdba3310">output_data_</a></td></tr>
+<tr class="memitem:a4f3f1793b6bc24840e4ebc11bdba3310"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1binary__operator.html#a4f3f1793b6bc24840e4ebc11bdba3310">output_data_</a></td></tr>
 <tr class="separator:a4f3f1793b6bc24840e4ebc11bdba3310"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
-<a id="a4ca7378f8fc9cb69c9374f0f5d3202cc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ca7378f8fc9cb69c9374f0f5d3202cc">&#9670;&nbsp;</a></span>tensor_type</h2>
+<a id="aa565c4a0185a1da139b40f027abd853b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa565c4a0185a1da139b40f027abd853b">&#9670;&nbsp;</a></span>tensor_type</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -130,7 +134,39 @@ Public Attributes</h2></td></tr>
 template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::<a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> =  typename <a class="el" href="structceras_1_1tensor__deduction.html">tensor_deduction</a>&lt;Lhs_Operator, Rhs_Operator&gt;::<a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a></td>
+          <td class="memname">typedef <a class="el" href="structceras_1_1tensor__deduction.html">tensor_deduction</a>&lt;Lhs_Operator, Rhs_Operator&gt;::<a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::<a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0990b1a1683b167f00f49d4ecdd6f14f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0990b1a1683b167f00f49d4ecdd6f14f">&#9670;&nbsp;</a></span>wrapped_lhs_operator_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef Lhs_Operator <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::<a class="el" href="structceras_1_1binary__operator.html#a0990b1a1683b167f00f49d4ecdd6f14f">wrapped_lhs_operator_type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad3e880fee771d28e7d2e272815a95860"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3e880fee771d28e7d2e272815a95860">&#9670;&nbsp;</a></span>wrapped_rhs_operator_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef Rhs_Operator <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::<a class="el" href="structceras_1_1binary__operator.html#ad3e880fee771d28e7d2e272815a95860">wrapped_rhs_operator_type</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -209,7 +245,7 @@ template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Act
         <tr>
           <td class="memname">void <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::backward </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> const &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> const &amp;&#160;</td>
           <td class="paramname"><em>grad</em></td><td>)</td>
           <td></td>
         </tr>
@@ -319,7 +355,7 @@ template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Act
 template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::lhs_input_data_</td>
+          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::lhs_input_data_</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -351,7 +387,7 @@ template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Act
 template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::output_data_</td>
+          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::output_data_</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -383,7 +419,7 @@ template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Act
 template&lt;typename Lhs_Operator , typename Rhs_Operator , typename Forward_Action , typename Backward_Action &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#a4ca7378f8fc9cb69c9374f0f5d3202cc">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::rhs_input_data_</td>
+          <td class="memname"><a class="el" href="structceras_1_1binary__operator.html#aa565c4a0185a1da139b40f027abd853b">tensor_type</a> <a class="el" href="structceras_1_1binary__operator.html">ceras::binary_operator</a>&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;::rhs_input_data_</td>
         </tr>
       </table>
 </div><div class="memdoc">
