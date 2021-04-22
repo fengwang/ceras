@@ -2,7 +2,6 @@
 
 ----
 
-
 __ceras__ is yet another tiny deep learning engine based on C++ expression templates.  This library mimicks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional for _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
 
 ----
@@ -11,7 +10,7 @@ __ceras__ is yet another tiny deep learning engine based on C++ expression templ
 ## Table of contents
 
 * [Features](#features)
-* [Build](#build)
+* [Usage](#usage)
 * [Design](#design)
 * [Examples](#examples)
 * [Supported layers/operations](#supported-layers)
@@ -23,18 +22,17 @@ __ceras__ is yet another tiny deep learning engine based on C++ expression templ
 ----
 
 ## Features
-- Fast, with/without GPU:
-    - 98% accuracy on MNIST in 10 epochs in 30s (loading dataset, training and validation on a laptop with Intel(R) Core(TM) i7-7700HQ and a mobile GTX 1060)
+- Fast and GPU memory friendly:
+    - 98% accuracy on MNIST in 10 epochs in 30s (loading dataset, training and validation on a laptop with Intel(R) Core(TM) i7-7700HQ and a mobile GTX 1060);
+    - only time-comsuming operations are accelerated by GPU (such as GEMM), and your GPU memory size is not the restriction for a large batch size.
 - Portable:
-    - compiles anywhere as long as your compiler supports C++20;
-    - CUDA acceleration is optional, not a must;
-    - header-only.
+    - header-only, only requires a standard C++ compiler;
+    - CUDA acceleration is optional, not a must.
 - Simply implemented:
-    - mimicking Tensorflow grammar, but in C++.
-    - minimizing the levels of indirection to expose as many implementation details as possible.
+    - mimicking Tensorflow/keras grammar for easy of use;
+    - minimizing the levels of indirections to expose as many implementation details as possible.
 
-
-## Build
+## Usage
 __Using this library__:
 
 copy the `include` directory to the working directory, then include the header file
