@@ -99,6 +99,12 @@ $(function() {
 , <a class="el" href="structceras_1_1view__3d.html#aae601d96cb966cc5a3768e5fa5e775f1">ceras::view_3d&lt; T &gt;</a>
 , <a class="el" href="structceras_1_1view__4d.html#a38a4475831a266adfc15f6bd31b0b809">ceras::view_4d&lt; T &gt;</a>
 </li>
+<li>compiled_optimizer_
+: <a class="el" href="structceras_1_1compiled__model.html#a481cbe3d0481c688134763b82c141937">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
+</li>
+<li>contexts_
+: <a class="el" href="structceras_1_1variable__state.html#a1a451edf951dd20516374bdd9b11ce2f">ceras::variable_state&lt; Tsor &gt;</a>
+</li>
 </ul>
 
 
@@ -122,7 +128,7 @@ $(function() {
 
 <h3><a id="index_e"></a>- e -</h3><ul>
 <li>expression_
-: <a class="el" href="structceras_1_1model.html#a11eb3a5a0466aa223af226475d17ca4c">ceras::model&lt; Ex, Ph &gt;</a>
+: <a class="el" href="structceras_1_1model.html#a4d792538f6c7db115a3acbbcd7831108">ceras::model&lt; Ex, Ph &gt;</a>
 </li>
 </ul>
 
@@ -139,12 +145,18 @@ $(function() {
 <li>gradient_
 : <a class="el" href="structceras_1_1variable__state.html#a3d1bf494df81d91180c7fc4b164d2ee6">ceras::variable_state&lt; Tsor &gt;</a>
 </li>
+<li>ground_truth_place_holder_
+: <a class="el" href="structceras_1_1compiled__model.html#ab3e4821503c309546b0559660dedacd3">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
+</li>
 </ul>
 
 
 <h3><a id="index_i"></a>- i -</h3><ul>
 <li>input_data_
 : <a class="el" href="structceras_1_1unary__operator.html#af7c35f7f4634b5ae16d2245a746b96f5">ceras::unary_operator&lt; Operator, Forward_Action, Backward_Action &gt;</a>
+</li>
+<li>input_place_holder_
+: <a class="el" href="structceras_1_1compiled__model.html#a5ece246d492e9035b60d2897ffc4d1ea">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
 </li>
 <li>iterations_
 : <a class="el" href="structceras_1_1adadelta.html#a4d0f49c736a2abaf5d867cf144784e59">ceras::adadelta&lt; Loss, T &gt;</a>
@@ -175,6 +187,7 @@ $(function() {
 : <a class="el" href="structceras_1_1adadelta.html#a9a953ce4b207310b3ded0b0e7b943e09">ceras::adadelta&lt; Loss, T &gt;</a>
 , <a class="el" href="structceras_1_1adagrad.html#a0ecaec28054bbe8f31835107ce1b2e42">ceras::adagrad&lt; Loss, T &gt;</a>
 , <a class="el" href="structceras_1_1adam.html#a51e5b6aec7dcabbb2d05bd6d3bdb6d29">ceras::adam&lt; Loss, T &gt;</a>
+, <a class="el" href="structceras_1_1compiled__model.html#a16cfb4059a18ee8fd55bab87d1285e92">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
 , <a class="el" href="structceras_1_1gradient__descent.html#a9861305f1dfae22b62757869f07437b1">ceras::gradient_descent&lt; Loss, T &gt;</a>
 , <a class="el" href="structceras_1_1rmsprop.html#a703795ae783984f24a404da8722d25e6">ceras::rmsprop&lt; Loss, T &gt;</a>
 , <a class="el" href="structceras_1_1sgd.html#a0e76e2819ade28686d069a8665139b95">ceras::sgd&lt; Loss, T &gt;</a>
@@ -185,6 +198,9 @@ $(function() {
 <h3><a id="index_m"></a>- m -</h3><ul>
 <li>memory_offset_
 : <a class="el" href="structceras_1_1tensor.html#a0312bc96aa8af79c88a1116ea11dfd12">ceras::tensor&lt; T, Allocator &gt;</a>
+</li>
+<li>model_
+: <a class="el" href="structceras_1_1compiled__model.html#a56108292f595504501971aae551e3d44">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
 </li>
 <li>momentum_
 : <a class="el" href="structceras_1_1gradient__descent.html#afd58f8d9c236d34d79281224de9f2e47">ceras::gradient_descent&lt; Loss, T &gt;</a>
@@ -204,6 +220,12 @@ $(function() {
 <li>op_
 : <a class="el" href="structceras_1_1unary__operator.html#a4cfbfbba34642bfd6ef2a1830ba9cd03">ceras::unary_operator&lt; Operator, Forward_Action, Backward_Action &gt;</a>
 </li>
+<li>optimizer_
+: <a class="el" href="structceras_1_1compiled__model.html#a1e35777b45f433eaadaf9b34074ceb0c">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
+</li>
+<li>optimizer_type
+: <a class="el" href="structceras_1_1compiled__model.html#a4a7224c12ebdac88cfb0276b02782f0c">ceras::compiled_model&lt; Model, Optimizer, Loss &gt;</a>
+</li>
 <li>output_data_
 : <a class="el" href="structceras_1_1binary__operator.html#a4f3f1793b6bc24840e4ebc11bdba3310">ceras::binary_operator&lt; Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action &gt;</a>
 , <a class="el" href="structceras_1_1unary__operator.html#ae159c413e887143a6d0b4950b243f113">ceras::unary_operator&lt; Operator, Forward_Action, Backward_Action &gt;</a>
@@ -213,7 +235,7 @@ $(function() {
 
 <h3><a id="index_p"></a>- p -</h3><ul>
 <li>place_holder_
-: <a class="el" href="structceras_1_1model.html#ae46b8efac93fdbd1bf7b50dc4d89c40c">ceras::model&lt; Ex, Ph &gt;</a>
+: <a class="el" href="structceras_1_1model.html#a35abe8bd985c35167c89116719ba7c57">ceras::model&lt; Ex, Ph &gt;</a>
 </li>
 <li>place_holders_
 : <a class="el" href="structceras_1_1session.html#a4dd9c881c370497f48fe2166dff4b5d0">ceras::session&lt; Tsor &gt;</a>

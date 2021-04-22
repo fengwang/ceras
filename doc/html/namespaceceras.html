@@ -81,6 +81,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1is__constant_3_01constant_3_01Tsor_01_4_01_4.html">is_constant&lt; constant&lt; Tsor &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1compiled__model.html">compiled_model</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1model.html">model</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structceras_1_1unary__operator.html">unary_operator</a></td></tr>
@@ -252,6 +254,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a4c771de6e382ade62a08d98fbfcce1a3"><td class="memTemplParams" colspan="2">template&lt;Expression Ex, Place_Holder Ph, Expression Ey&gt; </td></tr>
 <tr class="memitem:a4c771de6e382ade62a08d98fbfcce1a3"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a4c771de6e382ade62a08d98fbfcce1a3">replace_placeholder_with_expression</a> (Ex const &amp;ex, Ph const &amp;old_place_holder, Ey const &amp;new_expression)</td></tr>
 <tr class="separator:a4c771de6e382ade62a08d98fbfcce1a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31888715efa1f3663b79991c999a14f2"><td class="memTemplParams" colspan="2">template&lt;typename Model , typename Optimizer , typename Loss &gt; </td></tr>
+<tr class="memitem:a31888715efa1f3663b79991c999a14f2"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a31888715efa1f3663b79991c999a14f2">make_compiled_model</a> (Model const &amp;m, Loss const &amp;l, Optimizer const &amp;o)</td></tr>
+<tr class="separator:a31888715efa1f3663b79991c999a14f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fb9892f3e8a3c18392af3aba29ee0e0"><td class="memTemplParams" colspan="2">template&lt;Expression Lhs_Expression, Expression Rhs_Expression&gt; </td></tr>
 <tr class="memitem:a0fb9892f3e8a3c18392af3aba29ee0e0"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a0fb9892f3e8a3c18392af3aba29ee0e0">plus</a> (Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</td></tr>
 <tr class="separator:a0fb9892f3e8a3c18392af3aba29ee0e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -614,6 +619,24 @@ Variables</h2></td></tr>
 <tr class="memitem:ab7b08ad37c312c18fcf683f30942d982"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ab7b08ad37c312c18fcf683f30942d982"><td class="memTemplItemLeft" align="right" valign="top">concept&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ab7b08ad37c312c18fcf683f30942d982">Constant</a> = <a class="el" href="namespaceceras.html#a4d0a5d3483d77d62fe3ef9f3b068438b">is_constant_v</a>&lt;T&gt;</td></tr>
 <tr class="separator:ab7b08ad37c312c18fcf683f30942d982"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0d175d0b8b76c12b3c6881dcb387eef"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ac0d175d0b8b76c12b3c6881dcb387eef">MeanSquaredError</a></td></tr>
+<tr class="separator:ac0d175d0b8b76c12b3c6881dcb387eef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a670cf209c1eaf52f4196b69119cff483"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a670cf209c1eaf52f4196b69119cff483">MeanAbsoluteError</a></td></tr>
+<tr class="separator:a670cf209c1eaf52f4196b69119cff483"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a136b5b164f7af5d03f28b14833a1d477"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a136b5b164f7af5d03f28b14833a1d477">Hinge</a></td></tr>
+<tr class="separator:a136b5b164f7af5d03f28b14833a1d477"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aace8219034346c2f437ecd0d2c644522"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#aace8219034346c2f437ecd0d2c644522">CategoricalCrossentropy</a></td></tr>
+<tr class="separator:aace8219034346c2f437ecd0d2c644522"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b6b46069d8e7a9a33d3b67761a8476d"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a6b6b46069d8e7a9a33d3b67761a8476d">Adam</a></td></tr>
+<tr class="separator:a6b6b46069d8e7a9a33d3b67761a8476d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05cc00512e564e6fefc360aff9a94871"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a05cc00512e564e6fefc360aff9a94871">SGD</a></td></tr>
+<tr class="separator:a05cc00512e564e6fefc360aff9a94871"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe39a160bdb22b3101384023a29acf24"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#afe39a160bdb22b3101384023a29acf24">Adagrad</a></td></tr>
+<tr class="separator:afe39a160bdb22b3101384023a29acf24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39f64f896bcf4537b5133aadd4f2053b"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a39f64f896bcf4537b5133aadd4f2053b">RMSprop</a></td></tr>
+<tr class="separator:a39f64f896bcf4537b5133aadd4f2053b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80f9afc7be5e7f734681e928a51fb365"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a80f9afc7be5e7f734681e928a51fb365">Adadelta</a></td></tr>
+<tr class="separator:a80f9afc7be5e7f734681e928a51fb365"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6ac38e73de3aafab36b36bbb617b0ce"><td class="memItemLeft" align="right" valign="top">static constexpr auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ac6ac38e73de3aafab36b36bbb617b0ce">make_unary_operator</a></td></tr>
 <tr class="separator:ac6ac38e73de3aafab36b36bbb617b0ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07817785d54e9eb33d2355320b328543"><td class="memItemLeft" align="right" valign="top">static constexpr auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a07817785d54e9eb33d2355320b328543">make_binary_operator</a></td></tr>
@@ -2653,6 +2676,50 @@ template&lt;Expression Lhs_Expression, Expression Rhs_Expression&gt; </div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">constexpr</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a31888715efa1f3663b79991c999a14f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31888715efa1f3663b79991c999a14f2">&#9670;&nbsp;</a></span>make_compiled_model()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Model , typename Optimizer , typename Loss &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::make_compiled_model </td>
+          <td>(</td>
+          <td class="paramtype">Model const &amp;&#160;</td>
+          <td class="paramname"><em>m</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Loss const &amp;&#160;</td>
+          <td class="paramname"><em>l</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Optimizer const &amp;&#160;</td>
+          <td class="paramname"><em>o</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -5522,6 +5589,94 @@ template&lt;Tensor Tsor&gt; </div>
 
 </div>
 </div>
+<a id="a80f9afc7be5e7f734681e928a51fb365"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a80f9afc7be5e7f734681e928a51fb365">&#9670;&nbsp;</a></span>Adadelta</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::Adadelta</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []( <span class="keyword">auto</span> ... args )</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex&gt;( Ex&amp; loss )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> adadelta{loss, args...};</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+<div class="ttc" id="anamespaceceras_html_aa715d4495f1a4100e9afcf1aac369afe"><div class="ttname"><a href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">ceras::Expression</a></div><div class="ttdeci">concept Expression</div><div class="ttdoc">A type that represents a unary operator, a binary operator, a variable, a place_holder,...</div><div class="ttdef"><b>Definition:</b> operation.hpp:197</div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="afe39a160bdb22b3101384023a29acf24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe39a160bdb22b3101384023a29acf24">&#9670;&nbsp;</a></span>Adagrad</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::Adagrad</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []( <span class="keyword">auto</span> ... args )</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex&gt;( Ex&amp; loss )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> adagrad{loss, args...};</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a6b6b46069d8e7a9a33d3b67761a8476d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b6b46069d8e7a9a33d3b67761a8476d">&#9670;&nbsp;</a></span>Adam</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::Adam</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []( <span class="keyword">auto</span> ... args )</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex&gt;( Ex&amp; loss )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> adam{loss, args...};</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a750c4d7c7f4819e942ce5d12925adcae"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a750c4d7c7f4819e942ce5d12925adcae">&#9670;&nbsp;</a></span>Binary_Operator</h2>
 
@@ -5561,6 +5716,40 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<a id="aace8219034346c2f437ecd0d2c644522"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aace8219034346c2f437ecd0d2c644522">&#9670;&nbsp;</a></span>CategoricalCrossentropy</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::CategoricalCrossentropy</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []()</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> []&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex &gt;( Ex <span class="keyword">const</span>&amp; output )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">Place_Holder</a> Ph&gt;( Ph <span class="keyword">const</span>&amp; ground_truth )</div>
+<div class="line">            {</div>
+<div class="line">                <span class="keywordflow">return</span> <a class="code" href="namespaceceras.html#ab51a79ca27d3fc9335032f01b4742559">cross_entropy_loss</a>( ground_truth, output );</div>
+<div class="line">            };</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+<div class="ttc" id="anamespaceceras_html_a514bfbcf1a92e44dab273c1e847767f4"><div class="ttname"><a href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">ceras::Place_Holder</a></div><div class="ttdeci">concept Place_Holder</div><div class="ttdef"><b>Definition:</b> place_holder.hpp:71</div></div>
+<div class="ttc" id="anamespaceceras_html_ab51a79ca27d3fc9335032f01b4742559"><div class="ttname"><a href="namespaceceras.html#ab51a79ca27d3fc9335032f01b4742559">ceras::cross_entropy_loss</a></div><div class="ttdeci">constexpr auto cross_entropy_loss(Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</div><div class="ttdef"><b>Definition:</b> loss.hpp:61</div></div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="ab7b08ad37c312c18fcf683f30942d982"></a>
@@ -5684,6 +5873,39 @@ template&lt;typename T &gt; </div>
 <p>A type that represents a unary operator, a binary operator, a variable, a <a class="el" href="structceras_1_1place__holder.html">place_holder</a>, a constant or a value. </p>
 <p>@concept Expression&lt;&gt; </p>
 
+</div>
+</div>
+<a id="a136b5b164f7af5d03f28b14833a1d477"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a136b5b164f7af5d03f28b14833a1d477">&#9670;&nbsp;</a></span>Hinge</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::Hinge</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []()</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> []&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex &gt;( Ex <span class="keyword">const</span>&amp; output )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">Place_Holder</a> Ph&gt;( Ph <span class="keyword">const</span>&amp; ground_truth )</div>
+<div class="line">            {</div>
+<div class="line">                <span class="keywordflow">return</span> <a class="code" href="namespaceceras.html#a1ad4339c1d36a93685d66d95bdca6789">hinge_loss</a>( ground_truth, output );</div>
+<div class="line">            };</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+<div class="ttc" id="anamespaceceras_html_a1ad4339c1d36a93685d66d95bdca6789"><div class="ttname"><a href="namespaceceras.html#a1ad4339c1d36a93685d66d95bdca6789">ceras::hinge_loss</a></div><div class="ttdeci">constexpr auto hinge_loss(Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</div><div class="ttdef"><b>Definition:</b> loss.hpp:84</div></div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a4e73c859d6cb548751c183c0f765eb31"></a>
@@ -5999,6 +6221,72 @@ template&lt;class T &gt; </div>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="a670cf209c1eaf52f4196b69119cff483"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a670cf209c1eaf52f4196b69119cff483">&#9670;&nbsp;</a></span>MeanAbsoluteError</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::MeanAbsoluteError</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []()</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> []&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex &gt;( Ex <span class="keyword">const</span>&amp; output )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">Place_Holder</a> Ph&gt;( Ph <span class="keyword">const</span>&amp; ground_truth )</div>
+<div class="line">            {</div>
+<div class="line">                <span class="keywordflow">return</span> <a class="code" href="namespaceceras.html#a95e51e6a082be7c71ac6f3d75191dbac">mean_absolute_error</a>( ground_truth, output );</div>
+<div class="line">            };</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+<div class="ttc" id="anamespaceceras_html_a95e51e6a082be7c71ac6f3d75191dbac"><div class="ttname"><a href="namespaceceras.html#a95e51e6a082be7c71ac6f3d75191dbac">ceras::mean_absolute_error</a></div><div class="ttdeci">constexpr auto mean_absolute_error(Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</div><div class="ttdef"><b>Definition:</b> loss.hpp:42</div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ac0d175d0b8b76c12b3c6881dcb387eef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0d175d0b8b76c12b3c6881dcb387eef">&#9670;&nbsp;</a></span>MeanSquaredError</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::MeanSquaredError</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []()</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> []&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex &gt;( Ex <span class="keyword">const</span>&amp; output )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#a514bfbcf1a92e44dab273c1e847767f4">Place_Holder</a> Ph&gt;( Ph <span class="keyword">const</span>&amp; ground_truth )</div>
+<div class="line">            {</div>
+<div class="line">                <span class="keywordflow">return</span> <a class="code" href="namespaceceras.html#a03bc91abce6718ae334f3232c47ee6c4">mean_squared_error</a>( ground_truth, output );</div>
+<div class="line">            };</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+<div class="ttc" id="anamespaceceras_html_a03bc91abce6718ae334f3232c47ee6c4"><div class="ttname"><a href="namespaceceras.html#a03bc91abce6718ae334f3232c47ee6c4">ceras::mean_squared_error</a></div><div class="ttdeci">constexpr auto mean_squared_error(Lhs_Expression const &amp;lhs_ex, Rhs_Expression const &amp;rhs_ex) noexcept</div><div class="ttdef"><b>Definition:</b> loss.hpp:24</div></div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a64ede146ebe135d256ac4688959c059a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a64ede146ebe135d256ac4688959c059a">&#9670;&nbsp;</a></span>Operator</h2>
 
@@ -6076,6 +6364,64 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<a id="a39f64f896bcf4537b5133aadd4f2053b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39f64f896bcf4537b5133aadd4f2053b">&#9670;&nbsp;</a></span>RMSprop</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::RMSprop</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []( <span class="keyword">auto</span> ... args )</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex&gt;( Ex&amp; loss )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> rmsprop{loss, args...};</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a05cc00512e564e6fefc360aff9a94871"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a05cc00512e564e6fefc360aff9a94871">&#9670;&nbsp;</a></span>SGD</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ceras::SGD</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= []( <span class="keyword">auto</span> ... args )</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordflow">return</span> [=]&lt;<a class="code" href="namespaceceras.html#aa715d4495f1a4100e9afcf1aac369afe">Expression</a> Ex&gt;( Ex&amp; loss )</div>
+<div class="line">        {</div>
+<div class="line">            <span class="keywordflow">return</span> sgd{loss, args...};</div>
+<div class="line">        };</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a860c2f61494ebcf5d3f3cdbcc38cd064"></a>

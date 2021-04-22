@@ -1,9 +1,14 @@
 var searchData=
 [
-  ['learning_5fphase_552',['learning_phase',['../namespaceceras.html#a7cdbba4525da894ee144ce5680a088e4',1,'ceras']]],
-  ['learning_5frate_5f_553',['learning_rate_',['../structceras_1_1sgd.html#a947b23519d978b58c869add754875da1',1,'ceras::sgd::learning_rate_()'],['../structceras_1_1adagrad.html#ab1e48b42672a0094777190317b35982b',1,'ceras::adagrad::learning_rate_()'],['../structceras_1_1rmsprop.html#af09720b92fa4fa4b1f496279ecfeb0e3',1,'ceras::rmsprop::learning_rate_()'],['../structceras_1_1adadelta.html#adf7776614c9a80a4df79cae4164ef9ac',1,'ceras::adadelta::learning_rate_()'],['../structceras_1_1adam.html#ab79075325dc611e247039743a3a0b24e',1,'ceras::adam::learning_rate_()'],['../structceras_1_1gradient__descent.html#abb64bb342efd0c885a27646ebeeeb4e3',1,'ceras::gradient_descent::learning_rate_()']]],
-  ['lhs_5finput_5fdata_5f_554',['lhs_input_data_',['../structceras_1_1binary__operator.html#adf9e41e083058284cf187e0b1f8b454a',1,'ceras::binary_operator']]],
-  ['lhs_5fop_5f_555',['lhs_op_',['../structceras_1_1binary__operator.html#a90c185b6716fc37cc9e3df5a38ac2bc8',1,'ceras::binary_operator']]],
-  ['loss_5f_556',['loss_',['../structceras_1_1sgd.html#a0e76e2819ade28686d069a8665139b95',1,'ceras::sgd::loss_()'],['../structceras_1_1adagrad.html#a0ecaec28054bbe8f31835107ce1b2e42',1,'ceras::adagrad::loss_()'],['../structceras_1_1rmsprop.html#a703795ae783984f24a404da8722d25e6',1,'ceras::rmsprop::loss_()'],['../structceras_1_1adadelta.html#a9a953ce4b207310b3ded0b0e7b943e09',1,'ceras::adadelta::loss_()'],['../structceras_1_1adam.html#a51e5b6aec7dcabbb2d05bd6d3bdb6d29',1,'ceras::adam::loss_()'],['../structceras_1_1gradient__descent.html#a9861305f1dfae22b62757869f07437b1',1,'ceras::gradient_descent::loss_()']]],
-  ['lstm_557',['lstm',['../namespaceceras.html#a9039ca9c32800e50440535908a94d55b',1,'ceras']]]
+  ['input_5fdata_5f_592',['input_data_',['../structceras_1_1unary__operator.html#af7c35f7f4634b5ae16d2245a746b96f5',1,'ceras::unary_operator']]],
+  ['input_5fplace_5fholder_5f_593',['input_place_holder_',['../structceras_1_1compiled__model.html#a5ece246d492e9035b60d2897ffc4d1ea',1,'ceras::compiled_model']]],
+  ['is_5fbinary_5foperator_5fv_594',['is_binary_operator_v',['../namespaceceras.html#a4e73c859d6cb548751c183c0f765eb31',1,'ceras']]],
+  ['is_5fconstant_5fv_595',['is_constant_v',['../namespaceceras.html#a4d0a5d3483d77d62fe3ef9f3b068438b',1,'ceras']]],
+  ['is_5fplace_5fholder_5fv_596',['is_place_holder_v',['../namespaceceras.html#a86046751dc350fda0d1fbec40f23532e',1,'ceras']]],
+  ['is_5ftensor_5fv_597',['is_tensor_v',['../namespaceceras.html#a68f9893615ff5d5864ba07ad32e8b99a',1,'ceras']]],
+  ['is_5funary_5foperator_5fv_598',['is_unary_operator_v',['../namespaceceras.html#acbec4790848ea3b168792a4cfd3d1460',1,'ceras']]],
+  ['is_5fvalue_5fv_599',['is_value_v',['../namespaceceras.html#ac5bcf5b226569ef3b723da9330bfce51',1,'ceras']]],
+  ['is_5fvariable_5fv_600',['is_variable_v',['../namespaceceras.html#aa5aac1498c759b47c7a81f4bcb11acba',1,'ceras']]],
+  ['is_5fwindows_5fplatform_601',['is_windows_platform',['../namespaceceras.html#ac0c0f29d4fb0ea6c4caa3864dcd6cd85',1,'ceras']]],
+  ['iterations_5f_602',['iterations_',['../structceras_1_1sgd.html#af17f13d48fd84d4347b753df1caea272',1,'ceras::sgd::iterations_()'],['../structceras_1_1adagrad.html#afefa023080def44bdd73dd3fd03190d3',1,'ceras::adagrad::iterations_()'],['../structceras_1_1rmsprop.html#a6123efb3ecd10e1ea9ddb5ee4bff45c8',1,'ceras::rmsprop::iterations_()'],['../structceras_1_1adadelta.html#a4d0f49c736a2abaf5d867cf144784e59',1,'ceras::adadelta::iterations_()'],['../structceras_1_1adam.html#abac2017de819a1470d6b29c8bd5bcc2b',1,'ceras::adam::iterations_()']]]
 ];

@@ -69,12 +69,15 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">layer.hpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="operation_8hpp_source.html">./operation.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="loss_8hpp_source.html">./loss.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="optimizer_8hpp_source.html">./optimizer.hpp</a>&quot;</code><br />
 <code>#include &quot;./utils/better_assert.hpp&quot;</code><br />
 </div>
 <p><a href="layer_8hpp_source.html">Go to the source code of this file.</a></p>
@@ -94,6 +97,27 @@ Functions</h2></td></tr>
 <tr class="separator:aff8fb437d1daa515e89a02f3b6bce56f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abce7dff5c169e830454611bc68940021"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#abce7dff5c169e830454611bc68940021">ceras::BatchNormalization</a> (std::vector&lt; unsigned long &gt; const &amp;shape, float threshold=0.95f)</td></tr>
 <tr class="separator:abce7dff5c169e830454611bc68940021"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ac0d175d0b8b76c12b3c6881dcb387eef"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#ac0d175d0b8b76c12b3c6881dcb387eef">ceras::MeanSquaredError</a></td></tr>
+<tr class="separator:ac0d175d0b8b76c12b3c6881dcb387eef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a670cf209c1eaf52f4196b69119cff483"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a670cf209c1eaf52f4196b69119cff483">ceras::MeanAbsoluteError</a></td></tr>
+<tr class="separator:a670cf209c1eaf52f4196b69119cff483"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a136b5b164f7af5d03f28b14833a1d477"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a136b5b164f7af5d03f28b14833a1d477">ceras::Hinge</a></td></tr>
+<tr class="separator:a136b5b164f7af5d03f28b14833a1d477"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aace8219034346c2f437ecd0d2c644522"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#aace8219034346c2f437ecd0d2c644522">ceras::CategoricalCrossentropy</a></td></tr>
+<tr class="separator:aace8219034346c2f437ecd0d2c644522"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b6b46069d8e7a9a33d3b67761a8476d"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a6b6b46069d8e7a9a33d3b67761a8476d">ceras::Adam</a></td></tr>
+<tr class="separator:a6b6b46069d8e7a9a33d3b67761a8476d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05cc00512e564e6fefc360aff9a94871"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a05cc00512e564e6fefc360aff9a94871">ceras::SGD</a></td></tr>
+<tr class="separator:a05cc00512e564e6fefc360aff9a94871"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe39a160bdb22b3101384023a29acf24"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#afe39a160bdb22b3101384023a29acf24">ceras::Adagrad</a></td></tr>
+<tr class="separator:afe39a160bdb22b3101384023a29acf24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39f64f896bcf4537b5133aadd4f2053b"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a39f64f896bcf4537b5133aadd4f2053b">ceras::RMSprop</a></td></tr>
+<tr class="separator:a39f64f896bcf4537b5133aadd4f2053b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80f9afc7be5e7f734681e928a51fb365"><td class="memItemLeft" align="right" valign="top">auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceceras.html#a80f9afc7be5e7f734681e928a51fb365">ceras::Adadelta</a></td></tr>
+<tr class="separator:a80f9afc7be5e7f734681e928a51fb365"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

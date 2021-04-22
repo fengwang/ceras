@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['tensor_580',['Tensor',['../namespaceceras.html#a860c2f61494ebcf5d3f3cdbcc38cd064',1,'ceras']]],
-  ['tensor_5ftype_581',['tensor_type',['../structceras_1_1unary__operator.html#a32e0d56f9ac59644d9a36a60e369f5a7',1,'ceras::unary_operator']]],
-  ['trainable_5f_582',['trainable_',['../structceras_1_1variable.html#abd40ca4cfdfee0b0e4831725804567ea',1,'ceras::variable']]],
-  ['transposed_5f_583',['transposed_',['../structceras_1_1view__2d.html#a935d98493064bbea8c4e534f77f56e89',1,'ceras::view_2d']]]
+  ['sgd_633',['SGD',['../namespaceceras.html#a05cc00512e564e6fefc360aff9a94871',1,'ceras']]],
+  ['shape_5f_634',['shape_',['../structceras_1_1tensor.html#ab06c7b6a6aa8a903b310ce08d7c3c8ad',1,'ceras::tensor']]],
+  ['shape_5fhint_5f_635',['shape_hint_',['../structceras_1_1place__holder__state.html#a7fc1d312aab48a6d04c1355af6c494fa',1,'ceras::place_holder_state']]],
+  ['state_5f_636',['state_',['../structceras_1_1variable.html#aa6917760c98664382df36f78d78b3d12',1,'ceras::variable']]],
+  ['stateful_5f_637',['stateful_',['../structceras_1_1variable.html#a03e1745fc8dc4dfbadcbdc545ba8ed5d',1,'ceras::variable']]]
 ];

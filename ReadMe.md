@@ -2,13 +2,14 @@
 
 ----
 
-__ceras__ is yet another tiny deep learning engine based on C++ expression templates.  This library mimicks tensorflow 1.x APIs, in pure C++20 and is header-only. CUDA acceleration is optional for _convolutional_ and _dense_ layers, as __ceras__ is written for ordinary devices such as a gaming laptop with a GeForce GTX 1060, in which the GPU memory is limited.
+__ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
 ----
 
 
 ## Table of contents
 
+* [Getting started](#getting-started)
 * [Features](#features)
 * [Usage](#usage)
 * [Design](#design)
@@ -20,6 +21,61 @@ __ceras__ is yet another tiny deep learning engine based on C++ expression templ
 
 
 ----
+
+
+## Getting Started
+
+A `model` is a way to orgnize layers. Here is an example to build a sequential model. 
+
+First we include the header and use the namespace of this library:
+
+```cpp
+#include "./include/ceras.hpp"
+using namespace ceras;
+```
+
+Layers are staked using a functional interface to compose a computation graph:
+```cpp
+input = Input(); // input layer, shape (28*28, )
+layer_1 = relu( Dense( 512, 784 )( input ) );
+layer_2 = relu( Dense( 128, 512 )( layer_1 ) );
+output = Dense( 10, 128 )( layer_2 );
+```
+
+And we build up a model by collecting the input layer and the output layer of the computation graph
+```cpp
+auto m = model{ input, output };
+```
+
+Before feeding a training set to this model, we need configure the training parameters
+```cpp
+unsigned long batch_size = 10;
+float learning_rate = 0.01;
+auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
+```
+
+Then we can train this model by feeding it the training set
+```cpp
+unsigned long epoch = 10;
+int verbose = 1;
+double validation_split = 0.1;
+cm.fit( input_data_of_784, output_data_of_10, batch_size, epoch, verbose, validation_split );
+```
+
+or training this model manually
+```cpp
+cm.train_on_batch( input_batch_of_784, output_batch_of_10 );
+```
+
+The performance of the trained model can be evaluated by
+```cpp
+auto error = cm.evaluate( test_data_of_784, test_data_of_10, batch_size );
+```
+
+Or generate predictions from new samples
+```cpp
+auto prediction = cm.predict( new_data_of_784 );
+```
 
 ## Features
 - Fast and GPU memory friendly:

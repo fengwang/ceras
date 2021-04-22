@@ -33,12 +33,19 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
 
 auto build_model()
 {
+#if 1
+    using namespace ceras;
+    auto input = Input();
+    auto output = Dense( 10, 28*28 )( input );
+    return model( input, output );
+#else
     using namespace ceras;
     auto input = Input();
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
     auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
     auto output = Dense( 10, 128 )( l2 );
     return model( input, output );
+#endif
 }
 
 auto train_model()
@@ -69,7 +76,7 @@ auto train_model()
     float learning_rate = 0.01f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
-    unsigned long epoches = 10;
+    unsigned long epoches = 150;
     int verbose = 1;
     double validation_split = 0.1;
     auto history = cm.fit( input_data, output_data, batch_size, epoches, verbose, validation_split );
@@ -86,44 +93,27 @@ auto train_model()
 template< typename Model >
 void evaluate( Model m )
 {
-    using  namespace ceras;
-    unsigned long const new_batch_size = 1;
+    using namespace ceras;
+    typedef tensor<float> tensor_type;
     std::vector<std::uint8_t> testing_images = load_binary( testing_image_path );
     std::vector<std::uint8_t> testing_labels = load_binary( testing_label_path );
-    std::size_t const testing_iterations = 10000 / new_batch_size;
 
-    tensor<float> new_input_images{ {new_batch_size, 28 * 28} };
+    unsigned long const samples = 10000;
+    tensor_type input_data{ {samples, 28*28} };
+    for_each( testing_images.begin()+16, testing_images.end(), input_data.begin(), []( std::uint8_t x, float& v){ v = 1.0f * x / 127.5f - 1.0f; } );
 
-    //session<tensor<float> > s;
-    //s.bind( input, new_input_images );
-
-    unsigned long errors = 0;
-
-    for ( auto i = 0UL; i != testing_iterations; ++i )
+    tensor_type output_data{ {samples, 10} } ;
+    std::fill( output_data.begin(), output_data.end(), 0.0f );
+    for ( auto idx : range( samples ) )
     {
-        std::size_t const image_offset = 16 + i * new_batch_size * 28 * 28;
-
-        for ( auto j = 0UL; j != new_batch_size*28*28; ++j )
-            new_input_images[j] = static_cast<float>( testing_images[j + image_offset] ) / 127.5f - 1.0f;
-
-        //auto prediction = s.run( output );
-        auto prediction = m.predict( new_input_images );
-        prediction.reshape( {prediction.size(), } );
-        std::size_t const predicted_number = std::max_element( prediction.begin(), prediction.end() ) - prediction.begin();
-
-        std::size_t const label_offset = 8 + i * new_batch_size * 1;
-        std::size_t const ground_truth = testing_labels[label_offset];
-
-        if ( predicted_number != ground_truth )
-        {
-            errors += 1;
-            std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth <<  "\r" << std::flush;
-        }
-
+        std::size_t const label = testing_labels[8+idx];
+        output_data[idx*10+label] = 1.0f;
     }
 
-    float const err = 1.0 * errors / 10000;
-    std::cout << "\nPrediction error on the test set is " << err << std::endl;
+    std::size_t const batch_size = 10;
+    auto error = m.evaluate( input_data, output_data, batch_size );
+
+    std::cout << "\nPrediction error on the test set is " << error << std::endl;
 
 }
 
