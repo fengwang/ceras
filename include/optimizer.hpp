@@ -46,7 +46,6 @@ namespace ceras
         void forward()
         {
             loss_.backward( ones<T>( {1, } ) );
-            debug_log( "sgd::backward(1) done." );
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
             auto& ss = get_default_session<tensor_type>().get();
             for ( auto [id, v] : ss.variables_ )

@@ -34,15 +34,11 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
 auto build_model()
 {
     using namespace ceras;
-    /*
     auto input = Input();
     auto l1 = relu( Dense( 256, 28*28 )( input ) );
     auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
     auto output = Dense( 10, 128 )( l2 );
     return model( input, output );
-    */
-    auto input = Input();
-    auto output = Dense( 10, 28*28 )( input );
     return model( input, output );
 }
 
@@ -87,7 +83,7 @@ auto train_model()
                 output_labels[j*10+label] = 1.0f;
             }
             auto error = cm.train_on_batch( input_images, output_labels );
-            std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << error << "\r" << std::flush;
+            //std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << error << "\r" << std::flush;
         }
         std::cout << std::endl;
     }
