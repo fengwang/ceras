@@ -1,10 +1,10 @@
 # Ceras
 
-----
+
 
 __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
-----
+
 
 
 ## Table of contents
@@ -20,7 +20,7 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 * [Acknowledgements](#acknowledgements)
 
 
-----
+
 
 
 ## Getting Started
