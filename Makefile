@@ -333,6 +333,10 @@ mnist_compiled_model: test/mnist_compiled_model.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_compiled_model.o test/mnist_compiled_model.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_compiled_model $(OBJECTS_DIR)/test_mnist_compiled_model.o $(LFLAGS)
 
+mnist_model_fit: test/mnist_model_fit.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_model_fit.o test/mnist_model_fit.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_model_fit $(OBJECTS_DIR)/test_mnist_model_fit.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

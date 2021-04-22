@@ -43,53 +43,43 @@ auto build_model()
 
 auto train_model()
 {
-    ceras::random_generator.seed( 42 );
+    using namespace ceras;
+    typedef tensor<float> tensor_type;
+    random_generator.seed( 42 );
+
     //load training set
     std::vector<std::uint8_t> training_images = load_binary( training_image_path ); // [u32, u32, u32, u32, uint8, uint8, ... ]
     std::vector<std::uint8_t> training_labels = load_binary( training_label_path ); // [u32, u32, uint8, uint8, ... ]
 
+    // preparing training data
+    unsigned long samples = 60000;
+    tensor_type input_data{ {samples, 28*28} };
+    for_each( training_images.begin()+16, training_images.end(), input_data.begin(), []( std::uint8_t x, float& v){ v = 1.0f * x / 127.5f - 1.0f; } );
 
-    std::size_t const batch_size = 10;
-    float learning_rate = 1.0e-1f;
-
-    using namespace ceras;
-    typedef tensor<float> tensor_type;
-    auto m = build_model();
-    auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
-
-    // preparing training
-    tensor_type input_images{ {batch_size, 28*28} };
-    tensor_type output_labels{ {batch_size, 10} };
-
-    std::size_t const epoch = 10;
-    std::size_t const iteration_per_epoch = 60000/batch_size;
-
-    for ( [[maybe_unused]] auto e : range( epoch ) )
+    tensor_type output_data{ {samples, 10} } ;
+    std::fill( output_data.begin(), output_data.end(), 0.0f );
+    for ( auto idx : range( samples ) )
     {
-        for ( [[maybe_unused]] auto i : tq::trange( iteration_per_epoch ) )
-        {
-            // generate images
-            std::size_t const image_offset = 16 + i * batch_size * 28 * 28;
-            for ( auto j : range( batch_size * 28 * 28 ) )
-                input_images[j] = static_cast<float>(training_images[j+image_offset]) / 127.5f - 1.0f;
-
-            // generating labels
-            std::size_t const label_offset = 8 + i * batch_size * 1;
-            std::fill_n( output_labels.data(), output_labels.size(), 0.0f ); //reset
-            for ( auto j : range( batch_size * 1 ) )
-            {
-                std::size_t const label = static_cast<std::size_t>(training_labels[j+label_offset]);
-                output_labels[j*10+label] = 1.0f;
-            }
-            auto error = cm.train_on_batch( input_images, output_labels );
-            //std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << error << "\r" << std::flush;
-        }
-        std::cout << std::endl;
+        std::size_t const label = training_labels[8+idx];
+        output_data[idx*10+label] = 1.0f;
     }
 
-    std::cout << std::endl;
+    auto m = build_model();
+    std::size_t const batch_size = 10;
+    float learning_rate = 0.01f;
+    auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
-    //return model{ input, output };
+    unsigned long epoches = 10;
+    int verbose = 1;
+    double validation_split = 0.1;
+    auto history = cm.fit( input_data, output_data, batch_size, epoches, verbose, validation_split );
+
+    auto const& [training_loss, validation_loss] = history;
+    for ( auto idx : range( epoches ) )
+    {
+        std::cout << training_loss[idx] << " -- " << validation_loss[idx] << std::endl;
+    }
+
     return cm;
 }
 
@@ -127,13 +117,13 @@ void evaluate( Model m )
         if ( predicted_number != ground_truth )
         {
             errors += 1;
-            std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth << std::endl;
+            std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth <<  "\r" << std::flush;
         }
 
     }
 
     float const err = 1.0 * errors / 10000;
-    std::cout << "Prediction error on the testing set is " << err << std::endl;
+    std::cout << "\nPrediction error on the test set is " << err << std::endl;
 
 }
 
