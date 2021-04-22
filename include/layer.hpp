@@ -2,10 +2,15 @@
 #define NLESIGQPSASUTOXPLGXCUHFGGUGYSWLQQFATNISJOSPUFHRORXBNXLSWTYRNSIWJKYFXIQXVN
 
 #include "./operation.hpp"
+#include "./loss.hpp"
+#include "./optimizer.hpp"
 #include "./utils/better_assert.hpp"
+
+// try to mimic classes defined in tensorflow.keras
 
 namespace ceras
 {
+
     inline auto Input()
     {
         return place_holder<tensor<float>>{};
@@ -53,6 +58,101 @@ namespace ceras
             return batch_normalization( threshold )( ex, gamma, beta );
         };
     }
+
+
+    // losses
+    // A loss is an expression. This expression takes two parameters.
+    // The first parameter is a place_holder, that will be binded to an tensor.
+    // The second parameter is an expression, that will be evaluated to compare with the tensor binded to the first parameter
+
+    inline auto MeanSquaredError = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return mean_squared_error( ground_truth, output );
+            };
+        };
+    };
+
+    inline auto MeanAbsoluteError = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return mean_absolute_error( ground_truth, output );
+            };
+        };
+    };
+
+    inline auto Hinge = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return hinge_loss( ground_truth, output );
+            };
+        };
+    };
+
+    // note: do not apply softmax activation to the last layer of the model, this loss has packaged it
+    inline auto CategoricalCrossentropy = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return cross_entropy_loss( ground_truth, output );
+            };
+        };
+    };
+
+    //
+    // optimizers
+    //
+
+    inline auto Adam = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adam{loss, args...};
+        };
+    };
+
+    inline auto SGD = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return sgd{loss, args...};
+        };
+    };
+
+    inline auto Adagrad = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adagrad{loss, args...};
+        };
+    };
+
+    inline auto RMSprop = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return rmsprop{loss, args...};
+        };
+    };
+
+    inline auto Adadelta = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adadelta{loss, args...};
+        };
+    };
 
 }//namespace f
 

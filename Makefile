@@ -9,7 +9,7 @@ OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -D
 OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
-OP            = -fconcepts-diagnostics-depth=4  -O2 -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
@@ -328,6 +328,10 @@ model: test/model.cc
 mnist_autoencoder: test/mnist_autoencoder.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_autoencoder.o test/mnist_autoencoder.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_autoencoder $(OBJECTS_DIR)/test_mnist_autoencoder.o $(LFLAGS)
+
+mnist_compiled_model: test/mnist_compiled_model.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_compiled_model.o test/mnist_compiled_model.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_compiled_model $(OBJECTS_DIR)/test_mnist_compiled_model.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

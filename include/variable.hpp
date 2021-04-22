@@ -23,6 +23,7 @@ namespace ceras
     {
         Tsor data_;
         Tsor gradient_;
+        std::vector<Tsor> contexts_;
     };
 
     template< Tensor Tsor >
@@ -77,6 +78,18 @@ namespace ceras
         {
             auto& state = *((*this).state_);
             return state.data_.shape();
+        }
+
+        std::vector<Tsor>& contexts()
+        {
+            auto& state = *((*this).state_);
+            return state.contexts_;
+        }
+
+        std::vector<Tsor> contexts() const
+        {
+            auto& state = *((*this).state_);
+            return state.contexts_;
         }
 
         Tsor& data()
