@@ -346,6 +346,53 @@ namespace ceras
 
     // TODO: adamax, nadam, ftrl
 
+
+
+    //
+    // optimizers interfaces
+    //
+
+    inline auto Adam = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adam{loss, args...};
+        };
+    };
+
+    inline auto SGD = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return sgd{loss, args...};
+        };
+    };
+
+    inline auto Adagrad = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adagrad{loss, args...};
+        };
+    };
+
+    inline auto RMSprop = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return rmsprop{loss, args...};
+        };
+    };
+
+    inline auto Adadelta = []( auto ... args )
+    {
+        return [=]<Expression Ex>( Ex& loss )
+        {
+            return adadelta{loss, args...};
+        };
+    };
+
+
 }//namespace ceras
 
 #endif//XNRPSJMCYFXBDGNRJAWDNDIYQNGNXMRVLEHGNQWILKMTHGNOVHODLLXCCNIMUUFQSMOIYHDUD

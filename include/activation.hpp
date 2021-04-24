@@ -243,8 +243,8 @@ namespace ceras
         return negative( relu( ex ) );
     }
 
-    template< typename T > requires std::floating_point<T>
-    auto elu( T const alpha ) noexcept
+    template< typename T=float > requires std::floating_point<T>
+    auto elu( T const alpha=1.0 ) noexcept
     {
         return [alpha]<Expression Ex>( Ex const& ex ) noexcept
         {

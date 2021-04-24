@@ -2,6 +2,7 @@
 #define NLESIGQPSASUTOXPLGXCUHFGGUGYSWLQQFATNISJOSPUFHRORXBNXLSWTYRNSIWJKYFXIQXVN
 
 #include "./operation.hpp"
+#include "./activation.hpp"
 #include "./loss.hpp"
 #include "./optimizer.hpp"
 #include "./utils/better_assert.hpp"
@@ -59,100 +60,147 @@ namespace ceras
         };
     }
 
-
-    // losses
-    // A loss is an expression. This expression takes two parameters.
-    // The first parameter is a place_holder, that will be binded to an tensor.
-    // The second parameter is an expression, that will be evaluated to compare with the tensor binded to the first parameter
-
-    inline auto MeanSquaredError = []()
+    ///
+    /// Layer that concatenates two layers.
+    /// @param axis The concatenation axis. Default to the last channel.
+    ///
+    /// Example usage:
+    /// @code
+    /// auto l1 = variable{ tensor<float>{ {12, 11, 3} } };
+    /// auto l2 = variable{ tensor<float>{ {12, 11, 4} } };
+    /// auto l12 = Concatenate()( l1, l2 ); // should be of shape (12, 11, 7)
+    /// @endcode
+    ///
+    inline auto Concatenate(unsigned long axis = -1) noexcept
     {
-        return []<Expression Ex >( Ex const& output )
+        return [=]<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
         {
-            return [=]<Place_Holder Ph>( Ph const& ground_truth )
-            {
-                return mean_squared_error( ground_truth, output );
-            };
+            return concatenate( axis )( lhs_ex, rhs_ex );
         };
-    };
+    }
 
-    inline auto MeanAbsoluteError = []()
+    ///
+    /// Layer that adds two layers
+    ///
+    /// Example usage:
+    /// @code
+    /// auto input = Input(); // (16, )
+    /// auto x1 = Dense( 8, 16 )( input );
+    /// auto x2 = Dense( 8, 16 )( input );
+    /// auto x3 = Add()( x1, x2 ); // equivalent to `x1 + x2`
+    /// auto m = model{ input, x3 };
+    /// @endcode
+    ///
+    inline auto Add() noexcept
     {
-        return []<Expression Ex >( Ex const& output )
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
         {
-            return [=]<Place_Holder Ph>( Ph const& ground_truth )
-            {
-                return mean_absolute_error( ground_truth, output );
-            };
+            return lhs_ex + rhs_ex;
         };
-    };
+    }
 
-    inline auto Hinge = []()
-    {
-        return []<Expression Ex >( Ex const& output )
-        {
-            return [=]<Place_Holder Ph>( Ph const& ground_truth )
-            {
-                return hinge_loss( ground_truth, output );
-            };
-        };
-    };
 
-    // note: do not apply softmax activation to the last layer of the model, this loss has packaged it
-    inline auto CategoricalCrossentropy = []()
+    ///
+    /// Layer that subtracts two layers
+    ///
+    /// Example usage:
+    /// @code
+    /// auto input = Input(); // (16, )
+    /// auto x1 = Dense( 8, 16 )( input );
+    /// auto x2 = Dense( 8, 16 )( input );
+    /// auto x3 = Subtract()( x1, x2 ); // equivalent to `x1 - x2`
+    /// auto m = model{ input, x3 };
+    /// @endcode
+    ///
+    inline auto Subtract() noexcept
     {
-        return []<Expression Ex >( Ex const& output )
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
         {
-            return [=]<Place_Holder Ph>( Ph const& ground_truth )
-            {
-                return cross_entropy_loss( ground_truth, output );
-            };
+            return lhs_ex - rhs_ex;
         };
-    };
+    }
+
+    ///
+    /// Layer that elementwise multiplies two layers
+    ///
+    /// Example usage:
+    /// @code
+    /// auto input = Input(); // (16, )
+    /// auto x1 = Dense( 8, 16 )( input );
+    /// auto x2 = Dense( 8, 16 )( input );
+    /// auto x3 = Multiply()( x1, x2 ); // equivalent to `elementwise_multiply(x1, x2)`
+    /// auto m = model{ input, x3 };
+    /// @endcode
+    ///
+    inline auto Multiply() noexcept
+    {
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        {
+            return hadamard_product( lhs_ex, rhs_ex );
+        };
+    }
+
+    ///
+    /// Rectified Linear Unit activation function.
+    ///
+    template< Expression Ex >
+    inline auto ReLU( Ex const& ex ) noexcept
+    {
+        return relu( ex );
+    }
+
+    ///
+    /// Softmax activation function.
+    ///
+    inline auto Softmax() noexcept
+    {
+        return []< Expression Ex >( Ex const& ex ) noexcept
+        {
+            return softmax( ex );
+        };
+    }
+
+
+    ///
+    /// leaky relu activation function.
+    ///
+    template< typename T = float >
+    inline auto LeakyReLU( T const factor=0.2 ) noexcept
+    {
+        return [=]< Expression Ex >( Ex const& ex ) noexcept
+        {
+            return leaky_relu( factor )( ex );
+        };
+    }
+
+    ///
+    /// Exponential Linear Unit.
+    ///
+    template< typename T = float >
+    inline auto ELU( T const factor=0.2 ) noexcept
+    {
+        return [=]< Expression Ex >( Ex const& ex ) noexcept
+        {
+            return elu( factor )( ex );
+        };
+    }
 
     //
-    // optimizers
+    // TODO: PReLU
+    // TODO: MaxPooling2D
+    // TODO: AveragePooling2D
+    // TODO: Dropout
+    // TODO: Reshape
+    // TODO: Flatten
+    // TODO: UpSampling2D
     //
 
-    inline auto Adam = []( auto ... args )
-    {
-        return [=]<Expression Ex>( Ex& loss )
-        {
-            return adam{loss, args...};
-        };
-    };
 
-    inline auto SGD = []( auto ... args )
-    {
-        return [=]<Expression Ex>( Ex& loss )
-        {
-            return sgd{loss, args...};
-        };
-    };
 
-    inline auto Adagrad = []( auto ... args )
-    {
-        return [=]<Expression Ex>( Ex& loss )
-        {
-            return adagrad{loss, args...};
-        };
-    };
 
-    inline auto RMSprop = []( auto ... args )
-    {
-        return [=]<Expression Ex>( Ex& loss )
-        {
-            return rmsprop{loss, args...};
-        };
-    };
 
-    inline auto Adadelta = []( auto ... args )
-    {
-        return [=]<Expression Ex>( Ex& loss )
-        {
-            return adadelta{loss, args...};
-        };
-    };
+
+
 
 }//namespace f
 

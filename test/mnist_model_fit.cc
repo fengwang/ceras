@@ -73,7 +73,8 @@ auto train_model()
 
     auto m = build_model();
     std::size_t const batch_size = 10;
-    float learning_rate = 0.01f;
+    //float learning_rate = 0.01f;
+    float learning_rate = 0.005f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
     unsigned long epoches = 150;

@@ -86,6 +86,60 @@ namespace ceras
         return mean_reduce( maximum( value{0.0f}, value{1.0f} - hadamard_product(lhs_ex, rhs_ex) ) );
     }
 
+
+
+    // loss interfaces
+    // A loss is an expression. This expression takes two parameters.
+    // The first parameter is a place_holder, that will be binded to an tensor.
+    // The second parameter is an expression, that will be evaluated to compare with the tensor binded to the first parameter
+
+    inline auto MeanSquaredError = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return mean_squared_error( ground_truth, output );
+            };
+        };
+    };
+
+    inline auto MeanAbsoluteError = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return mean_absolute_error( ground_truth, output );
+            };
+        };
+    };
+
+    inline auto Hinge = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return hinge_loss( ground_truth, output );
+            };
+        };
+    };
+
+    // note: do not apply softmax activation to the last layer of the model, this loss has packaged it
+    inline auto CategoricalCrossentropy = []()
+    {
+        return []<Expression Ex >( Ex const& output )
+        {
+            return [=]<Place_Holder Ph>( Ph const& ground_truth )
+            {
+                return cross_entropy_loss( ground_truth, output );
+            };
+        };
+    };
+
+
+
 }//namespace ceras
 
 #endif//APWVIJWMXHAVXUGYGVNDSEFKTMBKLBMGLSHWUPRPGLFCHUBDRAHGSTDSEDNKOGTIBNQVNLXCD
