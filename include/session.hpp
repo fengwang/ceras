@@ -19,7 +19,8 @@ namespace ceras
         typedef variable_state<Tsor> variable_state_type;
 
         std::vector<place_holder_type> place_holders_;
-        std::unordered_map<int, variable_type> variables_;
+        //std::unordered_map<int, variable_type> variables_;
+        std::map<int, variable_type> variables_;
 
         session()
         {
@@ -44,9 +45,12 @@ namespace ceras
 
         void remember( variable_type const& v )
         {
+            debug_log( "trying to remember new varialble with id ", v.id_ );
+            debug_log( "session has ", variables_.size(), "elements remembered." );
             if ( variables_.find( v.id_ ) == variables_.end() )
             {
                 variables_.insert( {v.id_, v} );
+                debug_log( "remembering new varialble with id ", v.id_ );
             }
         }
 

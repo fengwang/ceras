@@ -27,7 +27,7 @@ namespace ceras
     };
 
     template< Tensor Tsor >
-    struct variable : enable_id<variable<Tsor>>//, enable_shared_state<variable<Tsor>, variable_state<Tsor>>
+    struct variable : enable_id<variable<Tsor>>
     {
         typedef Tsor tensor_type;
 
@@ -66,6 +66,8 @@ namespace ceras
 
         void backward( auto const& grad )
         {
+            debug_log( "variable backward at ", (*this).id_ );
+
             if (!trainable_) return;
 
             auto& state = *((*this).state_);
@@ -127,6 +129,12 @@ namespace ceras
             if ( stateful_ )
                 reset();
         }
+
+        bool trainable() const noexcept { return trainable_; }
+        void trainable( bool t ) { trainable_ = t; }
+        bool stateful() const noexcept { return stateful_; }
+        void stateful( bool s ){ stateful_ = s; }
+
     };//struct variable
 
     template< typename T >
