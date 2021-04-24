@@ -36,7 +36,6 @@ namespace ceras
         unsigned long iterations_;
 
         sgd(Loss& loss, std::size_t batch_size, T learning_rate=1.0e-1, T momentum=0.0, T decay=0.0, bool nesterov=false) noexcept :
-        //sgd(Loss const& loss, std::size_t batch_size, T learning_rate=1.0e-1, T momentum=0.0, T decay=0.0, bool nesterov=false) noexcept :
             loss_{loss}, learning_rate_(learning_rate), momentum_(std::max(T{0}, momentum)), decay_{std::max(T{0}, decay)}, nesterov_{nesterov}, iterations_{0}
         {
             better_assert( batch_size >= 1, "batch_size must be positive, but got: ", batch_size );
@@ -57,9 +56,7 @@ namespace ceras
                     auto& contexts = v.contexts();
                     if ( contexts.empty() ) // create context
                         contexts.push_back( zeros_like( data ) );
-                        //contexts.push_back( std::make_shared<tensor_type>( zeros_like( data ) ) );
                     auto& moments = contexts[0];
-                    //if ( iterations_ == 0 ) std::fill( moments.begin(), moments.end(), T{0} );
                     for_each( moments.begin(), moments.end(), gradient.begin(), [this]( T& m, T g ) { m *= (*this).momentum_; m -= (*this).learning_rate_ * g;} );
                     if (!nesterov_ ) for_each( moments.begin(), moments.end(), data.begin(), gradient.begin(), [this]( T m, T& v, T g ) { v += (*this).momentum_ * m - (*this).learning_rate_ * g; } );
                     else data += moments;
