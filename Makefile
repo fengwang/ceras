@@ -337,6 +337,10 @@ mnist_model_fit: test/mnist_model_fit.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_model_fit.o test/mnist_model_fit.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_model_fit $(OBJECTS_DIR)/test_mnist_model_fit.o $(LFLAGS)
 
+mnist_dataset: test/mnist_dataset.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_dataset.o test/mnist_dataset.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_dataset $(OBJECTS_DIR)/test_mnist_dataset.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
