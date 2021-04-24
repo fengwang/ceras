@@ -11,6 +11,9 @@
 namespace ceras
 {
 
+    namespace ceras_private
+    {
+
     template< Tensor Tsor >
     struct session
     {
@@ -24,13 +27,14 @@ namespace ceras
 
         session()
         {
-            singleton<session<Tsor>*>::instance() = this;
+            debug_log("!Creating a session!");
+            //singleton<session<Tsor>*>::instance() = this;
         }
 
         session( session const& ) = delete;
-        session( session&& ) = delete;
+        session( session&& ) = default;
         session& operator=( session const& ) = delete;
-        session& operator=( session&& ) = delete;
+        session& operator=( session&& ) = default;
 
         void rebind( place_holder_type& p_holder, Tsor const& value )
         {
@@ -46,7 +50,7 @@ namespace ceras
         void remember( variable_type const& v )
         {
             debug_log( "trying to remember new varialble with id ", v.id_ );
-            debug_log( "session has ", variables_.size(), "elements remembered." );
+            debug_log( "session has ", variables_.size(), " variables remembered." );
             if ( variables_.find( v.id_ ) == variables_.end() )
             {
                 variables_.insert( {v.id_, v} );
@@ -136,13 +140,15 @@ namespace ceras
 
             singleton<session<Tsor>*>::instance() = nullptr;
         }
-    };
+    }; // session
+
+    } //namespace ceras_private
 
     template< Tensor Tsor >
-    std::reference_wrapper<session<Tsor>> get_default_session()
+    std::reference_wrapper<ceras_private::session<Tsor>> get_default_session()
     {
-        auto p_session = singleton<session<Tsor>*>::instance();
-        return std::ref(*p_session);
+        auto& sess = singleton<ceras_private::session<Tsor>>::instance();
+        return std::ref(sess);
     }
 
 }//namespace ceras

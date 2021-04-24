@@ -1,6 +1,23 @@
 #ifndef _SINGLETON_HPP_INCLUDED_ODISFJ948ILDFJOIUIRFGDUISOIURKLJFLKJASLDKJOIUSDLKJSALKFJEOIUJSODIFUEROIUSFDLKJROIUSFDLKJF
 #define _SINGLETON_HPP_INCLUDED_ODISFJ948ILDFJOIUIRFGDUISOIURKLJFLKJASLDKJOIUSDLKJSALKFJEOIUJSODIFUEROIUSFDLKJROIUSFDLKJF
 
+#if 0
+template<typename T>
+class Singleton
+{
+public:
+    static T& getInstance()
+    {
+        static T value;
+        return value;
+    }
+
+private:
+    Singleton();
+    ~Singleton();
+};
+#endif
+
 namespace ceras
 {
     template< typename T >
@@ -9,8 +26,7 @@ namespace ceras
         typedef T value_type;
         typedef singleton self_type;
 
-        static value_type&
-        instance()
+        static value_type& instance()
         {
             static value_type instance_;
             constuctor_.null_action();

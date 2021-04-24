@@ -13,7 +13,7 @@ void test_1()
     auto&& z = sigmoid( A*x + b );
 
     auto&& X = ceras::tensor<float>{{3,}, {1.0f, 2.0f, 3.0f}};
-    auto&& s = ceras::session<ceras::tensor<float>>{};
+    auto& s = ceras::get_default_session<ceras::tensor<float>>().get();
     s.bind(x, X);
 
     std::cout << "x=\n" << s.run(x) << std::endl;

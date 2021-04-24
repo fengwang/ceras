@@ -34,17 +34,10 @@ int main()
     auto output_data_3 = mm.predict( data );
     std::cout <<  "The output of the composed model at input 3, after setting non-trainable, are:\n" << output_data_3 << std::endl;
 
-    mm.expression_.backward( random<float>( {batch_size, 7} ) );
+    mm.expression_.backward( random<float>( {batch_size, 11} ) );
     auto output_data_4 = mm.predict( data );
     std::cout <<  "The output of the composed model at input 4, after backpropagate random gradient, (should be the same as the previous output) are:\n" << output_data_4 << std::endl;
-#if 0
-    mm.trainable( true );
-    mm.expression_.backward( random<float>( {batch_size, 7} ) );
-    std::cout << "backward is done.\n";
-    auto output_data_5 = mm.predict( data );
-    std::cout << "prediction is done.\n";
-    std::cout <<  "The output of the composed model at input 5, after setting trainable and backpropagate random gradient,  are:\n" << output_data_5 << std::endl;
-#endif
+
 
     return 0;
 }

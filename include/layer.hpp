@@ -188,11 +188,27 @@ namespace ceras
         return reshape( new_shape, include_batch_flag );
     }
 
+    ///
+    /// Flattens the input. Does not affect the batch size.
+    ///
+    inline auto Flatten() noexcept
+    {
+        return []<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return flatten( ex );
+        };
+    }
 
+    ///
+    /// Max pooling operation for 2D spatial data.
+    ///
+    inline auto MaxPooling2D( unsigned long stride ) noexcept
+    {
+        return max_pooling_2d( stride );
+    }
 
     //
     // TODO: PReLU
-    // TODO: MaxPooling2D
     // TODO: AveragePooling2D
     // TODO: Dropout
     // TODO: Reshape

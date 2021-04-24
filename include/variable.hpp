@@ -12,11 +12,14 @@
 namespace ceras
 {
 
-    template< Tensor Tsor >
-    struct session;
+    namespace ceras_private
+    {
+        template< Tensor Tsor >
+        struct session;
+    }
 
     template< Tensor Tsor >
-    std::reference_wrapper<session<Tsor>> get_default_session();
+    std::reference_wrapper<ceras_private::session<Tsor>> get_default_session();
 
     template< Tensor Tsor >
     struct variable_state
@@ -66,9 +69,8 @@ namespace ceras
 
         void backward( auto const& grad )
         {
-            debug_log( "variable backward at ", (*this).id_ );
-
             if (!trainable_) return;
+            debug_log( "variable backward at ", (*this).id_ );
 
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
