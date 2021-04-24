@@ -16,6 +16,7 @@
 #include "./constant.hpp"
 #include "./layer.hpp"
 #include "./model.hpp"
+#include "./dataset.hpp"
 
 #endif//AOXWQXCBBVJUJJSDTMLRNOHUNBOARCNCRGBTAHMIKSULFJOIUGCEEGXXVRUVWTOSKPYWDJOKQ
 

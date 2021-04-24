@@ -316,6 +316,14 @@ namespace ceras
             return *begin();
         }
 
+        template< typename U >
+        constexpr auto as_type() const noexcept
+        {
+            tensor<U> ans{ (*this).shape() };
+            std::copy( (*this).begin(), (*this).end(), ans.begin() );
+            return ans;
+        }
+
     };
 
     template <typename T, typename A=default_allocator<T> >

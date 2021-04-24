@@ -167,10 +167,7 @@ namespace ceras
     template< typename T = float >
     inline auto LeakyReLU( T const factor=0.2 ) noexcept
     {
-        return [=]< Expression Ex >( Ex const& ex ) noexcept
-        {
-            return leaky_relu( factor )( ex );
-        };
+        return leaky_relu( factor );
     }
 
     ///
@@ -179,11 +176,19 @@ namespace ceras
     template< typename T = float >
     inline auto ELU( T const factor=0.2 ) noexcept
     {
-        return [=]< Expression Ex >( Ex const& ex ) noexcept
-        {
-            return elu( factor )( ex );
-        };
+        return elu( factor );
     }
+
+
+    ///
+    /// Reshapes inputs into the given shape.
+    ///
+    inline auto Reshape( std::vector<unsigned long> const& new_shape, bool include_batch_flag=true ) noexcept
+    {
+        return reshape( new_shape, include_batch_flag );
+    }
+
+
 
     //
     // TODO: PReLU

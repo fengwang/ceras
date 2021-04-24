@@ -25,7 +25,7 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 
 ## Getting Started
 
-A `model` is a way to orgnize layers. Here is an example to build a sequential model. 
+A `model` is a way to orgnize layers. Here is an example to build a sequential model.
 
 First we include the header and use the namespace of this library:
 
@@ -76,6 +76,8 @@ Or generate predictions from new samples
 ```cpp
 auto prediction = cm.predict( new_data_of_784 );
 ```
+
+Check out a minimal example from [here](./test/mnist_minimal.cc).
 
 ## Features
 - Fast and GPU memory friendly:

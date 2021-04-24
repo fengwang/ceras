@@ -11,9 +11,10 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofa
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
-CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=2 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
+CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
@@ -340,6 +341,10 @@ mnist_model_fit: test/mnist_model_fit.cc
 mnist_dataset: test/mnist_dataset.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_dataset.o test/mnist_dataset.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_dataset $(OBJECTS_DIR)/test_mnist_dataset.o $(LFLAGS)
+
+mnist_minimal: test/mnist_minimal.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_minimal.o test/mnist_minimal.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_minimal $(OBJECTS_DIR)/test_mnist_minimal.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

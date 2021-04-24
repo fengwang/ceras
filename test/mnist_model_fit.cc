@@ -33,7 +33,7 @@ std::vector<std::uint8_t> load_binary( std::string const& filename )
 
 auto build_model()
 {
-#if 1
+#if 0
     using namespace ceras;
     auto input = Input();
     auto output = Dense( 10, 28*28 )( input );
@@ -77,7 +77,7 @@ auto train_model()
     float learning_rate = 0.005f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
-    unsigned long epoches = 150;
+    unsigned long epoches = 50;
     int verbose = 1;
     double validation_split = 0.1;
     auto history = cm.fit( input_data, output_data, batch_size, epoches, verbose, validation_split );
