@@ -1,10 +1,10 @@
 # Ceras
 
-----
+
 
 __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
-----
+
 
 
 ## Table of contents
@@ -20,7 +20,7 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 * [Acknowledgements](#acknowledgements)
 
 
-----
+
 
 
 ## Getting Started
@@ -36,10 +36,10 @@ using namespace ceras;
 
 Layers are staked using a functional interface to compose a computation graph:
 ```cpp
-input = Input(); // input layer, shape (28*28, )
-layer_1 = relu( Dense( 512, 784 )( input ) );
-layer_2 = relu( Dense( 128, 512 )( layer_1 ) );
-output = Dense( 10, 128 )( layer_2 );
+auto input = Input(); // input layer, shape (28*28, )
+auto layer_1 = relu( Dense( 512, 784 )( input ) );
+auto layer_2 = relu( Dense( 128, 512 )( layer_1 ) );
+auto output = Dense( 10, 128 )( layer_2 );
 ```
 
 And we build up a model by collecting the input layer and the output layer of the computation graph
