@@ -19,7 +19,8 @@ void test_1()
     auto vb = ceras::variable{ b };
     auto diff = ceras::hinge_loss( va, vb );
 
-    ceras::session<ceras::tensor<float>> s;
+    //ceras::session<ceras::tensor<float>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
     auto d = s.run( diff );
 
     std::cout << "hinge loss is\n" << d << std::endl;

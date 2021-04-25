@@ -14,7 +14,8 @@ void test_1()
     auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.2 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
+    //ceras::session<ceras::tensor<double>> s;
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.2):\n" << ans << std::endl;
 
@@ -35,7 +36,8 @@ void test_2()
     auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.5 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.5):\n" << ans << std::endl;
 
@@ -44,7 +46,7 @@ void test_2()
     std::cout << "gradient generated as:\n" << grad << std::endl;
     ta.backward( grad );
 
-    auto new_g = *(va.gradient_);
+    auto new_g = va.gradient();
     std::cout << "propageated gradient:\n" << new_g << std::endl;
 }
 
@@ -61,7 +63,8 @@ void test_3()
     auto va = ceras::variable{ a };
     auto ta = ceras::drop_out( 0.5 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     ceras::learning_phase = 0;
     auto ans = s.run( ta );
     std::cout << "after drop_out (0.5):\n" << ans << std::endl;
@@ -71,7 +74,7 @@ void test_3()
     std::cout << "gradient generated as:\n" << grad << std::endl;
     ta.backward( grad );
 
-    auto new_g = *(va.gradient_);
+    auto new_g = va.gradient();
     std::cout << "propageated gradient:\n" << new_g << std::endl;
 }
 

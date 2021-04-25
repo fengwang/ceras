@@ -11,15 +11,16 @@ void test_1()
     a.reshape( {3, 4} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto b = ceras::linspace<double>( 1.0, 24.0, 24 );
-    b.reshape( {2, 3, 4} );
-    std::cout << "b created with shape (2, 3, 4) in range [1, 24]:\n";
+    auto b = ceras::linspace<double>( 1.0, 12.0, 12 );
+    b.reshape( {3, 4} );
+    std::cout << "b created with shape (3, 4) in range [1, 12]:\n";
 
     auto va = ceras::variable{ a };
     auto vb = ceras::variable{ b };
     auto ta = ceras::elementwise_product( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
 
     std::cout << "after elementwise_product(va, vb):\n" << ans << std::endl;
@@ -32,21 +33,23 @@ void test_2()
     a.reshape( {3, 2} );
     std::cout << "a created with:\n" << a << std::endl;
 
-    auto b = ceras::linspace<double>( 1.0, 12.0, 12 );
-    b.reshape( {2, 3, 2} );
-    std::cout << "b created with shape (2, 3, 2) in range [1, 12]:\n";
+    auto b = ceras::linspace<double>( 1.0, 6.0, 6 );
+    b.reshape( {3, 2} );
+    std::cout << "b created with shape (3, 2) in range [1, 6]:\n";
 
     auto va = ceras::variable{ a };
     auto vb = ceras::variable{ b };
     auto ta = ceras::elementwise_product( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
 
-    ta.backward( b );
+    //ta.backward( b );
+    ta.backward( ceras::ones<double>({3, 2}) );
 
-    std::cout << "after backward with [1, 12], the va gradient is:\n" << *(va.gradient_) << std::endl;
-    std::cout << "after backward with [1, 12], the vb gradient is:\n" << *(vb.gradient_) << std::endl;
+    std::cout << "after backward with ones, the va gradient is:\n" << va.gradient() << std::endl;
+    std::cout << "after backward with ones, the vb gradient is:\n" << vb.gradient() << std::endl;
 
 }
 

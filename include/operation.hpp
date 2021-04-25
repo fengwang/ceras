@@ -314,15 +314,12 @@ namespace ceras
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                                      {
-                                        better_assert( !has_nan(lhs_tensor), "forward propagation with elementwise_product: the lhs_tensor has nan!" );
-                                        better_assert( !has_nan(rhs_tensor), "forward propagation with elementwise_product: the rhs_tensor has nan!" );
-                                        auto const& ans = elementwise_product( lhs_tensor, rhs_tensor );
-                                        better_assert( !has_nan(ans), "forward propagation with elementwise_product: the output ans has nan!" );
-                                        return ans;
+                                        return elementwise_product( lhs_tensor, rhs_tensor );
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        //
+                                        return std::make_tuple( elementwise_product( rhs_input, grad ), elementwise_product( lhs_input, grad ) );
+                                        /*
                                         auto const& grad_fun = [&grad]( auto const& input, auto const& other_input )
                                         {
                                             //Tsor ans = grad.deep_copy();
@@ -336,9 +333,16 @@ namespace ceras
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
+                                        */
                                      }
                 )( lhs_ex, rhs_ex );
     };
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr elementwise_multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return elementwise_product( lhs_ex, rhs_ex );
+    }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr hadamard_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept

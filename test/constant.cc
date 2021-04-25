@@ -16,7 +16,8 @@ void test_45()
     auto va = ceras::constant<ceras::tensor<double>>{ a };
     auto ta = ceras::transpose( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after transpose:\n" << ans << std::endl;
 }
@@ -50,7 +51,8 @@ TEST_CASE("softmax_constant", "[softmax_constant]")
 
             auto p = softmax( x * W + b );
 
-            session<tensor<double>> s;
+            //session<tensor<double>> s;
+            auto& s = ceras::get_default_session<ceras::tensor<double>>();
             s.bind( x, _x );
             auto result = s.run( p );
 

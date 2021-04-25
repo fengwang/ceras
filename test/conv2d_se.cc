@@ -15,7 +15,8 @@ void test( unsigned long output_channels,std::vector<unsigned long> const& kerne
 
     auto input = ceras::variable{ input_data };
     auto output = ceras::Conv2D( output_channels, kernel_size, input_shape, padding, strides )(input);
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto result = s.run( output );
     auto output_shape = result.shape();
 

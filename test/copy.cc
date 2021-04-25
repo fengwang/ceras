@@ -20,7 +20,8 @@ void test_1()
     auto vab = va+vb;
     auto result = ceras::copy( vab, va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( result );
     std::cout << "After session, the answer is:" << ceras::squeeze(ans) << std::endl;
     std::cout << "a is udpated to " << ceras::squeeze(a) << std::endl;

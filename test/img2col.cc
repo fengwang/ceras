@@ -19,7 +19,8 @@ void test_55_33()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(3,3)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 
@@ -38,7 +39,8 @@ void test_332_33()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2,2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -52,7 +54,8 @@ void test_3320_33()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2, 2, 1, 1)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -66,7 +69,8 @@ void test_2332_33()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2,2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -80,7 +84,8 @@ void test_3332_33()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2,2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -94,7 +99,8 @@ void test_1441_22_s2()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2, 2, 0, 0, 2, 2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -108,7 +114,8 @@ void test_1442_22_s2()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2, 2, 0, 0, 2, 2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -122,7 +129,8 @@ void test_2442_22_s2()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(2, 2, 0, 0, 2, 2)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 }
@@ -136,7 +144,8 @@ void test_55_33_back()
     auto va = ceras::variable{ a };
     auto col_va = ceras::img2col(3,3)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto col_im = s.run( col_va );
     std::cout << "after col2img:\n" << col_im << std::endl;
 
@@ -148,7 +157,7 @@ void test_55_33_back()
     auto grad = ceras::ones<double>({18, 4});
     col_va.backward( grad  );
 
-    std::cout << "After backward, the gradient for va is \n" << ceras::squeeze(*(va.gradient_)) << std::endl;
+    std::cout << "After backward, the gradient for va is \n" << ceras::squeeze(va.gradient()) << std::endl;
 
 }
 

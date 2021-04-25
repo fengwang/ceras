@@ -143,13 +143,20 @@ namespace ceras
     }; // session
 
     } //namespace ceras_private
-
+#if 0
     template< Tensor Tsor >
     std::reference_wrapper<ceras_private::session<Tsor>> get_default_session()
     {
         auto& sess = singleton<ceras_private::session<Tsor>>::instance();
         return std::ref(sess);
     }
+#else
+    template< Tensor Tsor >
+    ceras_private::session<Tsor>& get_default_session()
+    {
+        return singleton<ceras_private::session<Tsor>>::instance();
+    }
+#endif
 
 }//namespace ceras
 

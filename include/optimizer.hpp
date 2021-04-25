@@ -46,7 +46,7 @@ namespace ceras
         {
             loss_.backward( ones<T>( {1, } ) );
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -89,7 +89,7 @@ namespace ceras
 
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
 
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -138,7 +138,7 @@ namespace ceras
 
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
 
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -186,7 +186,7 @@ namespace ceras
         {
             loss_.backward( ones<T>( {1, } ) );
 
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -259,7 +259,7 @@ namespace ceras
         void forward()
         {
             loss_.backward( ones<T>( {1, } ) );
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -302,7 +302,8 @@ namespace ceras
 
     // Example usage:
     //
-    //  session ss;
+    //  //session ss;
+    //  auto& ss = get_default_session<tensor<float>>();
     //  auto loss = ...;
     //  auto optimizer = gradient{ loss, 1.0e-3f };
     //  for i = 1 : 1000
@@ -327,7 +328,7 @@ namespace ceras
             // update the gradient in the loss
             loss_.backward( ones<T>( {1, } ) );
             //update variables
-            auto& ss = get_default_session<tensor_type>().get();
+            auto& ss = get_default_session<tensor_type>();//.get();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)

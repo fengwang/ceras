@@ -20,7 +20,8 @@ void test_44()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(4, 4)( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -44,7 +45,8 @@ void test_44_same()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(4, 4, 1, 1, 1, 1, "same")( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -66,7 +68,8 @@ void test_44_22()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(4, 4)( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -88,7 +91,8 @@ void test_55_33()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(5, 5)( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -110,7 +114,8 @@ void test_55_33_same()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(5, 5, 1, 1, 1, 1, "same")( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -133,7 +138,8 @@ void test_55_33_same_back()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(5, 5, 1, 1, 1, 1, "same")( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -160,7 +166,8 @@ void test_55_33_same_back_s2()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(5, 5, 1, 1, 1, 1, "same")( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
@@ -187,7 +194,8 @@ void test_66_33_same()
     auto vb = ceras::variable{ b };
     auto cab = ceras::conv2d(6, 6, 3, 3, 1, 1, "same")( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    //ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
