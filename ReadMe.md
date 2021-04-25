@@ -222,7 +222,7 @@ A `place_holder` variable holds a position that a `tensor` will be fed later.
 ```cpp
 ceras::place_holder<ceras::tensor<float>> input{};
 // ......
-session<ceras::float<float>> s;
+auto&s = ceras::get_default_session<ceras::tensor<float>>();
 ceras::tensor<float> a{{2, 1, 2}, {0.0f, 0.1f, 0.2f, 0.3f}};
 s.bind(input, a ); // binding a tensor to a place_holder
 ```
@@ -281,7 +281,7 @@ auto z = sigmoid( A*x + b );
 To evaluate the operations (computation graph), we need a session.
 
 ```cpp
-auto s = ceras::session<ceras::tensor<float>>{};
+auto&s = ceras::get_default_session<ceras::tensor<float>>();
 ```
 
 Then we can bind a tensor to `x`,
@@ -517,7 +517,7 @@ std::size_t const iteration_per_epoch = 60000/batch_size;
 
 ```cpp
 // creating session
-session<tensor<float>> s;
+auto s = ceras::session<ceras::tensor<float>>{};
 s.bind( input, input_images );
 s.bind( ground_truth, output_labels );
 ```

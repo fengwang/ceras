@@ -350,6 +350,10 @@ mnist_conv2d_minimal: test/mnist_conv2d_minimal.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_minimal.o test/mnist_conv2d_minimal.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_minimal $(OBJECTS_DIR)/test_mnist_conv2d_minimal.o $(LFLAGS)
 
+context: test/context.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_context.o test/context.cc
+	$(LINK) -o $(BIN_DIR)/test_context $(OBJECTS_DIR)/test_context.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
