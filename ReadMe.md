@@ -129,6 +129,85 @@ in which the template parameter `float` is for the data type, the first argument
 Quite a few operations, such as `+`, `-`, `*`,  `abs`,  `random`, `randn`, `reduce` and `max` are implemented for `tensor`. But these operations are there to serve the purpose of deep learning, not intend to be a generic tensor library.
 
 
+#### creating tensor instances
+
+An empty tensor could be directly created using its constructor by passing a shape parameter:
+
+```cpp
+auto data = ceras::tensor<float>{{16, 28, 28, 77}};
+```cpp
+
+Or creating an empty tensor:
+
+```cpp
+auto empty = ceras::zeros<float>( {16, 28, 28, 21} );
+auto empty_2 = ceras::zeros_like( data );
+```
+
+or creating a tensor filled with `1`:
+
+```cpp
+auto one = ceras::ones<float>( { 28, 28, 21} );
+auto one_2 = ceras::ones_like( data );
+```
+
+or a tensor filled with random values
+
+```cpp
+auto r = ceras::random( {12, 34} ); // U(0, 1)
+auto r_1 = ceras::random( {12, 34}, -10.0, 10.0 ); // U(-10, 10)
+auto r_2 = ceras::random_like( data ); // U(0, 1)
+auto r_3 = ceras::random_like( data, -10.0, 10.0 ); // U(-10, 10)
+```
+
+or a tensor sampling values from a Normal distribution
+```cpp
+auto n = ceras::randn( {12, 34} ); // N(0, 1)
+auto n_1 = ceras::randn( {12, 34}, 1.0, 10.0 ); // N(1, 10)
+auto n_2 = ceras_randn_like( data ); // N(0, 1)
+auto n_3 = ceras_randn_like( data, 1.0, 10.0 ); // N(1, 10)
+```
+
+#### access elements
+
+It is possible to access elements by iterators to read
+```cpp
+std::copy( data.begin(), data.end(), std::ostream_iterator<float>( std::cout, " " ) );
+```
+or write a tensor
+```cpp
+std::fill( data.begin(), data.end(), 0.0 );
+```
+
+1D view is enabled by default:
+```cpp
+data[0] = 1.0;
+data[100] = -1.0;
+```
+
+2D view is possible by exposing the tensor data and by setting up two dimensional parameters:
+```cpp
+auto v2 = ceras::view_2d{ data.data(), 16, 28*28*77 };
+v2[11][28] = 0.0;
+```
+
+For 3D view, three parameters are required
+```cpp
+auto v3 = ceras::view_3d{ data.data(), 16, 28, 28*77 };
+v3[11][20][40] = 0.0;
+```
+
+For 4D view, four parameters are required
+```cpp
+auto v4 = ceras::view_3d{ data.data(), 16, 28, 28, 77 };
+v4[11][20][10][20] = 0.0;
+```
+
+
+
+
+
+
 ### [constant](./include/constant.hpp)
 A `constant` variable  holds a `tensor` instance, and this `tensor` is not supposed to be updated in its life-time.
 
@@ -154,6 +233,19 @@ A `variable` variable  holds a stateful `tensor`, and this `tensor` will be upda
 
 ```cpp
 auto w = ceras::variable{ ceras::randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
+```
+
+
+### [value](./include/value.hpp)
+
+A `value` variable holds a constant value. The operations between a value and another operator (such as a constant, a place holder, a varialbe or an operation) is elementwised.
+```cpp
+auto v = ceras::value{ 0.0f };
+auto op = ...; // a constant, a place holder, a variable, or an operation
+auto xx = ceras::maximum( v op );
+//auto xx = v + op;
+//auto xx = v - op;
+//auto xx = v * op;
 ```
 
 ### [operation](./include/operation.hpp) and  computation graph
