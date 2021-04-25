@@ -8,7 +8,7 @@ int main()
     auto a = variable{ ones<float>( {2, 2} ) };
     auto b = variable{ zeros<float>( {2, 2} ) };
     auto ab = mae(a, b);
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
     std::cout <<  s.run( ab );
 
     return 0;

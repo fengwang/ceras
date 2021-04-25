@@ -7,8 +7,9 @@ int main()
 
     auto a = variable{ ones<float>( {20,} ) };
     auto b = relu( Dense( 32, 20 )( a ) );
-    auto la = exp(b);
-    ceras::session<ceras::tensor<float>> s;
+    auto la = exponential(b);
+    //ceras::session<ceras::tensor<float>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
     std::cout <<  s.run( la );
 
     return 0;
