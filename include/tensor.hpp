@@ -702,10 +702,12 @@ namespace ceras
     template< Tensor Tsor >
     Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
+#if 0
         better_assert( lhs.shape() == rhs.shape(), "elementwise_product: shapes not match!" );
         Tsor ans{ lhs.shape() };
         for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x*y; } );
         return ans;
+#endif
 #if 0
         better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
         better_assert( !has_nan( lhs ), "lhs parameter for elementwise_product has nan!" );
@@ -720,7 +722,7 @@ namespace ceras
         better_assert( !has_nan(ans), "result for elementwise product has nan. The shape is ", *(lhs.shape().begin()), " x ", *(lhs.shape().rbegin()) );
         return ans;
 #endif
-#if 0
+#if 1
         unsigned long const l_size = lhs.size();
         unsigned long const r_size = rhs.size();
         if ( l_size < r_size ) return elementwise_product(rhs, lhs);

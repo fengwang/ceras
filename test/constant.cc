@@ -16,7 +16,7 @@ void test_45()
     auto va = ceras::constant<ceras::tensor<double>>{ a };
     auto ta = ceras::transpose( va );
 
-    //ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after transpose:\n" << ans << std::endl;

@@ -20,7 +20,7 @@ void test_1()
     //auto cab = ceras::concatenate( va, vb )();
     auto cab = ceras::concatenate()( va, vb );
 
-    //ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( cab );
     cab.reset_states();

@@ -21,7 +21,7 @@ void test_1()
 
     auto mab = maximum( va, vb );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( mab );
     std::cout << "after maximum(a, b):\n" << ans << std::endl;
 

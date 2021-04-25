@@ -7,7 +7,7 @@ int main()
 
     auto a = variable{ ones<float>( {3, 3} ) };
     auto r = random_normal_like( 1.0, 4.0 )( a );
-    ceras::session<ceras::tensor<float>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
     std::cout <<  s.run( r );
 
     return 0;

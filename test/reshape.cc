@@ -14,7 +14,7 @@ void test_1()
     auto va = ceras::variable{ a };
     auto ta = ceras::reshape({2, 6}, true)( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after transpose with batch size:\n" << ans << std::endl;
 
@@ -33,7 +33,7 @@ void test_2()
     auto va = ceras::variable{ a };
     auto ta = ceras::reshape({2, 6})( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
 
     auto grad = ceras::random<double>( {1, 2, 6} );

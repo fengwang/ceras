@@ -13,7 +13,7 @@ void test_44()
     auto ta = ceras::flatten( va );
 
     auto& s = ceras::get_default_session<ceras::tensor<double>>();
-    //ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "(4, 4) after flatten:\n" << ans << std::endl;
 }
@@ -28,7 +28,7 @@ void test_44_back()
     auto ta = ceras::flatten( va );
 
     auto& s = ceras::get_default_session<ceras::tensor<double>>();
-    //ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "(1, 4, 3) after flatten:\n" << ans << std::endl;
 

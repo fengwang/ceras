@@ -318,8 +318,7 @@ namespace ceras
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        return std::make_tuple( elementwise_product( rhs_input, grad ), elementwise_product( lhs_input, grad ) );
-                                        /*
+                                        //return std::make_tuple( elementwise_product( rhs_input, grad ), elementwise_product( lhs_input, grad ) );
                                         auto const& grad_fun = [&grad]( auto const& input, auto const& other_input )
                                         {
                                             //Tsor ans = grad.deep_copy();
@@ -333,7 +332,6 @@ namespace ceras
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
-                                        */
                                      }
                 )( lhs_ex, rhs_ex );
     };
@@ -1223,6 +1221,7 @@ namespace ceras
         };
     }
 
+#if 0
     template< typename T=double > requires std::floating_point<T>
     inline auto normalization_instance( T const momentum=0.98 ) noexcept
     {
@@ -1353,6 +1352,7 @@ namespace ceras
             return elementwise_product( normalization_instance(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
         };
     }
+#endif
 
     //
     //  example:

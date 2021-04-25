@@ -56,7 +56,7 @@ int main()
     std::size_t const epoch = 2;
 
     // creating session
-    session<tensor_type> s;
+    auto& s = get_default_session<tensor_type>();
     s.bind( input, input_d );
     s.bind( ground_truth, output_d );
 

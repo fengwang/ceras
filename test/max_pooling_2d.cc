@@ -14,7 +14,7 @@ void test_1()
     auto va = ceras::variable{ a };
     auto ta = ceras::max_pooling_2d( 2 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after max_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 }
@@ -30,7 +30,7 @@ void test_2()
     auto va = ceras::variable{ a };
     auto ta = ceras::max_pooling_2d( 2 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after max_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 

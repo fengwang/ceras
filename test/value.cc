@@ -15,7 +15,7 @@ void test_1()
 
     auto vb = ceras::value{ 1.1f };
     std::cout << "created value of  1.1f\n";
-    ceras::session<ceras::tensor<float>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
 
     {
         auto v = va+vb;

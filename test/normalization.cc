@@ -13,7 +13,7 @@ void test_1()
     auto vx = variable{ randn<double>( {128, 128} ) };
     auto nx = normalization()( vx );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( nx );
 
     auto m_ans = mean( ans, 0 );

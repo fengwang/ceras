@@ -7,7 +7,7 @@ int main()
 
     auto a = variable{ ones<float>( {2, 2} ) };
     auto ls = softmax(a);
-    ceras::session<ceras::tensor<float>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<float>>();
     std::cout <<  s.run( ls );
 
     return 0;

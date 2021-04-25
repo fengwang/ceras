@@ -69,7 +69,7 @@ int main()
     tensor_type output_labels{ {batch_size, 10} };
 
     // creating session
-    session<tensor_type> s;
+    auto& s = get_default_session<tensor_type>();
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 

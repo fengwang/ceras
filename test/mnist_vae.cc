@@ -85,7 +85,7 @@ int main()
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
-    session<tensor_type> s;
+    auto& s = get_default_session<tensor_type>();
     s.bind( x, input_images );
 
     float learning_rate = 1.0e-3f;
