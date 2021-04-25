@@ -354,6 +354,10 @@ context: test/context.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_context.o test/context.cc
 	$(LINK) -o $(BIN_DIR)/test_context $(OBJECTS_DIR)/test_context.o $(LFLAGS)
 
+model_trainable: test/model_trainable.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_model_trainable.o test/model_trainable.cc
+	$(LINK) -o $(BIN_DIR)/test_model_trainable $(OBJECTS_DIR)/test_model_trainable.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
