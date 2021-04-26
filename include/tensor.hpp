@@ -253,6 +253,7 @@ namespace ceras
 
         constexpr self_type& operator += ( self_type const& other )
         {
+            //better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch! -- current shape is ", shape(), " and other tensor shape is ", other.shape() );
             better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;

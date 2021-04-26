@@ -60,6 +60,11 @@ namespace ceras
         };
     }
 
+    inline auto BatchNormalization( float threshold, std::vector<unsigned long> const& shape )
+    {
+        return BatchNormalization( shape, threshold );
+    }
+
     ///
     /// Layer that concatenates two layers.
     /// @param axis The concatenation axis. Default to the last channel.
@@ -207,13 +212,33 @@ namespace ceras
         return max_pooling_2d( stride );
     }
 
+    ///
+    /// Upsampling layer for 2D inputs.
+    ///
+    inline auto UpSampling2D( unsigned long stride ) noexcept
+    {
+        return up_sampling_2d( stride );
+    }
+
+    ///
+    /// Applies Dropout to the input.
+    ///
+    template< typename T >
+    inline auto Dropout( T factor ) noexcept
+    {
+        return drop_out( factor );
+    }
+
+    ///
+    /// Average pooling operation for spatial data.
+    ///
+    inline auto AveragePooling2D( unsigned long stride ) noexcept
+    {
+        return average_pooling_2d( stride );
+    }
+
     //
     // TODO: PReLU
-    // TODO: AveragePooling2D
-    // TODO: Dropout
-    // TODO: Reshape
-    // TODO: Flatten
-    // TODO: UpSampling2D
     //
 
 

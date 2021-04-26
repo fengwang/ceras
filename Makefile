@@ -11,7 +11,8 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofa
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=999999 -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 
 CXX           = g++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
@@ -357,6 +358,10 @@ context: test/context.cc
 model_trainable: test/model_trainable.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_model_trainable.o test/model_trainable.cc
 	$(LINK) -o $(BIN_DIR)/test_model_trainable $(OBJECTS_DIR)/test_model_trainable.o $(LFLAGS)
+
+dcgan: examples/dcgan.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/example_dcgan.o examples/dcgan.cc
+	$(LINK) -o $(BIN_DIR)/example_dcgan $(OBJECTS_DIR)/example_dcgan.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

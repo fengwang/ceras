@@ -27,7 +27,7 @@ namespace ceras
 
         session()
         {
-            debug_log("!Creating a session!");
+            //debug_log("!Creating a session!");
             //singleton<session<Tsor>*>::instance() = this;
         }
 
@@ -49,12 +49,12 @@ namespace ceras
 
         void remember( variable_type const& v )
         {
-            debug_log( "trying to remember new varialble with id ", v.id_ );
-            debug_log( "session has ", variables_.size(), " variables remembered." );
+            //debug_log( "trying to remember new varialble with id ", v.id_ );
+            //debug_log( "session has ", variables_.size(), " variables remembered." );
             if ( variables_.find( v.id_ ) == variables_.end() )
             {
                 variables_.insert( {v.id_, v} );
-                debug_log( "remembering new varialble with id ", v.id_ );
+                //debug_log( "remembering new varialble with id ", v.id_ );
             }
         }
 

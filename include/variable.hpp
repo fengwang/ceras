@@ -75,7 +75,7 @@ namespace ceras
         void backward( auto const& grad )
         {
             if (!trainable_) return;
-            debug_log( "variable backward at ", (*this).id_ );
+            //debug_log( "variable backward at ", (*this).id_ );
 
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass

@@ -245,11 +245,12 @@ namespace ceras
         auto train_on_batch( Tsor const& input, Tsor const& output )
         {
             learning_phase = 1; // for different behaviours in normalization and drop-out layers
-            //session<Tsor> s;
             auto& s = get_default_session<Tsor>();//.get();
             s.bind( input_place_holder_, input );
             s.bind( ground_truth_place_holder_, output );
+            //debug_log( "Training on batch forward pass." );
             auto error = s.run( loss_ );
+            //debug_log( "Training on batch backward pass." );
             s.run( compiled_optimizer_ );
             return error.as_scalar();
         }
@@ -269,7 +270,7 @@ namespace ceras
 
         void trainable( bool t )
         {
-            return model_.trainable( t );
+            model_.trainable( t );
         }
     };
 
