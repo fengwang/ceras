@@ -48,6 +48,9 @@ namespace ceras
             (*this).state_ = std::make_shared<variable_state<Tsor>>();
             (*((*this).state_)).data_ = data;
             (*((*this).state_)).gradient_ = Tsor{ data.shape() };
+
+            auto& ss = get_default_session<Tsor>();//.get();
+            ss.remember( *this );
         }
 
         variable() = delete;
@@ -59,8 +62,8 @@ namespace ceras
         Tsor const forward() const
         {
             // attach current varialbe to a session, so this varialbe can be saved/restored by the session
-            auto& ss = get_default_session<Tsor>();//.get();
-            ss.remember( *this );
+            //auto& ss = get_default_session<Tsor>();//.get();
+            //ss.remember( *this );
 
             auto& state = *((*this).state_);
 
@@ -79,8 +82,8 @@ namespace ceras
 
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
-            auto& ss = get_default_session<Tsor>();//.get();
-            ss.remember( *this );
+            //auto& ss = get_default_session<Tsor>();//.get();
+            //ss.remember( *this );
         }
 
         std::vector<std::size_t> shape() const noexcept

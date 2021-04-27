@@ -284,6 +284,7 @@ To evaluate the operations (computation graph), we need a session.
 auto&s = ceras::get_default_session<ceras::tensor<float>>();
 ```
 
+
 Then we can bind a tensor to `x`,
 ```cpp
 auto X = ceras::tensor<float>{{3,}, {1.0f, 2.0f, 3.0f}};
@@ -320,17 +321,6 @@ s.restore( "./test/mnist.session" );
 // or
 s.deserialized( "./test/mnist.session" );
 ```
-
-The `save`/`restore` method is convenient for saving and loading a model, but before using them, make sure the expression templates has been attached to the session. The attachment can be done automatically by running an expression
-```cpp
-s.run( z );
-```
-or simple taping an expression to the session
-```
-s.tap( z );
-```
-Then all the variables associated to the expression `z`, the variables `A` and `b`, are attached to session. Then it is possible to save/load the session by `save`/`restore` methods.
-
 
 ### [loss](./include/loss.hpp)
 
