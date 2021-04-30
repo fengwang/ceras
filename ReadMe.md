@@ -17,7 +17,7 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 * [Supported layers/operations](#supported-layers)
 * [TODO](#todo)
 * [License](#license)
-* [Acknowledgements](#acknowledgements)
+* [Acknowledgments](#acknowledgements)
 
 
 
@@ -25,9 +25,9 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 
 ## Getting Started
 
-A `model` is a way to orgnize layers. Here is an example to build a sequential model.
+A `model` is a way to organize layers. Here is an example to build a sequential model.
 
-First we include the header and use the namespace of this library:
+First, we include the header and use the namespace of this library:
 
 ```cpp
 #include "./include/ceras.hpp"
@@ -82,12 +82,12 @@ Check out a minimal example from [here](./test/mnist_minimal.cc).
 ## Features
 - Fast and GPU memory friendly:
     - 98% accuracy on MNIST in 10 epochs in 30s (loading dataset, training and validation on a laptop with Intel(R) Core(TM) i7-7700HQ and a mobile GTX 1060);
-    - only time-comsuming operations are accelerated by GPU (such as GEMM), and your GPU memory size is not the restriction for a large batch size.
+    - only time-consuming operations are accelerated by GPU (such as GEMM), and your GPU memory size is not the restriction for large batch size.
 - Portable:
-    - header-only, only requires a standard C++ compiler;
+    - header-only;
     - CUDA acceleration is optional, not a must.
 - Simply implemented:
-    - mimicking Tensorflow/keras grammar for easy of use;
+    - mimicking Tensorflow/keras grammar for ease of use;
     - minimizing the levels of indirections to expose as many implementation details as possible.
 
 ## Usage
@@ -135,11 +135,11 @@ An empty tensor could be directly created using its constructor by passing a sha
 
 ```cpp
 auto data = ceras::tensor<float>{{16, 28, 28, 77}};
-```cpp
+​```cpp
 
 Or creating an empty tensor:
 
-```cpp
+​```cpp
 auto empty = ceras::zeros<float>( {16, 28, 28, 21} );
 auto empty_2 = ceras::zeros_like( data );
 ```
@@ -238,7 +238,7 @@ auto w = ceras::variable{ ceras::randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.
 
 ### [value](./include/value.hpp)
 
-A `value` variable holds a constant value. The operations between a value and another operator (such as a constant, a place holder, a varialbe or an operation) is elementwised.
+A `value` variable holds a constant value. The operations between a value and another operator (such as a constant, a place holder, a variable or an operation) is element-wised.
 ```cpp
 auto v = ceras::value{ 0.0f };
 auto op = ...; // a constant, a place holder, a variable, or an operation
@@ -303,7 +303,7 @@ auto _A = s.run(A);
 auto _b = s.run(b);
 ```
 
-By design, an instance of an expression has a builtin `forward()` method. When a session runs an expression, the `forward()` method will be invoked.
+By design, an instance of an expression has a built-in `forward()` method. When a session runs an expression, the `forward()` method will be invoked.
 
 Please find the complete code from [this file](./test/session.cc).
 
@@ -407,7 +407,7 @@ __TODO__
 
 ### implement VGG16
 
-There are a few pre-defined layers in file `./include/layer.hpp`, such as `Input`, `Conv2D` and `Dense`. Starting from thses layers, we are already able to build a VGG16 model.
+There are a few pre-defined layers in file `./include/layer.hpp`, such as `Input`, `Conv2D` and `Dense`. Starting from these layers, we are already able to build a VGG16 model.
 
 
 The input layer for VGG16 is defined as
@@ -823,7 +823,7 @@ The full code is [here](./test/optimize.cc).
 
 
 ## TODO
-+ mimicking Tensorflow::Keras grammar
++ mimicking Tensorflow::Keras grammar, as close as possible
 + recurrent operations
 + provide a single-header file
 

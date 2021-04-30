@@ -807,14 +807,23 @@ namespace ceras
 
         if ( 1 == tsor.size() )
         {
-            ans.shape_.resize( 1 );
+            ans.reshape( {1,} );
             return ans;
         }
 
+        /*
         std::vector<unsigned long> new_shape;
         std::copy_if( ans.shape_.begin(), ans.shape_.end(), std::back_inserter( new_shape ), []( unsigned long n ) { return n != 1UL; } );
         ans.shape_.swap( new_shape );
         return  ans;
+        */
+
+        std::vector<unsigned long> new_shape;
+        for ( auto s : tsor.shape() )
+            if (s > 1 )
+                new_shape.push_back( s );
+        ans.reshape( new_shape );
+        return ans;
     }
 
     template< typename T, typename A=default_allocator<T> >

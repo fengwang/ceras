@@ -404,10 +404,31 @@ namespace ceras
 
         ///
         ///
+        ///
         void trainable( bool t )
         {
             make_trainable( expression_, t );
         }
+
+
+        ///
+        /// Writes all variables to a file
+        ///
+        void save_weights( std::string const& file )
+        {
+            auto& s = get_default_session<tensor<float>>();
+            s.serialize( file );
+        }
+
+        ///
+        /// Loads all variables from a file
+        ///
+        void load_weights( std::string const& file )
+        {
+            auto& s = get_default_session<tensor<float>>();
+            s.deserialize( file );
+        }
+
     };
 
 }//namespace ceras
