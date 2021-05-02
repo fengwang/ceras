@@ -86,8 +86,6 @@ namespace ceras
         return mean_reduce( maximum( value{0.0f}, value{1.0f} - hadamard_product(lhs_ex, rhs_ex) ) );
     }
 
-
-
     // loss interfaces
     // A loss is an expression. This expression takes two parameters.
     // The first parameter is a place_holder, that will be binded to an tensor.

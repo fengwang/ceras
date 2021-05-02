@@ -363,6 +363,10 @@ dcgan: examples/dcgan.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/example_dcgan.o examples/dcgan.cc
 	$(LINK) -o $(BIN_DIR)/example_dcgan $(OBJECTS_DIR)/example_dcgan.o $(LFLAGS)
 
+fashion_mnist_dataset: test/fashion_mnist_dataset.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_fashion_mnist_dataset.o test/fashion_mnist_dataset.cc
+	$(LINK) -o $(BIN_DIR)/test_fashion_mnist_dataset $(OBJECTS_DIR)/test_fashion_mnist_dataset.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
