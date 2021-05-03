@@ -18,13 +18,8 @@ namespace ceras
         struct session;
     }
 
-#if 0
-    template< Tensor Tsor >
-    std::reference_wrapper<ceras_private::session<Tsor>> get_default_session();
-#else
     template< Tensor Tsor >
     ceras_private::session<Tsor>& get_default_session();
-#endif
 
     template< Tensor Tsor >
     struct variable_state
@@ -61,10 +56,6 @@ namespace ceras
 
         Tsor const forward() const
         {
-            // attach current varialbe to a session, so this varialbe can be saved/restored by the session
-            //auto& ss = get_default_session<Tsor>();//.get();
-            //ss.remember( *this );
-
             auto& state = *((*this).state_);
 
             if ( learning_phase == 1 )
@@ -78,12 +69,9 @@ namespace ceras
         void backward( auto const& grad )
         {
             if (!trainable_) return;
-            //debug_log( "variable backward at ", (*this).id_ );
 
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
-            //auto& ss = get_default_session<Tsor>();//.get();
-            //ss.remember( *this );
         }
 
         std::vector<std::size_t> shape() const noexcept

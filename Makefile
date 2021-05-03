@@ -367,6 +367,10 @@ fashion_mnist_dataset: test/fashion_mnist_dataset.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_fashion_mnist_dataset.o test/fashion_mnist_dataset.cc
 	$(LINK) -o $(BIN_DIR)/test_fashion_mnist_dataset $(OBJECTS_DIR)/test_fashion_mnist_dataset.o $(LFLAGS)
 
+equal: test/equal.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_equal.o test/equal.cc
+	$(LINK) -o $(BIN_DIR)/test_equal $(OBJECTS_DIR)/test_equal.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

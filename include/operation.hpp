@@ -1512,6 +1512,52 @@ namespace ceras
         };
     }
 
+    ///
+    /// Returns the truth value of (lhs == rhs) element-wise. [+1 for true, -1 for false]
+    ///
+    /// @param lhs_ex The first operator.
+    /// @param rhs_ex The second operator.
+    /// @return An instance of a binary operator that evaluate the element-wise equality of two input operators.
+    ///
+    /// Example code:
+    /// @code
+    /// auto l = variable<tensor<float>>{ /*...*/ };
+    /// auto r = place_holder<tensor<float>>{};
+    /// auto eq = equal(l, r);
+    /// @endcode
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "equal: tensor shape mismatch." );
+
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto l, auto r, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{-1} : value_type{1}; } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+
+                Tsor& ans = context_cast<Tsor>( backward_cache );
+                ans.resize( lhs_input.shape() );
+
+                for_each( lhs_input.begin(), lhs_input.end(), rhs_input.begin(), grad.begin(), ans.begin(), []( auto l, auto r, auto g, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{0} : value_type{g}; } );
+
+                return std::make_tuple( ans, ans );
+            },
+            "Equal"
+        )( lhs_ex, rhs_ex );
+    }
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM
