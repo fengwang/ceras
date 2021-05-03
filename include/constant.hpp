@@ -11,7 +11,7 @@ namespace ceras
 {
 
     template< Tensor Tsor >
-    struct constant// : enable_shared<constant<Tsor>>
+    struct constant
     {
         // Tsor is a shallow copy, and once an instance is initialized,it will never change
         Tsor data_;

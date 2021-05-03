@@ -22,14 +22,9 @@ namespace ceras
         typedef variable_state<Tsor> variable_state_type;
 
         std::vector<place_holder_type> place_holders_;
-        //std::unordered_map<int, variable_type> variables_;
         std::map<int, variable_type> variables_;
 
-        session()
-        {
-            //debug_log("!Creating a session!");
-            //singleton<session<Tsor>*>::instance() = this;
-        }
+        session() { }
 
         session( session const& ) = delete;
         session( session&& ) = default;
@@ -49,12 +44,9 @@ namespace ceras
 
         void remember( variable_type const& v )
         {
-            //debug_log( "trying to remember new varialble with id ", v.id_ );
-            //debug_log( "session has ", variables_.size(), " variables remembered." );
             if ( variables_.find( v.id_ ) == variables_.end() )
             {
                 variables_.insert( {v.id_, v} );
-                //debug_log( "remembering new varialble with id ", v.id_ );
             }
         }
 
@@ -143,20 +135,12 @@ namespace ceras
     }; // session
 
     } //namespace ceras_private
-#if 0
-    template< Tensor Tsor >
-    std::reference_wrapper<ceras_private::session<Tsor>> get_default_session()
-    {
-        auto& sess = singleton<ceras_private::session<Tsor>>::instance();
-        return std::ref(sess);
-    }
-#else
+
     template< Tensor Tsor >
     ceras_private::session<Tsor>& get_default_session()
     {
         return singleton<ceras_private::session<Tsor>>::instance();
     }
-#endif
 
 }//namespace ceras
 

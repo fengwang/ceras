@@ -634,7 +634,6 @@ namespace ceras
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ grad.data(), row, col };
 
-                //Tsor back_ans{ {col, row} }; // TODO: optimize it out with shared_ptr
                 Tsor& back_ans = context_cast<Tsor>( backward_cache );
                 back_ans.resize( {col, row} );
 
