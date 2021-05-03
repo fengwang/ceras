@@ -371,6 +371,10 @@ equal: test/equal.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_equal.o test/equal.cc
 	$(LINK) -o $(BIN_DIR)/test_equal $(OBJECTS_DIR)/test_equal.o $(LFLAGS)
 
+sign: test/sign.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_sign.o test/sign.cc
+	$(LINK) -o $(BIN_DIR)/test_sign $(OBJECTS_DIR)/test_sign.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

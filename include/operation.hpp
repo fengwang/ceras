@@ -1513,7 +1513,7 @@ namespace ceras
     }
 
     ///
-    /// Returns the truth value of (lhs == rhs) element-wise. [+1 for true, -1 for false]
+    /// Returns the truth value of (lhs == rhs) element-wise. [+1 for true, 0 for false]
     ///
     /// @param lhs_ex The first operator.
     /// @param rhs_ex The second operator.
@@ -1540,7 +1540,7 @@ namespace ceras
 
                 Tsor& ans = context_cast<Tsor>( forward_cache );
                 ans.resize( lhs_tensor.shape() );
-                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto l, auto r, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{-1} : value_type{1}; } );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto l, auto r, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{0} : value_type{1}; } );
                 return ans;
             },
             [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
@@ -1557,6 +1557,45 @@ namespace ceras
             "Equal"
         )( lhs_ex, rhs_ex );
     }
+
+    ///
+    /// Returns the sign. [1 for positive, 0 otherwise]
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the sign of the input operator.
+    ///
+    /// Example code:
+    /// @code
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto si = sign(e);
+    /// @endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sign( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& input ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( input.shape() );
+                for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ){ v = (x > value_type{0}) ? value_type{1} : value_type{0}; } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                Tsor& ans = context_cast<Tsor>( backward_cache );
+                ans.resize( input.shape() );
+                for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto p, auto& v){ v = (x > value_type{0}) ? p : value_type{0}; } );
+                return ans;
+            },
+            "Sign"
+        )( ex );
+    };
 
 }//namespace ceras
 
