@@ -1167,6 +1167,19 @@ namespace ceras
         return x;
     }
 
+    template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
+    typename Tsor::value_type var( Tsor const& ts ) noexcept
+    {
+        auto x = ts - mean(ts);
+        return std::inner_product( x.begin(), x.end(), x.begin(), typename Tsor::value_type{0} );
+    }
+
+    template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
+    typename Tsor::value_type std( Tsor const& ts ) noexcept
+    {
+        return std::sqrt( var(ts) );
+    }
+
     template <Tensor Tsor>
     Tsor max( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
     {

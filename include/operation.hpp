@@ -1100,143 +1100,6 @@ namespace ceras
         };
     }
 
-#if 0
-    template< typename T=double > requires std::floating_point<T>
-    inline auto normalization_batch( T const momentum=0.98 ) noexcept
-    {
-        std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
-        {
-            return make_unary_operator
-            (
-                [=]<Tensor Tsor>( Tsor const& input ) noexcept
-                {
-                    better_assert( input.ndim() > 1, "normalization_batch requires input dimension at least 2, got ", input.ndim() );
-
-                    typedef typename Tsor::value_type value_type;
-                    typedef typename Tsor::allocator allocator;
-
-                    std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const batch_size = shape[0];
-                    unsigned long const rest_dim = input.size() / batch_size;
-                    view_2d<value_type> input_{ input.data(), batch_size, rest_dim };
-                    std::vector<unsigned long> new_shape{ shape.begin()+1, shape.end() };
-
-                    // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
-                    if ( learning_phase == 0 ) // defined in 'config.hpp'
-                    {
-                        // fix for the special case when prediction is executed before the training, typically in a GAN
-                        Tsor& global_average_test = context_cast<Tsor>( global_average_cache );
-                        if ( global_average_test.empty() )
-                            return input;
-
-                        // normal case. i.e., the global_average_cache and global_variance_cache are not empty
-                        Tsor& global_average = context_extract<Tsor>( global_average_cache );
-                        Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
-
-                        Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
-                        ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
-
-                        view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
-                        {
-                            for ( auto r : range( batch_size ) )
-                                for ( auto c : range( rest_dim ) )
-                                    ans_[r][c] = (input_[r][c] - global_average[c]) / std::sqrt( global_variance[c] + eps );
-                        }
-                        return ans;
-                    }
-
-                    //if ( batch_size < 8 )
-                    if ( batch_size < 32 )
-                    {
-                        debug_print( "Normalization_batch warning: expecting a batch size greater or equal to 32, but got ", batch_size, ". <FAILURE AHEAD>" );
-                    }
-
-                    // training phase below
-
-                    //calculate E
-                    Tsor& average = context_cast<Tsor>( average_cache, zeros<value_type, allocator>(new_shape) );
-                    {
-                        std::fill( average.begin(), average.end(), value_type{0} );
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                average[c] += input_[r][c];
-                        average /= static_cast<value_type>(batch_size);
-                    }
-
-                    //calculate Var
-                    Tsor& variance = context_cast<Tsor>( variance_cache, zeros<value_type, allocator>(new_shape) );
-                    {
-                        std::fill( variance.begin(), variance.end(), value_type{0} );
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                variance[c] += std::pow( input_[r][c] - average[c], 2);
-                        variance /= static_cast<value_type>(batch_size);
-                    }
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
-                    ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
-                    view_2d<value_type> ans_{ ans.data(), batch_size, rest_dim };
-                    {
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                ans_[r][c] = (input_[r][c] - average[c]) / std::sqrt( variance[c] + eps );
-                    }
-
-                    // update global average and global variance
-                    {
-                        Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
-                        // Note: No obvious different is observed between initializing global_variance to zeros and to ones with MNIST example:
-                        //       initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
-                        //       initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
-                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
-                        //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
-                        for ( auto idx : range( global_average.size() ) )
-                        {
-                            global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
-                            global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
-                        }
-                    }
-
-                    return ans;
-                },
-                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                {
-                    typedef typename Tsor::value_type value_type;
-                    Tsor& variance = context_extract<Tsor>( variance_cache );
-
-                    std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const batch_size = shape[0];
-                    unsigned long const rest_dim = variance.size();
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
-                    view_2d<value_type> ans_{ans.data(), batch_size, rest_dim};
-                    view_2d<value_type> grad_{grad.data(), batch_size, rest_dim};
-                    for ( auto r : range( batch_size ) )
-                        for ( auto c : range( rest_dim ) )
-                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
-                    return ans;
-                }
-            )( ex );
-        };
-    }
-
-    template< typename T > requires std::floating_point<T>
-    inline auto batch_normalization( T const momentum=0.98 ) noexcept
-    {
-        return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
-        {
-            return elementwise_product( normalization_batch(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
-        };
-    }
-
-#endif
 
     template< typename T=double > requires std::floating_point<T>
     inline auto normalization_batch( T const momentum=0.98 ) noexcept
@@ -1614,6 +1477,102 @@ namespace ceras
             "Sign"
         )( ex );
     };
+
+
+
+#if 0
+    // TODO: fix this layer
+    inline auto normalization_layer() noexcept
+    {
+        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    better_assert( input.ndim() > 1, "normalization_layer requires input dimension at least 2, got ", input.ndim() );
+
+                    typedef typename Tsor::value_type value_type;
+                    //typedef typename Tsor::allocator allocator;
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
+
+                    view_2d<value_type> input_{ input.data(), rest_dims, channels };
+
+                    //calculate average along the last channel
+                    Tsor& average = context_cast<Tsor>( average_cache );
+                    {
+                        average.resize( {channels, } );
+                        std::fill( average.begin(), average.end(), value_type{0} );
+
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                average[jdx] += input_[idx][jdx];
+
+                        average /= static_cast<value_type>(rest_dims);
+                    }
+
+                    //calculate Variance along the last channel
+                    Tsor& variance = context_cast<Tsor>( variance_cache );
+                    {
+                        variance.resize( {channels,} );
+                        std::fill( variance.begin(), variance.end(), value_type{0} );
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                variance[jdx] += std::pow( input_[idx][jdx] - average[jdx], 2 );
+
+                        variance /= static_cast<value_type>( rest_dims );
+                    }
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( input.shape() ); // the batch sizes for training and for prediction are not necessarily same
+                    view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
+                    {
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                ans_[idx][jdx] = ( input_[idx][jdx] - average[jdx] ) / std::sqrt( variance[jdx] + eps );
+                    }
+
+                    return ans;
+                },
+
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    Tsor& variance = context_extract<Tsor>( variance_cache );
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
+
+                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
+                    view_2d<value_type> ans_{ans.data(), rest_dims, channels };
+                    view_2d<value_type> grad_{grad.data(), rest_dims, channels };
+                    for ( auto r : range( rest_dims ) )
+                        for ( auto c : range( channels ) )
+                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
+                    return ans;
+                },
+                "LayerNormalization"
+            )( ex );
+        };
+    }
+
+    inline auto layer_normalization() noexcept
+    {
+        return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
+        {
+            return elementwise_product( normalization_layer()(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
+        };
+    }
+#endif
 
 }//namespace ceras
 

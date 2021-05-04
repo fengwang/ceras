@@ -66,6 +66,20 @@ namespace ceras
         return BatchNormalization( shape, threshold );
     }
 
+#if 0
+    // TODO: fix this layer
+    inline auto LayerNormalization( std::vector<unsigned long> const& shape )
+    {
+        return [=]<Expression Ex>( Ex const& ex )
+        {
+            unsigned long const last_dim = *(shape.rbegin());
+            auto gamma = variable<tensor<float>>{ ones<float>( {last_dim, }  ) };
+            auto beta = variable<tensor<float>>{ zeros<float>( {last_dim, } ) };
+            return layer_normalization()( ex, gamma, beta );
+        };
+    }
+#endif
+
     ///
     /// Layer that concatenates two layers.
     /// @param axis The concatenation axis. Default to the last channel.

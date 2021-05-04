@@ -375,6 +375,10 @@ sign: test/sign.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_sign.o test/sign.cc
 	$(LINK) -o $(BIN_DIR)/test_sign $(OBJECTS_DIR)/test_sign.o $(LFLAGS)
 
+mnist_ln_mini: test/mnist_ln_mini.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_ln_mini.o test/mnist_ln_mini.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_ln_mini $(OBJECTS_DIR)/test_mnist_ln_mini.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
