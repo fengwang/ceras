@@ -54,8 +54,9 @@ namespace ceras
     {
         return [=]<Expression Ex>( Ex const& ex )
         {
-            auto gamma = variable<tensor<float>>{ ones<float>( shape ) };
-            auto beta = variable<tensor<float>>{ zeros<float>( shape ) };
+            unsigned long const last_dim = *(shape.rbegin());
+            auto gamma = variable<tensor<float>>{ ones<float>( {last_dim, }  ) };
+            auto beta = variable<tensor<float>>{ zeros<float>( {last_dim, } ) };
             return batch_normalization( threshold )( ex, gamma, beta );
         };
     }

@@ -45,8 +45,8 @@ int main()
     auto b1 = variable{ zeros<float>( { 1, 256 } ) };
 
     auto l1_1 = input * w1 + b1;
-    auto gamma = variable{ ones<float>( {1, 256} ) };
-    auto beta = variable{ zeros<float>( {1, 256} ) };
+    auto gamma = variable{ ones<float>( {256,} ) };
+    auto beta = variable{ zeros<float>( {256,} ) };
     auto l1 = relu( batch_normalization(0.95)( l1_1, gamma, beta ) );
     //auto l1 = relu( input * w1 + b1 );
 

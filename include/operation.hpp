@@ -318,10 +318,8 @@ namespace ceras
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
                                      {
-                                        //return std::make_tuple( elementwise_product( rhs_input, grad ), elementwise_product( lhs_input, grad ) );
                                         auto const& grad_fun = [&grad]( auto const& input, auto const& other_input )
                                         {
-                                            //Tsor ans = grad.deep_copy();
                                             Tsor ans = elementwise_product( grad, other_input );
                                             while( input.ndim() < ans.ndim() )
                                                 ans = sum( ans, 0 );
@@ -420,6 +418,18 @@ namespace ceras
     }
 
 
+    ///
+    /// Returns the square of the input
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the squared value of the input operator.
+    ///
+    /// Example code:
+    /// @code
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto square = square(e);
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr square( Ex const& ex ) noexcept
     {
@@ -1090,6 +1100,7 @@ namespace ceras
         };
     }
 
+#if 0
     template< typename T=double > requires std::floating_point<T>
     inline auto normalization_batch( T const momentum=0.98 ) noexcept
     {
@@ -1204,7 +1215,6 @@ namespace ceras
                     unsigned long const batch_size = shape[0];
                     unsigned long const rest_dim = variance.size();
 
-                    //Tsor ans{ input.shape() };
                     Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
                     view_2d<value_type> ans_{ans.data(), batch_size, rest_dim};
                     view_2d<value_type> grad_{grad.data(), batch_size, rest_dim};
@@ -1226,9 +1236,10 @@ namespace ceras
         };
     }
 
-#if 0
+#endif
+
     template< typename T=double > requires std::floating_point<T>
-    inline auto normalization_instance( T const momentum=0.98 ) noexcept
+    inline auto normalization_batch( T const momentum=0.98 ) noexcept
     {
         std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
@@ -1243,70 +1254,74 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const& input ) noexcept
                 {
-                    better_assert( input.ndim() > 2, "normalization_instance requires input dimension at least 3, got ", input.ndim() );
+                    better_assert( input.ndim() > 1, "normalization_batch requires input dimension at least 2, got ", input.ndim() );
 
                     typedef typename Tsor::value_type value_type;
-                    typedef typename Tsor::allocator allocator;
+                    //typedef typename Tsor::allocator allocator;
 
                     std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const batch_size = shape[0];
-                    unsigned long const last_dim = *(shape.rbegin());
-                    unsigned long const rest_dim = input.size() / (batch_size*last_dim);
-                    view_3d<value_type> input_{ input.data(), batch_size, rest_dim, last_dim };
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
 
-                    std::vector<unsigned long> new_shape{ shape.begin()+1, shape.end()-1 };
+                    view_2d<value_type> input_{ input.data(), rest_dims, channels };
 
                     // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
                     if ( learning_phase == 0 ) // defined in 'config.hpp'
                     {
+                        // fix for the special case when prediction is executed before the training, typically in a GAN
+                        Tsor& global_average_test = context_cast<Tsor>( global_average_cache );
+                        if ( global_average_test.empty() )
+                            return input;
+
+                        // normal case. i.e., the global_average_cache and global_variance_cache are not empty
                         Tsor& global_average = context_extract<Tsor>( global_average_cache );
                         Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
 
                         Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
                         ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
 
-                        view_3d<value_type> ans_{ ans.data(), batch_size, rest_dim, last_dim };
+                        view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
                         {
-                            for ( auto r : range( batch_size ) )
-                                for ( auto c : range( rest_dim ) )
-                                    for ( auto l : range( last_dim ) )
-                                    ans_[r][c][l] = (input_[r][c][l] - global_average[c]) / std::sqrt( global_variance[c] + eps );
+                            for ( auto r : range( rest_dims ) )
+                                for ( auto c : range( channels ) )
+                                    ans_[r][c] = (input_[r][c] - global_average[c]) / std::sqrt( global_variance[c] + eps );
                         }
                         return ans;
                     }
 
-                    // training phase below
-
-                    //calculate E
-                    Tsor& average = context_cast<Tsor>( average_cache, zeros<value_type, allocator>(new_shape) );
+                    //calculate average along the last channel
+                    Tsor& average = context_cast<Tsor>( average_cache );
                     {
+                        average.resize( {channels, } );
                         std::fill( average.begin(), average.end(), value_type{0} );
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                for ( auto l : range( last_dim ) )
-                                    average[c] += input_[r][c][l];
-                        average /= static_cast<value_type>(batch_size*last_dim);
+
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                average[jdx] += input_[idx][jdx];
+
+                        average /= static_cast<value_type>(rest_dims);
                     }
 
-                    //calculate Var
-                    Tsor& variance = context_cast<Tsor>( variance_cache, zeros<value_type, allocator>(new_shape) );
+                    //calculate Variance along the last channel
+                    Tsor& variance = context_cast<Tsor>( variance_cache );
                     {
+                        variance.resize( {channels,} );
                         std::fill( variance.begin(), variance.end(), value_type{0} );
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                for ( auto l : range( last_dim ) )
-                                    variance[c] += std::pow( input_[r][c][l] - average[c], 2);
-                        variance /= static_cast<value_type>(batch_size*last_dim);
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                variance[jdx] += std::pow( input_[idx][jdx] - average[jdx], 2 );
+
+                        variance /= static_cast<value_type>( rest_dims );
                     }
 
-                    Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
-                    ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
-                    view_3d<value_type> ans_{ ans.data(), batch_size, rest_dim, last_dim };
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( input.shape() ); // the batch sizes for training and for prediction are not necessarily same
+                    view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
                     {
-                        for ( auto r : range( batch_size ) )
-                            for ( auto c : range( rest_dim ) )
-                                for ( auto l : range( last_dim ) )
-                                    ans_[r][c][l] = (input_[r][c][l] - average[c]) / std::sqrt( variance[c] + eps );
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                ans_[idx][jdx] = ( input_[idx][jdx] - average[jdx] ) / std::sqrt( variance[jdx] + eps );
                     }
 
                     // update global average and global variance
@@ -1326,38 +1341,43 @@ namespace ceras
 
                     return ans;
                 },
+
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
                     Tsor& variance = context_extract<Tsor>( variance_cache );
 
                     std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const batch_size = shape[0];
-                    unsigned long const last_dim = *(shape.rbegin());
-                    unsigned long const rest_dim = variance.size();
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
 
                     Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
-                    view_3d<value_type> ans_{ans.data(), batch_size, rest_dim, last_dim};
-                    view_3d<value_type> grad_{grad.data(), batch_size, rest_dim, last_dim};
-                    for ( auto r : range( batch_size ) )
-                        for ( auto c : range( rest_dim ) )
-                            for ( auto l : range( last_dim ) )
-                                ans_[r][c][l] = grad_[r][c][l] / std::sqrt( variance[c] + eps );
+                    view_2d<value_type> ans_{ans.data(), rest_dims, channels };
+                    view_2d<value_type> grad_{grad.data(), rest_dims, channels };
+                    for ( auto r : range( rest_dims ) )
+                        for ( auto c : range( channels ) )
+                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
                     return ans;
                 }
             )( ex );
         };
     }
 
+
+
     template< typename T > requires std::floating_point<T>
-    inline auto instance_normalization( T const momentum=0.98 ) noexcept
+    inline auto batch_normalization( T const momentum=0.98 ) noexcept
     {
         return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
-        {   // TODO: should have problem with operator '+', as only broadcasting from right-most side. TOBE FIXED
-            return elementwise_product( normalization_instance(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
+        {
+            return elementwise_product( normalization_batch(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
         };
     }
-#endif
+
+
+
+
+
 
     //
     //  example:
@@ -1545,13 +1565,11 @@ namespace ceras
             },
             [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
             {
+                // note: tensorflow has no gradient for operator Equal
                 typedef typename Tsor::value_type value_type;
-
                 Tsor& ans = context_cast<Tsor>( backward_cache );
                 ans.resize( lhs_input.shape() );
-
                 for_each( lhs_input.begin(), lhs_input.end(), rhs_input.begin(), grad.begin(), ans.begin(), []( auto l, auto r, auto g, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{0} : value_type{g}; } );
-
                 return std::make_tuple( ans, ans );
             },
             "Equal"
@@ -1559,7 +1577,7 @@ namespace ceras
     }
 
     ///
-    /// Returns the sign. [1 for positive, 0 otherwise]
+    /// Returns the sign. [1 for positive, 0 for 0 and -1 for negative]
     ///
     /// @param ex The input operator.
     /// @return An instance of a unary_operator that evaluate the sign of the input operator.
@@ -1582,15 +1600,15 @@ namespace ceras
                 typedef typename Tsor::value_type value_type;
                 Tsor& ans = context_cast<Tsor>( forward_cache );
                 ans.resize( input.shape() );
-                for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ){ v = (x > value_type{0}) ? value_type{1} : value_type{0}; } );
+                for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ){ v = (value_type{0} < x) - (x < value_type{0}); } );
                 return ans;
             },
-            [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+            [=]<Tensor Tsor>( Tsor const&input, Tsor const&, Tsor const& grad ) noexcept
             {
                 typedef typename Tsor::value_type value_type;
                 Tsor& ans = context_cast<Tsor>( backward_cache );
                 ans.resize( input.shape() );
-                for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto p, auto& v){ v = (x > value_type{0}) ? p : value_type{0}; } );
+                std::fill( ans.begin(), ans.end(), value_type{0} ); //TF gives zeros, we follow TF here
                 return ans;
             },
             "Sign"
