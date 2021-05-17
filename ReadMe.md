@@ -56,7 +56,7 @@ auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) )
 
 Then we can train this model by feeding it the training set
 ```cpp
-unsigned long epoch = 10;
+unsigned long epoch = 50;
 int verbose = 1;
 double validation_split = 0.1;
 cm.fit( input_data_of_784, output_data_of_10, batch_size, epoch, verbose, validation_split );
@@ -77,7 +77,7 @@ Or generate predictions from new samples
 auto prediction = cm.predict( new_data_of_784 );
 ```
 
-Check out a minimal example from [here](./test/mnist_minimal.cc).
+Check out a minimal example from [here](./test/mnist_minimal.cc). On Linux/Unix, type `make mnist_minimal && ./bin/test_mnist_minimal`  or `make mnist_conv2d_minimal && ./bin/test_mnist_conv2d_minimal` to try.
 
 
 ### Implementation using mid-level APIs
