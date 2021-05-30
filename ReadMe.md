@@ -1,9 +1,12 @@
 # Ceras
 
+![What I cannot create, I do not understand.](./assets/Feynman.png)
+What I cannot create, I do not understand. -- Richard Feynman
+
+
 
 
 __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
-
 
 
 
