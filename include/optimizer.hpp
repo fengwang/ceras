@@ -11,7 +11,6 @@
 #include "./utils/id.hpp"
 #include "./utils/enable_shared.hpp"
 
-// TODO: all optimizers update variables using method 'update(tsor/step)'
 namespace ceras
 {
 
@@ -330,11 +329,14 @@ namespace ceras
             loss_.backward( ones<T>( {1, } ) );
             //update variables
             auto& ss = get_default_session<tensor_type>();//.get();
-            for ( auto& [id, v] : ss.variables_ )
+            for ( auto [id, v] : ss.variables_ )
             {
-                better_assert( !has_nan(v.gradient()), "gradient_descent error, tensor with id ", id, " has a nan value." );
-                //v.data() -= learning_rate_ * v.gradient();
-                v.update( -learning_rate_ );
+                if (v.trainable_)
+                {
+                    //v.data() -= learning_rate_ * (v.gradient());
+                    better_assert( !has_nan(v.gradient()), "gradient_descent error, tensor with id ", id, " has a nan value." );
+                    v.data() -= learning_rate_ * v.gradient();
+                }
             }
         }
 

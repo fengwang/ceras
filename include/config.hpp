@@ -1,11 +1,9 @@
 #ifndef FBXYAXRPGSNHIXESHOGNYHPVEWWVSRSRJLQPIRIFENBGNMGFLJNMWXDNQLHKOAGBNYGBJRLBD
 #define FBXYAXRPGSNHIXESHOGNYHPVEWWVSRSRJLQPIRIFENBGNMGFLJNMWXDNQLHKOAGBNYGBJRLBD
 
-static_assert( __cplusplus >= 202002L, "C++20 is required for this library." );
-
 namespace ceras
 {
-    inline constexpr unsigned long version = 20210531UL;
+    inline constexpr unsigned long version = 20210418UL;
     inline constexpr unsigned long __version__ = version;
 
 

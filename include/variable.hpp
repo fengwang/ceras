@@ -27,25 +27,22 @@ namespace ceras
         Tsor data_;
         Tsor gradient_;
         std::vector<Tsor> contexts_;
-        bool gradient_refreshed_;
-        bool trainable_;
     };
 
     template< Tensor Tsor >
     struct variable : enable_id<variable<Tsor>>
     {
         typedef Tsor tensor_type;
-        typedef typename Tsor::value_type value_type;
 
         std::shared_ptr<variable_state<Tsor>> state_;
+        bool trainable_;
+        bool stateful_;
 
-        variable( Tsor const& data, bool trainable = true ) : enable_id<variable<Tsor>>{}
+        variable( Tsor const& data, bool trainable = true, bool stateful = false ) : enable_id<variable<Tsor>>{}, trainable_{trainable}, stateful_{stateful}
         {
             (*this).state_ = std::make_shared<variable_state<Tsor>>();
             (*((*this).state_)).data_ = data;
             (*((*this).state_)).gradient_ = Tsor{ data.shape() };
-            (*((*this).state_)).gradient_refreshed_ = false;
-            (*((*this).state_)).trainable_ = trainable;
 
             auto& ss = get_default_session<Tsor>();//.get();
             ss.remember( *this );
@@ -66,36 +63,15 @@ namespace ceras
                 typedef typename Tsor::value_type value_type;
                 state.gradient_.reset( value_type{0} );
             }
-
-            //debug_log( "variable forward." );
             return state.data_;
         }
 
         void backward( auto const& grad )
         {
+            if (!trainable_) return;
+
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
-
-            state.gradient_refreshed_ = true;
-
-            //debug_log( "variable backward." );
-        }
-
-        void update( Tsor const& tsor )
-        {
-            auto& state = *((*this).state_);
-            if ( ! state.gradient_refreshed_ ) return;
-            if ( ! state.trainable_ ) return;
-
-            data() += tsor;
-            state.gradient_refreshed_ = false;
-
-            //debug_log( "updating variable" );
-        }
-
-        void update( value_type step )
-        {
-            update( step * gradient() );
         }
 
         std::vector<std::size_t> shape() const noexcept
@@ -146,16 +122,16 @@ namespace ceras
             gradient().reset();
         }
 
-        bool trainable() const noexcept
+        void reset_states()
         {
-            auto const& state = *((*this).state_);
-            return state.trainable_;
+            if ( stateful_ )
+                reset();
         }
-        void trainable( bool t )
-        {
-            auto const& state = *((*this).state_);
-            state.trainable_ = t;
-        }
+
+        bool trainable() const noexcept { return trainable_; }
+        void trainable( bool t ) { trainable_ = t; }
+        bool stateful() const noexcept { return stateful_; }
+        void stateful( bool s ){ stateful_ = s; }
 
     };//struct variable
 
