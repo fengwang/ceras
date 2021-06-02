@@ -351,7 +351,7 @@ namespace ceras
 
             auto ans = s.run( expression_ );
 
-            learning_phase = 0; // restore learning phase
+            learning_phase = 1; // restore learning phase
 
             return ans;
         }

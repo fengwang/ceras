@@ -305,6 +305,13 @@ int main()
         std::cout << "concatenate(x, y, -1):\n" << ceras::concatenate(x, y, -1) << std::endl;
     }
 
+    {
+        ceras::tensor<unsigned char> x {{3, 3}};
+        std::cout << x << std::endl;
+    }
+
+
+
     return 0;
 }
 

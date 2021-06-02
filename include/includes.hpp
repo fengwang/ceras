@@ -27,7 +27,7 @@
 #include <optional>
 #include <ostream>
 #include <random>
-#include <ranges>
+//#include <ranges>
 #include <regex>
 #include <set>
 #include <sstream>

@@ -13,14 +13,17 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofa
 OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=999999 -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
+#OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
+#CXX           = clang++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -pg -O0 -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -359,9 +362,9 @@ model_trainable: test/model_trainable.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_model_trainable.o test/model_trainable.cc
 	$(LINK) -o $(BIN_DIR)/test_model_trainable $(OBJECTS_DIR)/test_model_trainable.o $(LFLAGS)
 
-dcgan: examples/dcgan.cc
-	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/example_dcgan.o examples/dcgan.cc
-	$(LINK) -o $(BIN_DIR)/example_dcgan $(OBJECTS_DIR)/example_dcgan.o $(LFLAGS)
+#dcgan: examples/dcgan.cc
+#	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/example_dcgan.o examples/dcgan.cc
+#	$(LINK) -o $(BIN_DIR)/example_dcgan $(OBJECTS_DIR)/example_dcgan.o $(LFLAGS)
 
 fashion_mnist_dataset: test/fashion_mnist_dataset.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_fashion_mnist_dataset.o test/fashion_mnist_dataset.cc
@@ -378,6 +381,10 @@ sign: test/sign.cc
 mnist_ln_mini: test/mnist_ln_mini.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_ln_mini.o test/mnist_ln_mini.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_ln_mini $(OBJECTS_DIR)/test_mnist_ln_mini.o $(LFLAGS)
+
+dcgan: test/dcgan.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_dcgan.o test/dcgan.cc
+	$(LINK) -o $(BIN_DIR)/test_dcgan $(OBJECTS_DIR)/test_dcgan.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

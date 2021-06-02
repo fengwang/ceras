@@ -111,6 +111,8 @@ int main()
             std::cout << "Loss at epoch " << e << " index: " << (i+1)*batch_size << ":\t" << current_error[0] << "\r" << std::flush;
             better_assert( !has_nan(current_error), "Error in current loss." );
             s.run( optimizer );
+
+            //better_assert( false, "stop for debug" );
         }
         std::cout << std::endl;
     }
