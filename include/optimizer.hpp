@@ -329,7 +329,7 @@ namespace ceras
             loss_.backward( ones<T>( {1, } ) );
             //update variables
             auto& ss = get_default_session<tensor_type>();//.get();
-            for ( auto [id, v] : ss.variables_ )
+            for ( auto& [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
                 {

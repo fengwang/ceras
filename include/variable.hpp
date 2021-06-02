@@ -36,9 +36,9 @@ namespace ceras
 
         std::shared_ptr<variable_state<Tsor>> state_;
         bool trainable_;
-        bool stateful_;
+        //bool stateful_;
 
-        variable( Tsor const& data, bool trainable = true, bool stateful = false ) : enable_id<variable<Tsor>>{}, trainable_{trainable}, stateful_{stateful}
+        variable( Tsor const& data, bool trainable = true/*, bool stateful = false*/ ) : enable_id<variable<Tsor>>{}, trainable_{trainable}/*, stateful_{stateful}*/
         {
             (*this).state_ = std::make_shared<variable_state<Tsor>>();
             (*((*this).state_)).data_ = data;
@@ -122,16 +122,20 @@ namespace ceras
             gradient().reset();
         }
 
+        /*
         void reset_states()
         {
             if ( stateful_ )
                 reset();
         }
+        */
 
         bool trainable() const noexcept { return trainable_; }
         void trainable( bool t ) { trainable_ = t; }
+        /*
         bool stateful() const noexcept { return stateful_; }
         void stateful( bool s ){ stateful_ = s; }
+        */
 
     };//struct variable
 
