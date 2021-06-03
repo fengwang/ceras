@@ -52,11 +52,11 @@ namespace ceras
         }
         else if constexpr (is_unary_operator_v<Ex>)
         {
-            return make_unary_operator( ex.forward_action_, ex.backward_action_, ex.name_, ex.reset_action_ )( replace_placeholder_with_expression( ex.op_, old_place_holder, new_expression ) );
+            return make_unary_operator( ex.forward_action_, ex.backward_action_, ex.name_ )( replace_placeholder_with_expression( ex.op_, old_place_holder, new_expression ) );
         }
         else if constexpr (is_binary_operator_v<Ex>)
         {
-            return make_binary_operator( ex.forward_action_, ex.backward_action_, ex.name_, ex.reset_action_ )
+            return make_binary_operator( ex.forward_action_, ex.backward_action_, ex.name_ )
                                        ( replace_placeholder_with_expression( ex.lhs_op_, old_place_holder, new_expression ),
                                          replace_placeholder_with_expression( ex.rhs_op_, old_place_holder, new_expression ) );
         }
