@@ -58,19 +58,16 @@ int main()
     auto const& fake = ceras::zeros<float>( {batch_size, 1} );
     ceras::debug_log( "All data prepared." );
 
-#if 1
     ceras::tensor<float> cache{{batch_size, 28, 28, 1}};
     for ( auto e : ceras::range( epochs ) )
     {
         for ( auto idx : ceras::range( iterations ) )
         {
-            //auto data = X.slice( batch_size*idx, batch_size*(idx+1) );
             auto const& noise = ceras::randn<float>( {batch_size, latent_dim} );
             auto const& gen_images = generator.predict( noise );
 
             d.trainable( true );
             auto loss_fake = d.train_on_batch( gen_images, fake );
-            //auto loss_valid = d.train_on_batch( data, valid );
             std::copy_n( X.begin()+idx*batch_size*28*28*1, batch_size*28*28*1, cache.begin() );
             auto loss_valid = d.train_on_batch( cache, valid );
 
@@ -83,9 +80,6 @@ int main()
     }
 
     generator.save_weights( "./tmp/dcgan" );
-#else
-    generator.load_weights( "./tmp/dcgan" );
-#endif
 
     ceras::debug_log( "Trying to generate noises." );
     auto const& noise = ceras::randn<float>( {1, latent_dim} );
@@ -96,15 +90,6 @@ int main()
     gen_images *= 127.5f;
 
     ceras::imageio::imwrite( std::string{"./tmp/dcgan_example.png"}, ceras::squeeze( gen_images ) );
-
-    /*
-    tensor<std::uint8_t> img{ {28, 28} };
-    for ( auto idx : range( batch_size ) )
-    {
-        std::copy_n( gen_images.begin()+idx*batch_size, 28*28, img.begin() );
-        imageio::imwrite( std::string{"./tmp/dcgan_"} + std::to_string(idx) + std::string{".png"}, img );
-    }
-    */
 
     return 0;
 }
