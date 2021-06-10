@@ -5,6 +5,7 @@
 //using namespace ceras;
 auto build_generator( unsigned long const latent_dim )
 {
+#if 0
     auto input = ceras::Input(); // (latent_dim, )
     auto l1 = ceras::ReLU( ceras::Dense( 128*7*7, latent_dim )( input ) );
     auto l2 = ceras::Reshape( {7, 7, 128} )( l1 );
@@ -16,16 +17,34 @@ auto build_generator( unsigned long const latent_dim )
     auto l8 = ceras::ReLU( ceras::BatchNormalization( 0.8f, {28, 28, 64} )( l7 ) );
     auto output = ceras::tanh( ceras::Conv2D( 1, {3,3}, {28, 28, 64}, "same" )( l8 ) );
     return ceras::model{ input, output };
+#endif
+
+    auto input = ceras::Input(); // (latent_dim, )
+    auto l0 = ceras::ReLU( ceras::Dense( 1024, latent_dim )( input ) );
+    auto l1 = ceras::ReLU( ceras::Dense( 1024, 1024 )( l0 ) );
+    auto l2 = ceras::ReLU( ceras::Dense( 1024, 1024 )( l1 ) );
+    auto l3 = ceras::tanh( ceras::Dense( 28*28, 1024 )( l1 ) );
+    auto output = ceras::Reshape( {28, 28, 1} )( l3 );
+    return ceras::model{ input, output };
 }
 
 auto build_discriminator()
 {
+#if 0
     auto input = ceras::Input(); // (28, 28, 1)
     auto l1 = ceras::MaxPooling2D(2)( ceras::Dropout(0.25f)( ceras::LeakyReLU(0.2f)( ceras::Conv2D( 32, {3, 3}, {28, 28, 1}, "same" )( input ) ) ) ); // (14, 14, 32)
     auto l2 = ceras::MaxPooling2D(2)( ceras::Dropout(0.25f)( ceras::LeakyReLU(0.2f)( ceras::BatchNormalization(0.8f, {14, 14, 64})( ceras::LeakyReLU(0.2f)( ceras::Conv2D( 64, {3, 3}, {14, 14, 32}, "same" )( l1 ) ) ) ) ) ); //(7, 7, 64)
     auto l3 = ceras::Flatten()( l2 ); //(7*7*64)
     auto l4 = ceras::Dropout(0.25f)( ceras::LeakyReLU(0.2f)( ceras::Dense( 64, 7*7*64 )( l3 ) ) );
     auto output = ceras::sigmoid( ceras::Dense( 1, 64 )( l4 ) );
+    return ceras::model{ input, output };
+#endif
+
+    auto input = ceras::Input(); // (28, 28, 1)
+    auto l0 = ceras::Flatten()( input );
+    auto l1 = ceras::ReLU( ceras::Dense( 1024, 28*28 )( l0 ) );
+    auto l2 = ceras::ReLU( ceras::Dense( 1024, 1024 )( l1 ) );
+    auto output = ceras::sigmoid( ceras::Dense( 1, 1024 )( l2 ) );
     return ceras::model{ input, output };
 }
 
@@ -34,7 +53,7 @@ int main()
     ceras::random_generator.seed( 42 );
 
     unsigned long const latent_dim = 16;
-    unsigned long const epochs = 1;
+    unsigned long const epochs = 20;
     unsigned long const batch_size = 600; // should work
     unsigned long const iterations = 60000 / batch_size;
 
