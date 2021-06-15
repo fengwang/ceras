@@ -234,9 +234,15 @@ namespace ceras
         {
             auto make_forward() const noexcept
             {
-                return []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                return []( std::shared_ptr<std::any> forward_cache ) noexcept
                 {
-                    return multiply( lhs_tensor, rhs_tensor );
+                    return [forward_cache]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                    {
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        multiply( lhs_tensor, rhs_tensor, ans );
+                        return ans;
+                        //return multiply( lhs_tensor, rhs_tensor );
+                    };
                 };
             }
             auto make_backward() const noexcept
@@ -273,7 +279,9 @@ namespace ceras
         else
         {
             multiplication_context const context_;
-            return make_binary_operator ( context_.make_forward(), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
+            std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+            return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
+            //return make_binary_operator( context_.make_forward(), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
         }
     }
 
