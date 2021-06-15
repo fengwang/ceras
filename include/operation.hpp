@@ -218,8 +218,8 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        plus_context const context_;
-        return make_binary_operator( context_.make_forward(), context_.make_backward(), "Plus")( lhs_ex, rhs_ex );
+        //plus_context const context_;
+        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus")( lhs_ex, rhs_ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -241,7 +241,6 @@ namespace ceras
                         Tsor& ans = context_cast<Tsor>( forward_cache );
                         multiply( lhs_tensor, rhs_tensor, ans );
                         return ans;
-                        //return multiply( lhs_tensor, rhs_tensor );
                     };
                 };
             }
@@ -256,14 +255,12 @@ namespace ceras
                        auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
                        auto const k = *(lhs_input.shape().rbegin()); // 13
 
-                       //Tsor lhs_grad{ lhs_input.shape() };
                        Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
                        lhs_grad.resize( lhs_input.shape() );
 
                        gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
                        // right branch <-- lhs^T * grad
-                       //Tsor rhs_grad{ rhs_input.shape() };
                        Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
                        rhs_grad.resize( rhs_input.shape() );
                        gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
@@ -285,12 +282,10 @@ namespace ceras
         }
         else
         {
-            multiplication_context const context_;
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
-            return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply")( lhs_ex, rhs_ex );
-            //return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
+            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply")( lhs_ex, rhs_ex );
         }
     }
 
