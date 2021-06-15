@@ -29,7 +29,6 @@ namespace ceras
         Forward_Action forward_action_;
         Backward_Action backward_action_;
 
-        typedef Operator wrapped_operator_type;
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
@@ -71,8 +70,6 @@ namespace ceras
         Forward_Action forward_action_;
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
 
-        typedef Lhs_Operator wrapped_lhs_operator_type;
-        typedef Rhs_Operator wrapped_rhs_operator_type;
         typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
 
         tensor_type lhs_input_data_;
@@ -177,34 +174,52 @@ namespace ceras
     template< typename T >
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
 
+
+    namespace
+    {
+        // `plus_context` was nested in the `plus` function.
+        // But gcc compiler (11.1.0) has a lot of problems in deducing the context types (gcc may consume infnite memory and then get killed).
+        // Moving forward/backward algorithms here to make gcc happy, at a price of an extra indirection layer with redundant code.
+        struct plus_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                {
+                    better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
+                    better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
+                    return add( lhs_tensor, rhs_tensor );
+                };
+            }
+
+            auto const make_backward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                   better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
+
+                   auto const& grad_fun = [&grad]( auto const& input )
+                   {
+                       Tsor ans = grad.deep_copy();
+                       while( input.ndim() < ans.ndim() )
+                           ans = sum( ans, 0 );
+                       auto const& shape = input.shape();
+                       for ( auto axis : range( input.ndim() ) )
+                           if ( shape[axis] == 1 )
+                              ans = sum( ans, axis, true );
+                       return ans;
+                   };
+                   return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
+                };
+            }
+        }; // plus_context
+    }//anonymous namespace
+
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-                                     {
-                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
-                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
-                                        return add( lhs_tensor, rhs_tensor );
-                                     },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
-                                     {
-                                        better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
-
-                                        auto const& grad_fun = [&grad]( auto const& input )
-                                        {
-                                            Tsor ans = grad.deep_copy();
-                                            while( input.ndim() < ans.ndim() )
-                                                ans = sum( ans, 0 );
-                                            auto const& shape = input.shape();
-                                            for ( auto axis : range( input.ndim() ) )
-                                                if ( shape[axis] == 1 )
-                                                    ans = sum( ans, axis, true );
-                                            return ans;
-                                        };
-                                        return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
-                                     },
-                                     "Plus"
-                )( lhs_ex, rhs_ex );
+        plus_context const context_;
+        return make_binary_operator( context_.make_forward(), context_.make_backward(), "Plus")( lhs_ex, rhs_ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -213,24 +228,20 @@ namespace ceras
         return plus( lhs_ex, rhs_ex );
     }
 
-    template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    namespace
     {
-        // case of Value * Operator and Operator * Value
-        if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
+        struct multiplication_context
         {
-            return elementwise_product( lhs_ex, rhs_ex );
-        }
-        else
-        {
-            // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
-            return make_binary_operator
-            (
-                []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            auto make_forward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                 {
                     return multiply( lhs_tensor, rhs_tensor );
-                },
-                []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                };
+            }
+            auto make_backward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
                 {
                    // left branch <-- grad * rhs^T
                    auto const& g_shape = grad.shape();
@@ -246,9 +257,23 @@ namespace ceras
                    gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
 
                    return std::make_tuple( lhs_grad, rhs_grad );
-                },
-                "Multiply"
-            )( lhs_ex, rhs_ex );
+                };
+            }
+        };//multiplication_context
+    }//anonymous namespace
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        // case of Value * Operator and Operator * Value
+        if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
+        {
+            return elementwise_product( lhs_ex, rhs_ex );
+        }
+        else
+        {
+            multiplication_context const context_;
+            return make_binary_operator ( context_.make_forward(), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
         }
     }
 
