@@ -247,22 +247,29 @@ namespace ceras
             }
             auto make_backward() const noexcept
             {
-                return []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                return []( std::shared_ptr<std::any> backward_cache_lhs, std::shared_ptr<std::any> backward_cache_rhs ) noexcept
                 {
-                   // left branch <-- grad * rhs^T
-                   auto const& g_shape = grad.shape();
-                   auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
-                   auto const k = *(lhs_input.shape().rbegin()); // 13
+                    return [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                       // left branch <-- grad * rhs^T
+                       auto const& g_shape = grad.shape();
+                       auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
+                       auto const k = *(lhs_input.shape().rbegin()); // 13
 
-                   Tsor lhs_grad{ lhs_input.shape() };
+                       //Tsor lhs_grad{ lhs_input.shape() };
+                       Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
+                       lhs_grad.resize( lhs_input.shape() );
 
-                   gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
+                       gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
 
-                   // right branch <-- lhs^T * grad
-                   Tsor rhs_grad{ rhs_input.shape() };
-                   gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
+                       // right branch <-- lhs^T * grad
+                       //Tsor rhs_grad{ rhs_input.shape() };
+                       Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
+                       rhs_grad.resize( rhs_input.shape() );
+                       gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
 
-                   return std::make_tuple( lhs_grad, rhs_grad );
+                       return std::make_tuple( lhs_grad, rhs_grad );
+                    };
                 };
             }
         };//multiplication_context
@@ -280,8 +287,10 @@ namespace ceras
         {
             multiplication_context const context_;
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-            return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
-            //return make_binary_operator( context_.make_forward(), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
+            std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+            std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+            return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply")( lhs_ex, rhs_ex );
+            //return make_binary_operator( context_.make_forward()(forward_cache), context_.make_backward(), "Multiply")( lhs_ex, rhs_ex );
         }
     }
 
