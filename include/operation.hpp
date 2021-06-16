@@ -197,34 +197,23 @@ namespace ceras
             auto const& [node, label] = generate_node_and_label( expr );
             std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
 
-            //n007 [label="X"] ;
-            //n006 -- n008 ;
             if constexpr( is_unary_operator_v<Expr> )
             {
-                // expr_dot
                 auto const& [n_node, n_label] = generate_node_and_label( expr.op_ );
-                // a -- b
                 std::string const& arrow_relation = n_node + std::string{" -> "} + node + std::string{" ;\n"};
-                // next
                 std::string const& op_dot = _generate_dot( expr.op_, _generate_dot );
                 return expr_dot + arrow_relation + op_dot;
             }
             if constexpr( is_binary_operator_v<Expr> )
             {
                 // for LHS operator
-                // expr_dot
                 auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op_ );
-                // a -- b
                 std::string const& arrow_lhs_relation = n_lhs_node + std::string{" -> "} + node + std::string{" ;\n"};
-                // next
                 std::string const& op_lhs_dot = _generate_dot( expr.lhs_op_, _generate_dot );
 
                 // for RHS operator
-                // expr_dot
                 auto const& [n_rhs_node, n_rhs_label] = generate_node_and_label( expr.rhs_op_ );
-                // a -- b
                 std::string const& arrow_rhs_relation = n_rhs_node + std::string{" -> "} + node + std::string{" ;\n"};
-                // next
                 std::string const& op_rhs_dot = _generate_dot( expr.rhs_op_, _generate_dot );
 
                 return expr_dot + arrow_lhs_relation + arrow_rhs_relation + op_lhs_dot + op_rhs_dot;
@@ -237,23 +226,23 @@ namespace ceras
                 // shape
                 std::stringstream ss;
                 std::copy( shape.begin(), shape.end(), std::ostream_iterator<unsigned long>( ss, " " ) );
-
                 std::string const& str_shape = ss.str() + (training_state ? std::string{"), trainable"} : std::string{"), non-trainable"});
-
                 // trainable state
                 std::string const& new_label = label + std::string{"[("} + str_shape + std::string{"]"};
 
-                return node + std::string{" [shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
+                if (!training_state)
+                    return node + std::string{" [shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
+
+                return node + std::string{" [peripheries=3,style=filled,color=\".7 .3 1.0\",shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
             }
             else
             {
                 return expr_dot;
             }
-
         };
 
-        std::string const& head = "digraph g {\n";
-        std::string const& tail = "}\n";
+        std::string const& head = "\n\ndigraph g {\n";
+        std::string const& tail = "}\n\n";
         return head + generate_dot( ex, generate_dot ) + tail;
     }
 
@@ -390,7 +379,8 @@ namespace ceras
                                         auto ans = elementwise_divide(grad, input); // TODO: error here
                                         better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
                                         return ans;
-                                    }
+                                    },
+                                    "Log"
                 )( ex );
     };
 
@@ -406,7 +396,8 @@ namespace ceras
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator negative contains NaN!" );
                                         return -grad;
-                                    }
+                                    },
+                                    "Negative"
                 )( ex );
     };
 
@@ -431,7 +422,8 @@ namespace ceras
                                             return ans;
                                         };
                                         return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
-                                     }
+                                     },
+                                     "HadamardProduct"
                 )( lhs_ex, rhs_ex );
     };
 
@@ -462,7 +454,8 @@ namespace ceras
                                         Tsor ans = ones_like( input );
                                         ans *= grad[0];
                                         return ans;
-                                    }
+                                    },
+                                    "Sum"
                 )( ex );
     }
 
@@ -489,7 +482,8 @@ namespace ceras
                                         unsigned long const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
-                                    }
+                                    },
+                                    "Mean"
                 )( ex );
     }
 
@@ -548,7 +542,8 @@ namespace ceras
                                         ans *= grad;
                                         ans *= typename Tsor::value_type{2};
                                         return ans;
-                                    }
+                                    },
+                                    "Square"
                 )( ex );
     }
 
@@ -570,7 +565,8 @@ namespace ceras
                                         for ( auto idx : range( ans.size() ) )
                                             ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
                                         return ans;
-                                    }
+                                    },
+                                    "Abs"
                 )( ex );
     }//;
 
@@ -591,7 +587,8 @@ namespace ceras
                                         Tsor ans = grad;
                                         grad *= output;
                                         return ans;
-                                    }
+                                    },
+                                    "Exp"
                 )( ex );
     }
 
@@ -617,7 +614,8 @@ namespace ceras
                                                            (input[idx] > upper) ? zero :
                                                            ans[idx];
                                             return ans;
-                                        }
+                                        },
+                                        "Clip"
                     )( ex );
         };
     }
@@ -668,7 +666,8 @@ namespace ceras
                     Tsor ans{ grad };
                     ans.reshape( input.shape() );
                     return ans;
-                }
+                },
+                "Reshape"
             )( ex );
         };
     }
@@ -690,7 +689,8 @@ namespace ceras
             {
                 Tsor ans = grad;
                 return ans.reshape( input.shape() );
-            }
+            },
+            "Flatten"
         )( ex );
     }
 
@@ -706,7 +706,8 @@ namespace ceras
             []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
             {
                 return grad;
-            }
+            },
+            "Identity"
         )( ex );
     }
 
@@ -755,7 +756,8 @@ namespace ceras
                         v_out[c][r] = v_in[r][c];
 
                 return back_ans;
-            }
+            },
+            "Transpose"
         )( ex );
     }
 
@@ -876,7 +878,8 @@ namespace ceras
                     Tsor& back_grad = context_cast<Tsor>( back_grad_cache );
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
-                }
+                },
+                "Img2Col"
             )( ex );
         };
     }
@@ -1069,7 +1072,8 @@ namespace ceras
                                     if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
                                         ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
                     return ans;
-                }
+                },
+                "MaxPooling2D"
             )( ex );
         };
     }
@@ -1132,7 +1136,8 @@ namespace ceras
                                 for ( auto ch : range( channel ) )
                                     ta[bs][r][c][ch] = factor * tg[bs][r/stride][c/stride][ch];
                     return ans;
-                }
+                },
+                "AveragePooling2D"
             )( ex );
         };
     }
@@ -1196,7 +1201,8 @@ namespace ceras
                                         for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for tg
                                             ta[bs][r][c][ch] += tg[bs][_r][_c][ch];
                     return ans;
-                }
+                },
+                "UpSampling2D"
             )( ex );
         };
     }
@@ -1322,7 +1328,8 @@ namespace ceras
                         for ( auto c : range( channels ) )
                             ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
                     return ans;
-                }
+                },
+                "Normalization"
             )( ex );
         };
     }

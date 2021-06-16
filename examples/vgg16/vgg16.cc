@@ -36,7 +36,7 @@ int main()
     auto l17 = flatten( l16 ); // 7x7x512
     auto l18 = relu( Dense( 4096, 7*7*512 )( l17 ) ); // 4096
     auto l19 = relu( Dense( 4096, 4096 )( l18 ) ); // 4096
-    auto l20 = relu( Dense( 1000, 4096 )( l19 ) ); // 1000
+    auto l20 = identity( Dense( 1000, 4096 )( l19 ) ); // 1000
     auto output = l20;
 
     auto m = model{ input, output }; // define a model

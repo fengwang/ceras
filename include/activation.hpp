@@ -75,7 +75,8 @@ namespace ceras
                                         // if x <  0: \lambda \alpha exp( x )
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), [lambda, alpha]( auto& a, auto i, auto g ){ a = (i >= value_type{0}) ? (g * lambda) : (g * lambda * alpha * std::exp(i)); } );
                                         return ans;
-                                    }
+                                    },
+                                    "SeLU"
                 )( ex );
     }
 
@@ -100,7 +101,8 @@ namespace ceras
                                         ans.resize( input.shape() ); // 1 / ( 1 + exp(-x) )
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), []( auto& a, auto i, auto g ){ a = g / ( typename Tsor::value_type{1} - std::exp(-i) ); } );
                                         return ans;
-                                    }
+                                    },
+                                    "SoftPlus"
                 )( ex );
     }
 
@@ -125,7 +127,8 @@ namespace ceras
                                         ans.resize( input.shape() ); // 1 / ( 1 + |x| )^2
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), []( auto& a, auto i, auto g ){ auto tmp = typename Tsor::value_type{1} + std::abs(i); a = g / (tmp*tmp); } );
                                         return ans;
-                                    }
+                                    },
+                                    "SoftSign"
                 )( ex );
     }
 
@@ -182,7 +185,8 @@ namespace ceras
                                         ans.map( []( auto& x ){ x = typename Tsor::value_type{1} - x * x; } );
                                         ans *= grad;
                                         return ans;
-                                    }
+                                    },
+                                    "Tanh"
                 )( ex );
     }
 
@@ -263,7 +267,8 @@ namespace ceras
                                             Tsor ans = grad;// OK for shallow copy
                                             for_each( ans.begin(), ans.end(), input.begin(), [alpha]( value_type& v_back, value_type const v_in ){ v_back = (v_in >= value_type{0}) ? v_back : alpha*std::exp(v_back); } );
                                             return ans;
-                                        }
+                                        },
+                                        "ELU"
                     )( ex );
         };
     }
@@ -318,7 +323,8 @@ namespace ceras
                                         Tsor ans = grad;
                                         for_each( ans.begin(), ans.end(), input.begin(), []( auto& a, auto x ) { a = ((x > value_type{1}) || (x < value_type{-1})) ? value_type{0} : (a / value_type{2}); } );
                                         return ans;
-                                    }
+                                    },
+                                    "HardSigmoid"
                 )( ex );
     }
 
@@ -364,7 +370,8 @@ namespace ceras
                                         Tsor ans = grad;
                                         for_each( ans.begin(), ans.end(), [&_dgelu]( auto& x ) {  x = _dgelu(x); } );
                                         return ans;
-                                    }
+                                    },
+                                    "GeLU"
                 )( ex );
     }
 
