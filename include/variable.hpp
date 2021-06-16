@@ -79,7 +79,6 @@ namespace ceras
             return state.data_.shape();
         }
 
-        /*
         std::vector<Tsor>& contexts()
         {
             auto& state = *((*this).state_);
@@ -91,7 +90,6 @@ namespace ceras
             auto& state = *((*this).state_);
             return state.contexts_;
         }
-        */
 
         Tsor& data()
         {

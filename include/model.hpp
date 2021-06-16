@@ -430,13 +430,23 @@ namespace ceras
 
 
         ///
-        /// print the model summary.
+        /// Print the model summary to console or to a file.
+        /// @param file_name The file to save the summary. If empty, the summary will be printed to console. Empty by default.
         ///
-        void summary() const noexcept
+        void summary(std::string const& file_name=std::string{}) const noexcept
         {
             auto g = computation_graph( expression_ );
-            std::cout << g << std::endl;
+
+            if ( file_name.empty() )
+            {
+                std::cout << g << std::endl;
+                return;
+            }
+
+            std::ofstream ofs{ file_name };
+            ofs << g;
         }
+
 
     };
 

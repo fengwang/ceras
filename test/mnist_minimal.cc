@@ -12,6 +12,8 @@ int main()
     auto output = Dense( 10, 256 )( l2 );
     auto m = model( input, output );
 
+    m.summary( "./mnist_minimal.dot" );
+
     std::size_t const batch_size = 10;
     float learning_rate = 0.005f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
