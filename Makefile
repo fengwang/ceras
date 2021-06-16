@@ -386,6 +386,10 @@ dcgan: test/dcgan.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_dcgan.o test/dcgan.cc
 	$(LINK) -o $(BIN_DIR)/test_dcgan $(OBJECTS_DIR)/test_dcgan.o $(LFLAGS)
 
+computation_graph_dump: test/computation_graph_dump.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_computation_graph_dump.o test/computation_graph_dump.cc
+	$(LINK) -o $(BIN_DIR)/test_computation_graph_dump $(OBJECTS_DIR)/test_computation_graph_dump.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

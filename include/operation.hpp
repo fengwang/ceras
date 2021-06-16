@@ -175,6 +175,89 @@ namespace ceras
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
 
 
+    ///
+    /// Generating the computation graph, in [graph description language](https://www.graphviz.org/documentation/).
+    /// @param ex An expression.
+    /// @return A string describing the computation graph, in graph description language.
+    ///
+    template< Expression Ex >
+    inline std::string computation_graph( Ex const& ex ) noexcept
+    {
+        auto generate_node_and_label = []<Expression Expr>( Expr const& expr ) noexcept
+        {
+            std::string const id = std::to_string( expr.id() );
+            std::string const name = expr.name();
+            std::string node = std::string{"n"} + id;
+            std::string label = name + std::string{"<"} + id + std::string{">"};
+            return std::make_tuple( node, label );
+        };
+
+        auto generate_dot = [&generate_node_and_label]<Expression Expr>( Expr const& expr, auto const& _generate_dot ) noexcept
+        {
+            auto const& [node, label] = generate_node_and_label( expr );
+            std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
+
+            //n007 [label="X"] ;
+            //n006 -- n008 ;
+            if constexpr( is_unary_operator_v<Expr> )
+            {
+                // expr_dot
+                auto const& [n_node, n_label] = generate_node_and_label( expr.op_ );
+                // a -- b
+                std::string const& arrow_relation = n_node + std::string{" -> "} + node + std::string{" ;\n"};
+                // next
+                std::string const& op_dot = _generate_dot( expr.op_, _generate_dot );
+                return expr_dot + arrow_relation + op_dot;
+            }
+            if constexpr( is_binary_operator_v<Expr> )
+            {
+                // for LHS operator
+                // expr_dot
+                auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op_ );
+                // a -- b
+                std::string const& arrow_lhs_relation = n_lhs_node + std::string{" -> "} + node + std::string{" ;\n"};
+                // next
+                std::string const& op_lhs_dot = _generate_dot( expr.lhs_op_, _generate_dot );
+
+                // for RHS operator
+                // expr_dot
+                auto const& [n_rhs_node, n_rhs_label] = generate_node_and_label( expr.rhs_op_ );
+                // a -- b
+                std::string const& arrow_rhs_relation = n_rhs_node + std::string{" -> "} + node + std::string{" ;\n"};
+                // next
+                std::string const& op_rhs_dot = _generate_dot( expr.rhs_op_, _generate_dot );
+
+                return expr_dot + arrow_lhs_relation + arrow_rhs_relation + op_lhs_dot + op_rhs_dot;
+            }
+            if constexpr ( is_variable_v<Expr> )
+            {
+                std::vector<unsigned long> const& shape = expr.shape();
+                bool const training_state = expr.trainable();
+
+                // shape
+                std::stringstream ss;
+                std::copy( shape.begin(), shape.end(), std::ostream_iterator<unsigned long>( ss, " " ) );
+
+                std::string const& str_shape = ss.str() + (training_state ? std::string{"), trainable"} : std::string{"), non-trainable"});
+
+                // trainable state
+                std::string const& new_label = label + std::string{"[("} + str_shape + std::string{"]"};
+
+                return node + std::string{" [shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
+            }
+            else
+            {
+                return expr_dot;
+            }
+
+        };
+
+        std::string const& head = "digraph g {\n";
+        std::string const& tail = "}\n";
+        return head + generate_dot( ex, generate_dot ) + tail;
+    }
+
+
     namespace
     {
         // `plus_context` was nested in the `plus` function.

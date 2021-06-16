@@ -11,12 +11,12 @@ namespace ceras
 {
 
     template< Tensor Tsor >
-    struct constant
+    struct constant : enable_id<constant<Tsor>, "Constant">
     {
         // Tsor is a shallow copy, and once an instance is initialized,it will never change
         Tsor data_;
 
-        constant( Tsor const& data ) : data_{data} {}
+        constant( Tsor const& data ) : enable_id<constant<Tsor>, "Constant">{}, data_{data} {}
 
         void backward( auto ) const {}
 

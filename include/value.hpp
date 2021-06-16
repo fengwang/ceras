@@ -11,13 +11,13 @@ namespace ceras
 {
 
     template< typename T > requires std::floating_point<T>
-    struct value
+    struct value : enable_id< value<T>, "Value" >
     {
         typedef T value_type;
         value_type data_;
 
         value() = delete;
-        value( value_type v ) noexcept : data_{ v } {}
+        value( value_type v ) noexcept : enable_id<value<T>, "Value">{}, data_{ v } {}
         value( value const& ) noexcept = default;
         value( value && ) noexcept = default;
         value& operator =( value const& ) noexcept = default;

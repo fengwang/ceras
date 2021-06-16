@@ -288,7 +288,8 @@ namespace ceras
                                         Tsor ans = grad;
                                         for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ){ a *= o; } );
                                         return ans;
-                                    }
+                                    },
+                                    "Exponentional"
                 )( ex );
     }
 

@@ -40,6 +40,8 @@ int main()
     auto output = l20;
 
     auto m = model{ input, output }; // define a model
+    m.summary();
+
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 1000
     auto loss = cross_entropy_loss( ground_truth, output );

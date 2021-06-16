@@ -11,7 +11,9 @@
 
 namespace ceras
 {
-
+    ///
+    /// Setting an expression's trainable flag
+    ///
     template< Expression Ex >
     void make_trainable( Ex& ex , bool t )
     {
@@ -110,7 +112,7 @@ namespace ceras
 
             // bind tensors to place holders
             //session<Tsor> s;
-            auto& s = get_default_session<Tsor>();//.get();
+            auto& s = get_default_session<Tsor>();
             s.bind( input_place_holder_, input_samples );
             s.bind( ground_truth_place_holder_, output_samples );
 
@@ -402,9 +404,6 @@ namespace ceras
             return make_compiled_model( *this, l, o );
         }
 
-        ///
-        ///
-        ///
         void trainable( bool t )
         {
             make_trainable( expression_, t );
@@ -427,6 +426,16 @@ namespace ceras
         {
             auto& s = get_default_session<tensor<float>>();
             s.deserialize( file );
+        }
+
+
+        ///
+        /// print the model summary.
+        ///
+        void summary() const noexcept
+        {
+            auto g = computation_graph( expression_ );
+            std::cout << g << std::endl;
         }
 
     };
