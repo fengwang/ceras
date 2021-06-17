@@ -909,7 +909,7 @@ namespace ceras
             if ( padding == "same" )
             {
                 unsigned long const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
-                better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total, " With row input being ", row_input, " and row_stride ", row_stride );
+                better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total, " With row input ", row_input, " and row_stride ", row_stride );
                 unsigned long const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
                 row_padding = ((row_kernel&1)+row_padding_total) >> 1;
@@ -988,7 +988,8 @@ namespace ceras
                     for ( auto idx : range( grad.size() ) )
                         ans[idx] *= mask__[idx];
                     return ans;
-                }
+                },
+                "Dropout"
             )( ex );
         };
     }

@@ -15,6 +15,7 @@ int main()
     auto l6 = ReLU( Dense( 128, 7*7*64 )( l5 ) );
     auto output = Dense( 10, 128 )( l6 );
     auto m = model( input, output );
+    m.summary( "./mnist_conv2d_minimal.dot" );
 
     std::size_t const batch_size = 10;
     float learning_rate = 0.005f;
