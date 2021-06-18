@@ -1348,9 +1348,6 @@ namespace ceras
 
 
 
-
-
-
     //
     //  example:
     //
