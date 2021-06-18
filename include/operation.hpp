@@ -1505,6 +1505,26 @@ namespace ceras
     }
 
     ///
+    /// `ones_like` produces a tensor of the same shape as the input expression, but with every element to be 1.
+    /// @return An unary operator that takes an unary operator, and producing an output tensor
+    /// Example Code:
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = ones_like( va ); // this expression will produces a tensor of shape (3, 3, 3), with every element to be 1.
+    /// @endcode
+    ///
+    template< Expression Ex>
+    auto ones_like( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept { return ones_like( tsor ); },
+            []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
+            "OnesLike"
+        )(ex);
+    }
+
+    ///
     /// Returns the truth value of (lhs == rhs) element-wise. [+1 for true, 0 for false]
     ///
     /// @param lhs_ex The first operator.
