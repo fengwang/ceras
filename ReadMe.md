@@ -26,7 +26,6 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 * [Acknowledgments](#acknowledgements)
 
 
-
 ----
 
 ## Getting Started
@@ -40,7 +39,7 @@ First, we include the header and use the namespace of this library:
 using namespace ceras;
 ```
 
-Layers are staked using a functional interface to compose a computation graph:
+Then we compose layers using a functional interface to compose a computation graph:
 ```cpp
 auto input = Input(); // input layer, shape (28*28, )
 auto layer_1 = relu( Dense( 512, 784 )( input ) );
@@ -52,6 +51,19 @@ And we build up a model by collecting the input layer and the output layer of th
 ```cpp
 auto m = model{ input, output };
 ```
+
+We can dump the structure of this computation graph to double check the design of the model.
+
+```cpp
+m.summary( "./mnist_minimal.dot" );
+```
+
+We will get a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot).
+
+We Convert this file to a '.png' file by using command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
+
+![mnist minimal model computation graph](./assets/mnist_minimal.png)
+
 
 Before feeding a training set to this model, we need configure the training parameters
 ```cpp
