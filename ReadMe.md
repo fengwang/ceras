@@ -41,10 +41,11 @@ using namespace ceras;
 
 Then we compose layers using a functional interface to compose a computation graph:
 ```cpp
-auto input = Input(); // input layer, shape (28*28, )
-auto layer_1 = relu( Dense( 512, 784 )( input ) );
-auto layer_2 = relu( Dense( 128, 512 )( layer_1 ) );
-auto output = Dense( 10, 128 )( layer_2 );
+auto input = Input(); // shape( 28, 28 )
+auto l0 = Reshape({28*28,})( input );
+auto l1 = ReLU( Dense( 512, 28*28 )( l0 ) );
+auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
+auto output = Dense( 10, 256 )( l2 );
 ```
 
 And we build up a model by collecting the input layer and the output layer of the computation graph
