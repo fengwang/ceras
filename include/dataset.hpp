@@ -18,7 +18,7 @@ namespace ceras::dataset
         ///  y_train, y_test: uint8 tensor of digit labels (integers in range 0-9) with shapes (num_samples, 10). Note: for digit 0, the corresponding array is `[[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`.
         ///
         /// Example usage:
-        /// @code
+        /// @code{.cpp}
         /// auto const& [x_train, y_train, x_test, y_test] = ceras::dataset::mnist::load_data("/home/feng/dataset/mnist");
         /// @endcode
         ///
@@ -31,15 +31,15 @@ namespace ceras::dataset
             std::string const test_image_path = path + std::string{"/t10k-images-idx3-ubyte"};
             std::string const test_label_path = path + std::string{"/t10k-labels-idx1-ubyte"};
 
-			auto const& load_binary = []( std::string const& filename )
-			{
-				std::ifstream ifs( filename, std::ios::binary );
-				better_assert( ifs.good(), "Failed to load data from ", filename );
-				std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
-				std::vector<std::uint8_t> ans( buff.size() );
-				std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
-				return ans;
-			};
+            auto const& load_binary = []( std::string const& filename )
+            {
+                std::ifstream ifs( filename, std::ios::binary );
+                better_assert( ifs.good(), "Failed to load data from ", filename );
+                std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
+                std::vector<std::uint8_t> ans( buff.size() );
+                std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
+                return ans;
+            };
 
             auto const& extract_image = []( std::vector<std::uint8_t> const& image_data )
             {
@@ -76,20 +76,20 @@ namespace ceras::dataset
         /// @return A tuple of 4 tensors: x_train, y_train, x_test, y_test. x_train, x_test: uint8 arrays of grayscale image data with shapes (num_samples, 28, 28).
         ///  y_train, y_test: uint8 tensor of digit labels (integers in range 0-9) with shapes (num_samples, 10). Note: for digit 0, the corresponding array is `[[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`.
         ///
-        /// Label	Description
-        ///  0	    T-shirt/top
-        ///  1	    Trouser
-        ///  2	    Pullover
-        ///  3	    Dress
-        ///  4	    Coat
-        ///  5	    Sandal
-        ///  6	    Shirt
-        ///  7	    Sneaker
-        ///  8	    Bag
-        ///  9	    Ankle boot
+        /// Label   Description
+        ///  0      T-shirt/top
+        ///  1      Trouser
+        ///  2      Pullover
+        ///  3      Dress
+        ///  4      Coat
+        ///  5      Sandal
+        ///  6      Shirt
+        ///  7      Sneaker
+        ///  8      Bag
+        ///  9      Ankle boot
         ///
         /// Example usage:
-        /// @code
+        /// @code{.cpp}
         /// auto const& [x_train, y_train, x_test, y_test] = ceras::dataset::mnist::load_data("/home/feng/dataset/fashion_mnist");
         /// @endcode
         ///
@@ -102,15 +102,15 @@ namespace ceras::dataset
             std::string const test_image_path = path + std::string{"/t10k-images-idx3-ubyte"};
             std::string const test_label_path = path + std::string{"/t10k-labels-idx1-ubyte"};
 
-			auto const& load_binary = []( std::string const& filename )
-			{
-				std::ifstream ifs( filename, std::ios::binary );
-				better_assert( ifs.good(), "Failed to load data from ", filename );
-				std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
-				std::vector<std::uint8_t> ans( buff.size() );
-				std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
-				return ans;
-			};
+            auto const& load_binary = []( std::string const& filename )
+            {
+                std::ifstream ifs( filename, std::ios::binary );
+                better_assert( ifs.good(), "Failed to load data from ", filename );
+                std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
+                std::vector<std::uint8_t> ans( buff.size() );
+                std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
+                return ans;
+            };
 
             auto const& extract_image = []( std::vector<std::uint8_t> const& image_data )
             {

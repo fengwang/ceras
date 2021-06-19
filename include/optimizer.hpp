@@ -28,7 +28,6 @@ namespace ceras
         typedef tensor< T > tensor_type;
 
         Loss&         loss_;
-        //Loss          loss_;
         T             learning_rate_;
         T             momentum_;
         T             decay_;
@@ -46,7 +45,7 @@ namespace ceras
         {
             loss_.backward( ones<T>( {1, } ) );
             learning_rate_ /= ( 1.0 + decay_ * iterations_ );
-            auto& ss = get_default_session<tensor_type>();//.get();
+            auto& ss = get_default_session<tensor_type>();
             for ( auto [id, v] : ss.variables_ )
             {
                 if (v.trainable_)
@@ -60,6 +59,8 @@ namespace ceras
                     for_each( moments.begin(), moments.end(), gradient.begin(), [this]( T& m, T g ) { m *= (*this).momentum_; m -= (*this).learning_rate_ * g;} );
                     if (!nesterov_ ) for_each( moments.begin(), moments.end(), data.begin(), gradient.begin(), [this]( T m, T& v, T g ) { v += (*this).momentum_ * m - (*this).learning_rate_ * g; } );
                     else data += moments;
+
+                    gradient.reset(); // clear variable gradient
                 }
             }
             ++iterations_;
@@ -105,6 +106,8 @@ namespace ceras
                     for_each( moments.begin(), moments.end(), gradient.begin(), []( T& m, T g ) { m  += g*g; } );
 
                     for_each( data.begin(), data.end(), gradient.begin(), moments.begin(), [this]( T& d, T g, T m ) { d -= (*this).learning_rate_ * g / (eps + std::sqrt(m)); } );
+
+                    gradient.reset(); // clear variable gradient
                 }
             }
             ++iterations_;
@@ -157,6 +160,8 @@ namespace ceras
                         for_each( moments.begin(), moments.end(), gradient.begin(), [this]( T& m, T g ) { m *= (*this).rho_; m  += g*g*(1.0-(*this).rho_); } );
 
                     for_each( data.begin(), data.end(), gradient.begin(), moments.begin(), [this]( T& d, T g, T m ) { d -= (*this).learning_rate_ * g / (eps + std::sqrt(m)); } );
+
+                    gradient.reset(); // clear variable gradient
                 }
             }
             ++iterations_;
@@ -228,6 +233,8 @@ namespace ceras
                     if (iterations_!=0)
                     */
                     for_each( delta.begin(), delta.end(), gradient.begin(), [this]( T& d, T g ) { d *= (*this).rho_; d += (1.0-(*this).rho_) * g * g; } );
+
+                    gradient.reset(); // clear variable gradient
                 }
             }
             ++iterations_;
@@ -291,6 +298,7 @@ namespace ceras
                     else
                         for_each( data.begin(), data.end(), gradient.begin(), [this]( T& d_, T g_ ){ d_ -= (*this).learning_rate_ * g_; } );
 
+                    gradient.reset(); // clear variable gradient
                     // TODO: enabling amsgrad
                 }
             }//loop of variables
@@ -334,8 +342,12 @@ namespace ceras
                 if (v.trainable_)
                 {
                     //v.data() -= learning_rate_ * (v.gradient());
-                    better_assert( !has_nan(v.gradient()), "gradient_descent error, tensor with id ", id, " has a nan value." );
-                    v.data() -= learning_rate_ * v.gradient();
+                    //
+                    auto& gradient = v.gradient();
+                    better_assert( !has_nan(gradient), "gradient_descent error, tensor with id ", id, " has a nan value." );
+                    v.data() -= learning_rate_ * gradient;
+
+                    gradient.reset(); // clear variable gradient
                 }
             }
         }

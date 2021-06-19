@@ -84,6 +84,16 @@ namespace ceras
             return  end();
         }
 
+        ///
+        /// Resetting all elements in the tensor to a fixed value (default to 0), without change the shape.
+        ///
+        /// Example code:
+        /// \code{.cpp}
+        /// tensor<float> ts;
+        /// //...
+        /// ts.reset();
+        /// \endcode
+        ///
         constexpr self_type& reset( T val = T{0} )
         {
             std::fill_n( data(), size(), val );

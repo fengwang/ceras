@@ -114,6 +114,19 @@ namespace ceras
     // The first parameter is a place_holder, that will be binded to an tensor.
     // The second parameter is an expression, that will be evaluated to compare with the tensor binded to the first parameter
 
+    ///
+    /// @brief Computes the mean of squares of errors between labels and predictions.
+    ///
+    /// \code{.cpp}
+    /// auto input = place_holder<tensor<float>>{};
+    /// auto v = variable<tensor<float>>{ ones<float>({12, 34}) };
+    /// auto output = input * v;
+    /// auto m = model{ input, output };
+    /// auto cm = m.compile( MeanSquareError(), Adam(128/*batch size*/, 0.01f/*learning rate*/) );
+    /// \endcode
+    ///
+    /// see also #mean_squared_error
+    ///
     inline auto MeanSquaredError = []()
     {
         return []<Expression Ex >( Ex const& output )
@@ -125,6 +138,27 @@ namespace ceras
         };
     };
 
+    ///
+    /// @brief An alias name of function #MeanSquaredError
+    ///
+    inline auto MSE = []()
+    {
+        return MeanSquaredError();
+    };
+
+    ///
+    /// @brief Computes the mean of absolute errors between labels and predictions.
+    ///
+    /// \code{.cpp}
+    /// auto input = place_holder<tensor<float>>{};
+    /// auto v = variable<tensor<float>>{ ones<float>({12, 34}) };
+    /// auto output = input * v;
+    /// auto m = model{ input, output };
+    /// auto cm = m.compile( MeanAbsoluteError(), Adam(128/*batch size*/, 0.01f/*learning rate*/) );
+    /// \endcode
+    ///
+    /// see also #mean_absolute_error
+    ///
     inline auto MeanAbsoluteError = []()
     {
         return []<Expression Ex >( Ex const& output )
@@ -135,6 +169,17 @@ namespace ceras
             };
         };
     };
+
+
+    ///
+    /// @brief An alias name of function #MeanAbsoluteError
+    ///
+    inline auto MAE = []()
+    {
+        return MeanAbsoluteError();
+    };
+
+
 
     inline auto Hinge = []()
     {
@@ -159,6 +204,11 @@ namespace ceras
         };
     };
 
+    inline auto CategoricalCrossEntropy = []()
+    {
+        return CategoricalCrossentropy();
+    };
+
     inline auto BinaryCrossentropy = []()
     {
         return []<Expression Ex >( Ex const& output )
@@ -168,6 +218,11 @@ namespace ceras
                 return binary_cross_entropy_loss( ground_truth, output );
             };
         };
+    };
+
+    inline auto BinaryCrossEntropy = []()
+    {
+        return BinaryCrossentropy();
     };
 
 

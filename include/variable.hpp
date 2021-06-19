@@ -43,7 +43,7 @@ namespace ceras
             (*((*this).state_)).data_ = data;
             (*((*this).state_)).gradient_ = Tsor{ data.shape() };
 
-            auto& ss = get_default_session<Tsor>();//.get();
+            auto& ss = get_default_session<Tsor>();
             ss.remember( *this );
         }
 
