@@ -390,6 +390,14 @@ computation_graph_dump: test/computation_graph_dump.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_computation_graph_dump.o test/computation_graph_dump.cc
 	$(LINK) -o $(BIN_DIR)/test_computation_graph_dump $(OBJECTS_DIR)/test_computation_graph_dump.o $(LFLAGS)
 
+layer_selu: test/layer_selu.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_selu.o test/layer_selu.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_selu $(OBJECTS_DIR)/test_layer_selu.o $(LFLAGS)
+
+layer_zeropadding2d: test/layer_zeropadding2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_zeropadding2d.o test/layer_zeropadding2d.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_zeropadding2d $(OBJECTS_DIR)/test_layer_zeropadding2d.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

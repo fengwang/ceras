@@ -6,9 +6,9 @@ int main()
     using namespace ceras;
 
     auto a = ceras::variable{ ceras::random<float>( {5, 5}, -1.0f, 1.0f ) };
-    std::cout << "Testing exponential with a=\n" << a.data() << std::endl;
+    std::cout << "Testing clip(-0.5, 0.5) with a=\n" << a.data() << std::endl;
 
-    auto la = ceras::exponential(a);
+    auto la = ceras::clip(-0.5f, 0.5f)(a);
     auto& s = get_default_session<tensor<float>>();
     auto const& result = s.run( la );
     std::cout << "Resutl is " << result << std::endl;

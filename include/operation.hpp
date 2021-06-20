@@ -1717,7 +1717,7 @@ namespace ceras
     {
         // An extra indirect layer to make gcc's life a bit easier.
         // TODO: move detail to `zero_padding_2d` after gcc reaching his maturity.
-        struct zero_pading_2d_context
+        struct zero_padding_2d_context
         {
             auto make_forward() const noexcept
             {
@@ -1808,10 +1808,10 @@ namespace ceras
             better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
 
         // checking extracted paddings
-        better_assert( top > 1, "Expecting zero_padding_2d top padding greater than 1, but got ", top );
-        better_assert( bottom > 1, "Expecting zero_padding_2d bottom padding greater than 1, but got ", bottom );
-        better_assert( left > 1, "Expecting zero_padding_2d left padding greater than 1, but got ", left );
-        better_assert( right > 1, "Expecting zero_padding_2d right padding greater than 1, but got ", right );
+        better_assert( top >= 1, "Expecting zero_padding_2d top padding no less than 1, but got ", top );
+        better_assert( bottom >= 1, "Expecting zero_padding_2d bottom padding no less than 1, but got ", bottom );
+        better_assert( left >= 1, "Expecting zero_padding_2d left padding no less than 1, but got ", left );
+        better_assert( right >= 1, "Expecting zero_padding_2d right padding no less than 1, but got ", right );
 
         // to avoid re-allocating memory for tensors
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
