@@ -29,21 +29,34 @@ namespace ceras
         std::vector<Tsor> contexts_;
     };
 
+    template< typename Float > requires std::floating_point<Float>
+    struct regularizer
+    {
+        typedef Float value_type;
+        value_type l1_;
+        value_type l2_;
+        bool synchronized_;
+
+        constexpr regularizer( value_type l1, value_type l2, bool synchronized ) noexcept : l1_{l1}, l2_{l2}, synchronized_{synchronized} {}
+    };
+
     template< Tensor Tsor >
     struct variable : enable_id<variable<Tsor>, "Variable">
     {
         typedef Tsor tensor_type;
+        typedef typename tensor_type::value_type value_type;
 
-        std::shared_ptr<variable_state<Tsor>> state_;
+        std::shared_ptr<variable_state<tensor_type>> state_;
+        regularizer<value_type> regularizer_;
         bool trainable_;
 
-        variable( Tsor const& data, bool trainable = true ) : enable_id<variable<Tsor>, "Variable">{}, trainable_{trainable}
+        variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}, regularizer_{l1, l2, true}, trainable_{trainable}
         {
-            (*this).state_ = std::make_shared<variable_state<Tsor>>();
+            (*this).state_ = std::make_shared<variable_state<tensor_type>>();
             (*((*this).state_)).data_ = data;
-            (*((*this).state_)).gradient_ = Tsor{ data.shape() };
+            (*((*this).state_)).gradient_ = tensor_type{ data.shape() };
 
-            auto& ss = get_default_session<Tsor>();
+            auto& ss = get_default_session<tensor_type>();
             ss.remember( *this );
         }
 
@@ -53,24 +66,42 @@ namespace ceras
         variable& operator=( variable&&) = default;
         variable& operator=( variable const& other) = default;
 
-        Tsor const forward() const
+        tensor_type const forward() noexcept// const
         {
             auto& state = *((*this).state_);
 
             if ( learning_phase == 1 )
             {
-                typedef typename Tsor::value_type value_type;
+                typedef typename tensor_type::value_type value_type;
                 state.gradient_.reset( value_type{0} );
+                regularizer_.synchronized_ = false; // mark changes
             }
             return state.data_;
         }
 
-        void backward( auto const& grad )
+        void backward( auto const& grad ) noexcept
         {
             if (!trainable_) return;
 
             auto& state = *((*this).state_);
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
+
+            // apply regularizers
+            if (!(regularizer_.synchronized_)) // in case of multiple invoke of this method in a same backward pass
+            {
+                if ( regularizer_.l1_ >= eps ) // l1 regularizer
+                {
+                    value_type const factor = regularizer_.l1_;
+                    for_each( state.data_.begin(), state.data_.end(), state.gradient_.begin(), [factor]( value_type d, value_type& g ){ g += (d >= value_type{0}) ? factor : -factor; } );
+                }
+                if ( regularizer_.l2_ >= eps ) // l2 regularizer
+                {
+                    value_type const factor = regularizer_.l2_;
+                    for_each( state.data_.begin(), state.data_.end(), state.gradient_.begin(), [factor]( value_type d, value_type& g ){ g += value_type{2} * d * factor; } );
+                }
+
+                regularizer_.synchronized_ = true;
+            }
         }
 
         std::vector<std::size_t> shape() const noexcept
@@ -79,37 +110,37 @@ namespace ceras
             return state.data_.shape();
         }
 
-        std::vector<Tsor>& contexts()
+        std::vector<tensor_type>& contexts()
         {
             auto& state = *((*this).state_);
             return state.contexts_;
         }
 
-        std::vector<Tsor> contexts() const
+        std::vector<tensor_type> contexts() const
         {
             auto& state = *((*this).state_);
             return state.contexts_;
         }
 
-        Tsor& data()
+        tensor_type& data()
         {
             auto& state = *((*this).state_);
             return state.data_;
         }
 
-        Tsor data() const
+        tensor_type data() const
         {
             auto& state = *((*this).state_);
             return state.data_;
         }
 
-        Tsor& gradient()
+        tensor_type& gradient()
         {
             auto& state = *((*this).state_);
             return state.gradient_;
         }
 
-        Tsor gradient() const
+        tensor_type gradient() const
         {
             auto& state = *((*this).state_);
             return state.gradient_;

@@ -398,6 +398,10 @@ layer_zeropadding2d: test/layer_zeropadding2d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_zeropadding2d.o test/layer_zeropadding2d.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_zeropadding2d $(OBJECTS_DIR)/test_layer_zeropadding2d.o $(LFLAGS)
 
+mnist_regularized: test/mnist_regularized.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_regularized.o test/mnist_regularized.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_regularized $(OBJECTS_DIR)/test_mnist_regularized.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

@@ -50,13 +50,23 @@ namespace ceras
     inline unsigned long cuda_gemm_threshold = 0UL; // will be updated if in CUDA mode, always assume float multiplications as double is rearly used
 
     inline constexpr double eps = 1.0e-8;
+    inline constexpr double epsilon = eps; // alias of `eps`
 
-    //
-    // some layers, such as batch normalization and drop out, behave differently during the training and the testing time
-    //
-    // 1 for learning
-    // 0 for prediction/test
-    //
+    ///
+    /// @brief Learning phase flag. 1 for learning, others for testing. Some layers, such as batch normalization and drop out, behave differently during the training and the testing time.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>{ (33, 33) } };
+    /// auto b = Dropout( 0.5f )( a );
+    /// auto& s = get_default_session<tensor<float>>();
+    /// auto b_training = s.run( b ); // the dropout is applied to b
+    ///
+    /// learning_phase = 0;
+    /// auto b_testing = s.run( b ); // no dropout applied
+    /// \code
+    ///
     inline int learning_phase = 1;
 }
 

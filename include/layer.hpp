@@ -59,7 +59,7 @@ namespace ceras
             unsigned long const dilation_col = dilations.size() == 2 ? dilations[1] : dilations[0];
             //unsigned long const stride_y = strides[1];
             auto w = variable<tensor<float>>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}), use_bias };
+            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}), 0.0f, 0.0f, use_bias };
             return conv2d( input_x, input_y, stride_x, stride_y, dilation_row, dilation_col, padding )( ex, w ) + b;
         };
     }
@@ -84,7 +84,7 @@ namespace ceras
         return [=]<Expression Ex>( Ex const& ex )
         {
             auto w = variable<tensor<float>>{ glorot_uniform<float>({input_size, output_size}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
+            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), 0.0f, 0.0f, use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
             return ex * w + b;
         };
     }
