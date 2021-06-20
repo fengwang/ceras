@@ -39,7 +39,8 @@ First, we include the header and use the namespace of this library:
 using namespace ceras;
 ```
 
-Then we compose layers using a functional interface to compose a computation graph:
+Then we compose layers using a functional interface to build up a computation graph:
+
 ```cpp
 auto input = Input(); // shape( 28, 28 )
 auto l0 = Reshape({28*28,})( input );
@@ -48,32 +49,34 @@ auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
 auto output = Dense( 10, 256 )( l2 );
 ```
 
-And we build up a model by collecting the input layer and the output layer of the computation graph
+We build up a model by collecting the input layer and the output layer of the computation graph:
+
 ```cpp
 auto m = model{ input, output };
 ```
 
-We can dump the structure of this computation graph to double check the design of the model.
+We can dump the structure of this computation graph to double check the architecture:
 
 ```cpp
 m.summary( "./mnist_minimal.dot" );
 ```
 
-We will get a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot).
-
-We Convert this file to a '.png' file by using command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
+After generating a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot),
+we Convert it to a '.png' file by executing command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
 
 ![mnist minimal model computation graph](./assets/mnist_minimal.png)
 
 
-Before feeding a training set to this model, we need configure the training parameters
+Before feeding a training set to this model, we configure the training hyper-parameters
+
 ```cpp
 unsigned long batch_size = 10;
 float learning_rate = 0.01;
 auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 ```
 
-Then we can train this model by feeding it the training set
+Then we can train this model. Typical training API is:
+
 ```cpp
 unsigned long epoch = 50;
 int verbose = 1;
@@ -81,17 +84,20 @@ double validation_split = 0.1;
 cm.fit( input_data_of_784, output_data_of_10, batch_size, epoch, verbose, validation_split );
 ```
 
-or training this model manually
+We can also train this model batch by batch:
+
 ```cpp
 cm.train_on_batch( input_batch_of_784, output_batch_of_10 );
 ```
 
-The performance of the trained model can be evaluated by
+We can evaluate the performance this way:
+
 ```cpp
 auto error = cm.evaluate( test_data_of_784, test_data_of_10, batch_size );
 ```
 
-Or generate predictions from new samples
+We can also calssify new samples:
+
 ```cpp
 auto prediction = cm.predict( new_data_of_784 );
 ```
@@ -573,7 +579,7 @@ auto output = l20;
 ```
 
 With above codes, VGG16 model has been build. However, we not train this model here as we do not have the training set yet. But we can demonstrate the training process with mnist, which is a dataset much smaller than imagenet.
-
+The computation graph can be found from [this file](./examples/vgg16/vgg16.dot) and [this image](./examples/vgg16/vgg16.png).
 
 
 ### [defining a 3-layered NN, 256+128 hidden units](./test/mnist_mini.cc) for mnist

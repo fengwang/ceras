@@ -40,12 +40,11 @@ int main()
     auto output = l20;
 
     auto m = model{ input, output }; // define a model
-    m.summary();
+    m.summary( "./examples/vgg16/vgg16.dot" );
 
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 1000
     auto loss = cross_entropy_loss( ground_truth, output );
-
 
     #if 0
     training code ommited.
