@@ -1712,6 +1712,122 @@ namespace ceras
     }
 #endif
 
+
+    namespace
+    {
+        // An extra indirect layer to make gcc's life a bit easier.
+        // TODO: move detail to `zero_padding_2d` after gcc reaching his maturity.
+        struct zero_pading_2d_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        // 4D view of input tensor
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                        // 4D view of output tensor
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, top+row+bottom, left+col+right, channel} );
+                        view_4d<value_type> ta{ ans.data(), batch_size, top+row+bottom, left+col+right, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][top+r][left+c][ch] = ts[bs][r][c][ch];
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, top+row+bottom, left+col+right, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][r][c][ch] = tg[bs][r+top][c+left][ch];
+                        return ans;
+                    };
+                };
+            }
+        }; // zero_padding_2d_context
+    }//anonymouse namespace
+
+    ///
+    /// @brief Zero-padding layer for 2D input. The input should have 4-dimensions: `(batch_size, row, col, channel)`. The output has 4-dimensions: `(batch_size, new_row, new_col, channel)`.
+    /// @param padding If a single integer, then apply symmetric padding to height and width. If two integers, then first is for height and the second is for width. If four integers, then is intepreted as`(top_pad, bottom_pad, left_pad, right_pad)`.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {16, 16, 3} );
+    /// auto b = zero_padding_2d( {8,} )( a ); // shape for b is (8+16+8, 8+16+8, 3)
+    /// auto c = zero_padding_2d( {8, 4} )( a ); // shape for c is (8+16+8, 4+16+4, 3)
+    /// auto d = zero_padding_2d( {8, 4, 2, 1} )( a ); // shape for d is (8+16+4, 2+16+1, 3)
+    /// \endcode
+    ///
+    inline auto zero_padding_2d( std::vector<unsigned long> const& padding ) noexcept
+    {
+        // extracting paddings
+        unsigned long top, bottom, left, right;
+        if ( padding.size() == 1 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[0], padding[0] );
+        else if (padding.size() == 2 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[1], padding[1] );
+        else if (padding.size() == 4 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[1], padding[2], padding[3] );
+        else
+            better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
+
+        // checking extracted paddings
+        better_assert( top > 1, "Expecting zero_padding_2d top padding greater than 1, but got ", top );
+        better_assert( bottom > 1, "Expecting zero_padding_2d bottom padding greater than 1, but got ", bottom );
+        better_assert( left > 1, "Expecting zero_padding_2d left padding greater than 1, but got ", left );
+        better_assert( right > 1, "Expecting zero_padding_2d right padding greater than 1, but got ", right );
+
+        // to avoid re-allocating memory for tensors
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                zero_padding_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
+                zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
+                "ZeroPadding2D"
+            )( ex );
+        };
+    }
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM
