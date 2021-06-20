@@ -465,6 +465,18 @@ namespace ceras
         return sum_reduce( ex );
     }
 
+    ///
+    /// @brief Computes the mean of elements across all dimensions of an expression.
+    /// @param ex Incoming expression.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto va = place_holder<tensor<float>>{};
+    /// auto vb = variable{ random<float>{ 3, 4} };
+    /// auto diff = mean_reduce( va, vb );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto constexpr mean_reduce( Ex const& ex ) noexcept
     {
