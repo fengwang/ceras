@@ -43,37 +43,12 @@ int main()
     auto input = Input();
 
     auto l1_1 = Dense( 256, 28*28 )( input );
-    /*
-    // 1st layer
-    auto w1 = variable{ randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
-    auto b1 = variable{ zeros<float>( { 1, 256 } ) };
-    auto l1_1 = input * w1 + b1;
-    */
 
     auto l1 = relu( BatchNormalization({256,})( l1_1 ) );
-    /*
-    auto gamma = variable{ ones<float>( {1, 256} ) };
-    auto beta = variable{ zeros<float>( {1, 256} ) };
-    auto l1 = relu( batch_normalization(0.95)( l1_1, gamma, beta ) );
-    //auto l1 = relu( input * w1 + b1 );
-    */
 
     auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
-    /*
-    // 2nd layer
-    auto w2 = variable{ randn<float>( {256, 128}, 0.0, 3.14/(16.0*11.2 )) };
-    auto b2 = variable{ zeros<float>( { 1, 128 } ) };
-    //auto l2 = relu( l1 * w2 + b2 );
-    auto l2 = sigmoid( l1 * w2 + b2 );
-    */
 
     auto output = Dense( 10, 128 )( l2 );
-    /*
-    // 3rd layer
-    auto w3 = variable{ randn<float>( {128, 10}, 0.0, 1.0/35.8 ) };
-    auto b3 = variable{ zeros<float>( { 1, 10 } ) };
-    auto output = l2 * w3 + b3;
-    */
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 

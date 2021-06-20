@@ -76,6 +76,10 @@ namespace ceras
     /// @param output_size Dimensionality of output shape. The output shape is `(batch_size, output_size)`.
     /// @param input_size Dimensionality of input shape. The input shape is `(batch_size, input_size)`.
     /// @param use_bias Using a bias vector or not. Defaults to `true`.
+    /// @param kernel_regularizer_l1 L1 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param kernel_regularizer_l2 L2 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param bias_regularizer_l1 L1 regularizer for the bias vector. Defaults to `0.0f`.
+    /// @param bias_regularizer_l2 L2 regularizer for the bias vector. Defaults to `0.0f`.
     ///
     /// Example code:
     ///
@@ -85,30 +89,45 @@ namespace ceras
     /// auto m = model{ x, y };
     /// \endcode
     ///
-    inline auto Dense( unsigned long output_size, unsigned long input_size, bool use_bias=true )
+    inline auto Dense( unsigned long output_size, unsigned long input_size, bool use_bias=true, float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f )
     {
         return [=]<Expression Ex>( Ex const& ex )
         {
-            auto w = variable<tensor<float>>{ glorot_uniform<float>({input_size, output_size}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), 0.0f, 0.0f, use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
+            auto w = variable<tensor<float>>{ glorot_uniform<float>({input_size, output_size}), kernel_regularizer_l1, kernel_regularizer_l2 };
+            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), bias_regularizer_l1, bias_regularizer_l2, use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
             return ex * w + b;
         };
     }
 
-    inline auto BatchNormalization( std::vector<unsigned long> const& shape, float threshold = 0.95f )
+    ///
+    /// @brief Applies a transformation that maintains the mean output close to 0 and the output standard deviation close to 1.
+    /// @param shape Dimensionality of the input shape.
+    /// @param threshold Momentum for the moving average.
+    /// @param kernel_regularizer_l1 L1 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param kernel_regularizer_l2 L2 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param bias_regularizer_l1 L1 regularizer for the bias vector. Defaults to `0.0f`.
+    /// @param bias_regularizer_l2 L2 regularizer for the bias vector. Defaults to `0.0f`.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {12, 34, 56, 78} ) };
+    /// auto b = BatchNormalization( {34, 56, 78}, 0.8f )( a ); // note the leading dimension of `a` is intepretated as batch size, and only the rest 3 dimensions are required here.
+    /// \endcode
+    ///
+    inline auto BatchNormalization( std::vector<unsigned long> const& shape, float threshold = 0.95f, float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f )
     {
         return [=]<Expression Ex>( Ex const& ex )
         {
             unsigned long const last_dim = *(shape.rbegin());
-            auto gamma = variable<tensor<float>>{ ones<float>( {last_dim, }  ) };
-            auto beta = variable<tensor<float>>{ zeros<float>( {last_dim, } ) };
+            auto gamma = variable{ ones<float>( {last_dim, }  ), kernel_regularizer_l1, kernel_regularizer_l2 };
+            auto beta = variable{ zeros<float>( {last_dim, } ), bias_regularizer_l1, bias_regularizer_l2 };
             return batch_normalization( threshold )( ex, gamma, beta );
         };
     }
 
-    inline auto BatchNormalization( float threshold, std::vector<unsigned long> const& shape )
+    inline auto BatchNormalization( float threshold, std::vector<unsigned long> const& shape, float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f )
     {
-        return BatchNormalization( shape, threshold );
+        return BatchNormalization( shape, threshold, kernel_regularizer_l1, kernel_regularizer_l2, bias_regularizer_l1, bias_regularizer_l2 );
     }
 
 #if 0
