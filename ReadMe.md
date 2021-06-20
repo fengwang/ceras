@@ -948,6 +948,10 @@ The full code is [here](./test/optimize.cc).
 + recurrent operations
 + provide a single-header file
 
+## [Documentation](http://fengwang.github.io/ceras/html/index.html)
+
+Under construction.
+
 
 ## License
 
