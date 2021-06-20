@@ -349,6 +349,13 @@ A `variable` variable  holds a stateful `tensor`, and this `tensor` will be upda
 auto w = ceras::variable{ ceras::randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ) };
 ```
 
+We can also apply regularizers to this variable:
+```cpp
+float const l1_regularizer = 1.0e-5;
+float const l2_regularizer = 1.0e-5;
+auto w = ceras::variable{ ceras::randn<float>( {28*28, 256}, 0.0, 10.0/(28.0*16.0) ), l1_regularizer, l2_regularizer };
+```
+
 
 ### [value](./include/value.hpp)
 

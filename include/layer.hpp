@@ -26,6 +26,10 @@ namespace ceras
     /// @param strides The strides along the height and width direction. Defaults to `(1, 1)`.
     /// @param dilations The dialation along the height and width direction. Defaults to `(1, 1)`.
     /// @param use_bias Wether or not use a bias vector. Defaults to `true`.
+    /// @param kernel_regularizer_l1 L1 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param kernel_regularizer_l2 L2 regularizer for the kernel. Defaults to `0.0f`.
+    /// @param bias_regularizer_l1 L1 regularizer for the bias vector. Defaults to `0.0f`.
+    /// @param bias_regularizer_l2 L2 regularizer for the bias vector. Defaults to `0.0f`.
     ///
     /// Example code:
     ///
@@ -39,7 +43,9 @@ namespace ceras
     ///
     inline auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size,
                         std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
-                        std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true )
+                        std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
+                        float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
+           )
     {
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
@@ -58,8 +64,8 @@ namespace ceras
             unsigned long const dilation_row = dilations[0];
             unsigned long const dilation_col = dilations.size() == 2 ? dilations[1] : dilations[0];
             //unsigned long const stride_y = strides[1];
-            auto w = variable<tensor<float>>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}), 0.0f, 0.0f, use_bias };
+            auto w = variable<tensor<float>>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}), kernel_regularizer_l1, kernel_regularizer_l2 };
+            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}), bias_regularizer_l1, bias_regularizer_l2, use_bias };
             return conv2d( input_x, input_y, stride_x, stride_y, dilation_row, dilation_col, padding )( ex, w ) + b;
         };
     }
