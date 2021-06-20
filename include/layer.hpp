@@ -17,7 +17,29 @@ namespace ceras
         return place_holder<tensor<float>>{};
     }
 
-    inline auto Conv2D( unsigned long output_channels,std::vector<unsigned long> const& kernel_size, std::vector<unsigned long> const& input_shape, std::string const& padding="valid", std::vector<unsigned long> const& strides={1,1} )
+    ///
+    /// @brief 2D convolution layer.
+    /// @param output_channels Dimensionality of the output space.
+    /// @param kernel_size The height and width of the convolutional window.
+    /// @param input_shape Dimensionality of the input shape.
+    /// @param padding `valid` or `same`. `valid` suggests no padding. `same` suggests zero padding. Defaults to `valid`.
+    /// @param strides The strides along the height and width direction. Defaults to `(1, 1)`.
+    /// @param dilations The dialation along the height and width direction. Defaults to `(1, 1)`.
+    /// @param use_bias Wether or not use a bias vector. Defaults to `true`.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto x = Input{};
+    /// auto y = Conv2D( 32, {3, 3}, {28, 28, 1}, "same" )( x );
+    /// auto z = Flatten()( y );
+    /// auto u = Dense( 10, 28*28*32 )( z );
+    /// auto m = model{ x, u };
+    /// \endcode
+    ///
+    inline auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size,
+                        std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
+                        std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true )
     {
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
@@ -33,19 +55,36 @@ namespace ceras
             unsigned long const input_y = input_shape[1];
             unsigned long const stride_x = strides[0];
             unsigned long const stride_y = strides.size() == 2 ? strides[1] : strides[0];
+            unsigned long const dilation_row = dilations[0];
+            unsigned long const dilation_col = dilations.size() == 2 ? dilations[1] : dilations[0];
             //unsigned long const stride_y = strides[1];
             auto w = variable<tensor<float>>{ glorot_uniform<float>({output_channels, kernel_size_x, kernel_size_y, input_channels}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}) };
-            return conv2d( input_x, input_y, stride_x, stride_y, 1, 1, padding )( ex, w ) + b;
+            auto b = variable<tensor<float>>{ zeros<float>({1, 1, output_channels}), use_bias };
+            return conv2d( input_x, input_y, stride_x, stride_y, dilation_row, dilation_col, padding )( ex, w ) + b;
         };
     }
 
-    inline auto Dense( unsigned long output_size, unsigned long input_size )
+    ///
+    /// @brief Densly-connected layer.
+    ///
+    /// @param output_size Dimensionality of output shape. The output shape is `(batch_size, output_size)`.
+    /// @param input_size Dimensionality of input shape. The input shape is `(batch_size, input_size)`.
+    /// @param use_bias Using a bias vector or not. Defaults to `true`.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto x = Input{};
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto m = model{ x, y };
+    /// \endcode
+    ///
+    inline auto Dense( unsigned long output_size, unsigned long input_size, bool use_bias=true )
     {
         return [=]<Expression Ex>( Ex const& ex )
         {
             auto w = variable<tensor<float>>{ glorot_uniform<float>({input_size, output_size}) };
-            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}) };
+            auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
             return ex * w + b;
         };
     }
