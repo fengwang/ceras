@@ -1007,6 +1007,97 @@ namespace ceras
     }
 
 
+    namespace
+    {
+
+        struct max_pooling_2d_context
+        {
+
+            auto make_forward() const noexcept
+            {
+                return  []( unsigned long stride, std::shared_ptr<std::any> mask, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        Tsor& mask__ = context_cast<Tsor>( mask );
+                        mask__.resize( input.shape() );
+
+
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+                        view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, row/stride, col/stride, channel} );
+
+                        view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
+
+                        for ( auto bs : range(batch_size) )
+                            for ( auto r : range(row/stride) ) // row for t1
+                                for ( auto c : range(col/stride) ) // col for t1
+                                    for ( auto ch : range(channel) )
+                                    {
+                                        unsigned long current_row_max = r * stride;
+                                        unsigned long current_col_max = c * stride;
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
+                                            {
+                                                if ( ts[bs][_r][_c][ch] > ts[bs][current_row_max][current_col_max][ch] )
+                                                {
+                                                    current_row_max = _r;
+                                                    current_col_max = _c;
+                                                }
+                                            }
+                                        tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
+                                        t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
+                                    }
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> mask, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& mask__ = std::any_cast<Tsor&>( *mask );
+                        view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
+                                            ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
+                        return ans;
+                    };
+                };
+            }
+
+        }; // max_pooling_2d_context
+
+    } // anonymous namespace
+
+
     // comment: maybe using function 'reduce' to reduce the cod complexity? at a price of performance?
     inline auto max_pooling_2d( unsigned long stride ) noexcept
     {
@@ -1020,72 +1111,16 @@ namespace ceras
         {
             return make_unary_operator
             (
+             /*
                 [stride, mask, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
                 {
-                    typedef typename Tsor::value_type value_type;
-                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
-
-                    Tsor& mask__ = context_cast<Tsor>( mask );
-                    mask__.resize( input.shape() );
-
-
-                    std::vector<unsigned long> shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-                    Tsor input_ = input;
-                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
-                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.resize( {batch_size, row/stride, col/stride, channel} );
-
-                    view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
-
-                    for ( auto bs : range(batch_size) )
-                        for ( auto r : range(row/stride) ) // row for t1
-                            for ( auto c : range(col/stride) ) // col for t1
-                                for ( auto ch : range(channel) )
-                                {
-                                    unsigned long current_row_max = r * stride;
-                                    unsigned long current_col_max = c * stride;
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
-                                        {
-                                            if ( ts[bs][_r][_c][ch] > ts[bs][current_row_max][current_col_max][ch] )
-                                            {
-                                                current_row_max = _r;
-                                                current_col_max = _c;
-                                            }
-                                        }
-                                    tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
-                                    t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
-                                }
-                    return ans;
                 },
                 [stride, mask, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
-                    typedef typename Tsor::value_type value_type;
-                    std::vector<unsigned long> const& shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-
-                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
-                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache );
-                    ans.resize( input.shape() );
-
-                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
-
-                    Tsor grad_ = grad;
-                    view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
-
-                    for ( auto bs : range( batch_size ) )
-                        for ( auto r : range( row ) )
-                            for ( auto c : range( col ) )
-                                for ( auto ch : range( channel ) )
-                                    if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
-                                        ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
-                    return ans;
                 },
+            */
+                max_pooling_2d_context{}.make_forward()( stride, mask, forward_cache ),
+                max_pooling_2d_context{}.make_backward()( stride, mask, backward_cache ),
                 "MaxPooling2D"
             )( ex );
         };
