@@ -1190,6 +1190,76 @@ namespace ceras
         };
     }
 
+    namespace
+    {
+        struct up_sampling_2d_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, row*stride, col*stride, channel} );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> t1{ ans.data(), batch_size, row*stride, col*stride, channel };
+
+                        for ( auto bs : range(batch_size) )
+                            for ( auto r : range(row) ) // row for ts
+                                for ( auto c : range(col) ) // col for ts
+                                    for ( auto ch : range(channel) )
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for t1
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for t1
+                                                t1[bs][_r][_c][ch] = ts[bs][r][c][ch];
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, row*stride, col*stride, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for tg
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for tg
+                                                ta[bs][r][c][ch] += tg[bs][_r][_c][ch];
+                        return ans;
+                    };
+                };
+            }
+        }; // up_sampling_2d_context
+
+    } // anonymous namespace
+
     inline auto up_sampling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting up_sampling_pooling_2d stride greater than 1, but got ", stride );
@@ -1201,55 +1271,16 @@ namespace ceras
         {
             return make_unary_operator
             (
+             /*
                 [stride, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
                 {
-                    typedef typename Tsor::value_type value_type;
-                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
-
-                    std::vector<unsigned long> shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-                    Tsor input_ = input;
-                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.resize( {batch_size, row*stride, col*stride, channel} );
-                    std::fill( ans.begin(), ans.end(), value_type{0} );
-
-                    view_4d<value_type> t1{ ans.data(), batch_size, row*stride, col*stride, channel };
-
-                    for ( auto bs : range(batch_size) )
-                        for ( auto r : range(row) ) // row for ts
-                            for ( auto c : range(col) ) // col for ts
-                                for ( auto ch : range(channel) )
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for t1
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for t1
-                                            t1[bs][_r][_c][ch] = ts[bs][r][c][ch];
-                    return ans;
                 },
                 [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
-                    typedef typename Tsor::value_type value_type;
-                    std::vector<unsigned long> const& shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache );
-                    ans.resize( input.shape() );
-                    std::fill( ans.begin(), ans.end(), value_type{0} );
-
-                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
-
-                    Tsor grad_ = grad;
-                    view_4d<value_type> tg{ grad_.data(), batch_size, row*stride, col*stride, channel };
-
-                    for ( auto bs : range( batch_size ) )
-                        for ( auto r : range( row ) )
-                            for ( auto c : range( col ) )
-                                for ( auto ch : range( channel ) )
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for tg
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for tg
-                                            ta[bs][r][c][ch] += tg[bs][_r][_c][ch];
-                    return ans;
                 },
+            */
+                up_sampling_2d_context{}.make_forward()( stride, forward_cache ),
+                up_sampling_2d_context{}.make_backward()( stride, backward_cache ),
                 "UpSampling2D"
             )( ex );
         };
@@ -1651,101 +1682,6 @@ namespace ceras
         )( ex );
     };
 
-
-
-#if 0
-    // TODO: fix this layer
-    inline auto normalization_layer() noexcept
-    {
-        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
-        {
-            return make_unary_operator
-            (
-                [=]<Tensor Tsor>( Tsor const& input ) noexcept
-                {
-                    better_assert( input.ndim() > 1, "normalization_layer requires input dimension at least 2, got ", input.ndim() );
-
-                    typedef typename Tsor::value_type value_type;
-                    //typedef typename Tsor::allocator allocator;
-
-                    std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const channels = *(shape.rbegin());
-                    unsigned long const rest_dims = input.size() / channels;
-
-                    view_2d<value_type> input_{ input.data(), rest_dims, channels };
-
-                    //calculate average along the last channel
-                    Tsor& average = context_cast<Tsor>( average_cache );
-                    {
-                        average.resize( {channels, } );
-                        std::fill( average.begin(), average.end(), value_type{0} );
-
-                        for ( auto idx : range( rest_dims ) )
-                            for ( auto jdx : range( channels ) )
-                                average[jdx] += input_[idx][jdx];
-
-                        average /= static_cast<value_type>(rest_dims);
-                    }
-
-                    //calculate Variance along the last channel
-                    Tsor& variance = context_cast<Tsor>( variance_cache );
-                    {
-                        variance.resize( {channels,} );
-                        std::fill( variance.begin(), variance.end(), value_type{0} );
-                        for ( auto idx : range( rest_dims ) )
-                            for ( auto jdx : range( channels ) )
-                                variance[jdx] += std::pow( input_[idx][jdx] - average[jdx], 2 );
-
-                        variance /= static_cast<value_type>( rest_dims );
-                    }
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.resize( input.shape() ); // the batch sizes for training and for prediction are not necessarily same
-                    view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
-                    {
-                        for ( auto idx : range( rest_dims ) )
-                            for ( auto jdx : range( channels ) )
-                                ans_[idx][jdx] = ( input_[idx][jdx] - average[jdx] ) / std::sqrt( variance[jdx] + eps );
-                    }
-
-                    return ans;
-                },
-
-                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                {
-                    typedef typename Tsor::value_type value_type;
-                    Tsor& variance = context_extract<Tsor>( variance_cache );
-
-                    std::vector<unsigned long> const& shape = input.shape();
-                    unsigned long const channels = *(shape.rbegin());
-                    unsigned long const rest_dims = input.size() / channels;
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
-                    view_2d<value_type> ans_{ans.data(), rest_dims, channels };
-                    view_2d<value_type> grad_{grad.data(), rest_dims, channels };
-                    for ( auto r : range( rest_dims ) )
-                        for ( auto c : range( channels ) )
-                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
-                    return ans;
-                },
-                "LayerNormalization"
-            )( ex );
-        };
-    }
-
-    inline auto layer_normalization() noexcept
-    {
-        return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
-        {
-            return elementwise_product( normalization_layer()(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
-        };
-    }
-#endif
 
 
     namespace

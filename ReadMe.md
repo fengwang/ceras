@@ -104,6 +104,10 @@ auto prediction = cm.predict( new_data_of_784 );
 
 Check out a minimal example from [here](./test/mnist_minimal.cc). On Linux/Unix, type `make mnist_minimal && ./bin/test_mnist_minimal`  or `make mnist_conv2d_minimal && ./bin/test_mnist_conv2d_minimal` to try.
 
+Some more examples:
+
+- vgg16: [model](./examples/vgg16/vgg16.cc) and [visualization](./examples/vgg16/vgg16.png)
+- unet: [model](./examples/unet/unet.cc) and [visualization](./examples/unet/unet.png)
 
 ### Implementation using mid-level APIs
 
