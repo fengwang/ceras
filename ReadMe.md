@@ -7,8 +7,6 @@
 What I cannot create, I do not understand. -- Richard Feynman
 
 
-
-
 __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
 ----
@@ -104,10 +102,10 @@ auto prediction = cm.predict( new_data_of_784 );
 
 Check out a minimal example from [here](./test/mnist_minimal.cc). On Linux/Unix, type `make mnist_minimal && ./bin/test_mnist_minimal`  or `make mnist_conv2d_minimal && ./bin/test_mnist_conv2d_minimal` to try.
 
-Some more examples:
+#### Some more examples:
 
-- vgg16: [model](./examples/vgg16/vgg16.cc) and [visualization](./examples/vgg16/vgg16.png)
-- unet: [model](./examples/unet/unet.cc) and [visualization](./examples/unet/unet.png)
+- vgg16: [model](./examples/vgg16/vgg16.cc) and [visualization](./examples/vgg16/vgg16.png).
+- unet: [model](./examples/unet/unet.cc) and [visualization](./examples/unet/unet.png).
 
 ### Implementation using mid-level APIs
 
@@ -248,7 +246,7 @@ ceras::tensor<float> a{{2, 1, 2}, {0.0f, 0.1f, 0.2f, 0.3f}};
 ```
 in which the template parameter `float` is for the data type, the first argument `{2, 1, 2}` is for the tensor shape, and the second argument `{0.0f, 0.1f, 0.2f, 0.3f}` is for the data stored in the tensor.
 
-Quite a few operations, such as `+`, `-`, `*`,  `abs`,  `random`, `randn`, `reduce` and `max` are implemented for `tensor`. But these operations are there to serve the purpose of deep learning, not intend to be a generic tensor library.
+Quite a few operations, such as `+`, `-`, `*`,  `abs`,  `random`, `randn`, `reduce` and `max` are implemented for `tensor`. But these operations are there to serve the purpose of deep learning, not intend to make a generic tensor library.
 
 
 #### creating tensors
@@ -276,16 +274,16 @@ auto one_2 = ceras::ones_like( data );
 or a tensor filled with random values
 
 ```cpp
-auto r = ceras::random( {12, 34} ); // U(0, 1)
-auto r_1 = ceras::random( {12, 34}, -10.0, 10.0 ); // U(-10, 10)
+auto r = ceras::random<float>( {12, 34} ); // U(0, 1)
+auto r_1 = ceras::random<float>( {12, 34}, -10.0, 10.0 ); // U(-10, 10)
 auto r_2 = ceras::random_like( data ); // U(0, 1)
 auto r_3 = ceras::random_like( data, -10.0, 10.0 ); // U(-10, 10)
 ```
 
 or a tensor sampling values from a Normal distribution
 ```cpp
-auto n = ceras::randn( {12, 34} ); // N(0, 1)
-auto n_1 = ceras::randn( {12, 34}, 1.0, 10.0 ); // N(1, 10)
+auto n = ceras::randn<float>( {12, 34} ); // N(0, 1)
+auto n_1 = ceras::randn<float>( {12, 34}, 1.0, 10.0 ); // N(1, 10)
 auto n_2 = ceras_randn_like( data ); // N(0, 1)
 auto n_3 = ceras_randn_like( data, 1.0, 10.0 ); // N(1, 10)
 ```
