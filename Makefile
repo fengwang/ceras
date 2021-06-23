@@ -402,6 +402,10 @@ mnist_regularized: test/mnist_regularized.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_regularized.o test/mnist_regularized.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_regularized $(OBJECTS_DIR)/test_mnist_regularized.o $(LFLAGS)
 
+unet: examples/unet/unet.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_unet.o examples/unet/unet.cc
+	$(LINK) -o $(BIN_DIR)/test_unet $(OBJECTS_DIR)/test_unet.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

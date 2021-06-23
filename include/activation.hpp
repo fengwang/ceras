@@ -190,11 +190,50 @@ namespace ceras
                 )( ex );
     }
 
+
+    namespace
+    {
+        struct relu_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( input.shape()  );
+                        for ( auto idx : range( ans.size() ) ) // 1-D view of tensors input and ans
+                            ans[idx] = std::max( input[idx], typename Tsor::value_type{0} );
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    Tsor ans = grad; // shallow copy
+                    const typename Tsor::value_type zero{0};
+                    for ( auto idx : range( ans.size() ) ) // 1-D view of tensors input, grad and ans
+                        ans[idx] = ( input[idx] > zero ) ? grad[idx] : zero;
+                    return ans;
+                };
+            }
+        }; // relu_context
+
+    }//anonymous namespace
+
     template <Expression Ex>
     auto relu( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator(
+                                    relu_context{}.make_forward()( forward_cache ),
+                                    relu_context{}.make_backward(),
+                                    /*
+                                    [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape()  );
@@ -210,6 +249,7 @@ namespace ceras
                                             ans[idx] = ( input[idx] > zero ) ? grad[idx] : zero;
                                         return ans;
                                     },
+                                    */
                                     "Relu"
                 )( ex );
     }

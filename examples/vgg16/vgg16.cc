@@ -16,7 +16,7 @@ typedef tensor<float> tensor_type;
 int main()
 {
     auto input = Input(); //  3D tensor input, (batch_size, 224, 224, 3)
-    auto l0 = relu( Conv2D( 64, {3, 3}, {224, 3, 3}, "same" )(input) ); // 224, 224, 64
+    auto l0 = relu( Conv2D( 64, {3, 3}, {224, 224, 3}, "same" )(input) ); // 224, 224, 64
     auto l1 = max_pooling_2d( 2 ) ( l0 ); // 112, 112, 64
     auto l2 = relu( Conv2D( 128, {3, 3}, {112, 112, 64}, "same" )( l1 ) ); // 112, 112, 128
     auto l3 = relu( Conv2D( 128, {3, 3}, {112, 112, 128}, "same" )( l2 ) ); // 112, 112, 128
