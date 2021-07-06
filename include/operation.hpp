@@ -1958,7 +1958,7 @@ namespace ceras
             {
                 return []( unsigned long axis, std::shared_ptr<std::any> backward_cache, std::shared_ptr<std::any> index_cache ) noexcept
                 {
-                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                     {
                         unsigned long const ax = std::min( axis, input.shape().size()-1 );
 
@@ -2019,6 +2019,130 @@ namespace ceras
             (
                 reduce_min_context{}.make_forward()( axis, forward_cache, index_cache ),
                 reduce_min_context{}.make_backward()( axis, backward_cache, index_cache )
+            )
+            ( ex );
+        };
+    }
+
+
+
+    namespace
+    {
+        struct reduce_max_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape(); // example: temporately being ( 2, 3, 4, 5 )
+                        std::copy( output_shape.begin()+ax+1, output_shape.end(), output_shape.begin()+ax ); // example: temporately being ( 2, 4, 5, 5 )
+                        output_shape.resize( output_shape.size() - 1 ); // example: output_shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape ); // example: ans shape is ( 2, 4, 5 )
+
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        // create 2D and 3D view
+                        view_2d v2{ ans.data(), iterations, stride }; // example: viewing as a matrix of shape ( 2, 20 )
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ input.data(), iterations, scales, stride }; // example: viewing as a tube of ( 2, 3, 20 )
+
+                        // reduce maximal elements along the selected axis
+                        for ( auto it : range( iterations ) ) // example: range (2)
+                            for ( auto st : range( stride ) ) // example: range (20)
+                            {
+                                // reduce the maximal elements along the column of st
+                                auto max_itor = std::max_element( v3[it].col_begin(st), v3[it].col_end(st) );
+                                v2[it][st] = *max_itor;
+
+                                // record the maximal position offset with respect to the head of the column
+                                unsigned long const offset = std::distance( v3[it].col_begin(st), max_itor );
+                                v_index[it][st] = offset;
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> backward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const& , Tsor const& grad ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        std::vector<unsigned long> const& output_shape = grad.shape(); // example: output shape of ( 2, 4, 5 )
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
+                        ans.reset();
+
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ ans.data(), iterations, scales, stride }; // example: view as a cube of ( 2, 3, 20 )
+                        view_2d v2{ grad.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+
+                        for ( auto it : range( iterations ) ) // example: range( 2 )
+                            for ( auto st : range( stride ) ) // example: range( 20 )
+                            {
+                                unsigned long const offset = v_index[it][st]; // get the offset from record
+                                v3[it][offset][st] = v2[it][st]; // only the element at the maximal position has gradient back-propagated
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct reduce_max_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Reduce maximum elements along an axis.
+    /// @param axis The axis along which to reduce maximal values. Defaults to the last axis.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} );
+    /// auto b = reduce_max( 0 )( a ); // <- output shape is ( 3, 5 )
+    /// auto b = reduce_max( 1 )( a ); // <- output shape is ( 2, 5 )
+    /// auto b = reduce_max( 2 )( a ); // <- output shape is ( 2, 3 )
+    /// auto b = reduce_max( )( a ); // <- output shape is ( 2, 3 )
+    /// \endcode
+    inline auto reduce_max( unsigned long axis=-1 ) noexcept
+    {
+        std::shared_ptr<std::any> index_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [axis, index_cache, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                reduce_max_context{}.make_forward()( axis, forward_cache, index_cache ),
+                reduce_max_context{}.make_backward()( axis, backward_cache, index_cache )
             )
             ( ex );
         };

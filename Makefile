@@ -10,10 +10,10 @@ OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -D
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=999999 -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 #OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
+OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
 #CXX           = clang++
@@ -421,6 +421,10 @@ layer_repeat: test/layer_repeat.cc
 layer_reduce_min: test/layer_reduce_min.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_min.o test/layer_reduce_min.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_reduce_min $(OBJECTS_DIR)/test_layer_reduce_min.o $(LFLAGS)
+
+layer_reduce_max: test/layer_reduce_max.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_max.o test/layer_reduce_max.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_reduce_max $(OBJECTS_DIR)/test_layer_reduce_max.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

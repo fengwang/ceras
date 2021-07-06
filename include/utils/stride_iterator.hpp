@@ -19,7 +19,7 @@ namespace ceras
         Iterator_Type                                                               iterator_;
         difference_type                                                             step_;
 
-        constexpr stride_iterator( const Iterator_Type& it, const difference_type& dt ) noexcept : iterator_( it ) , step_( dt ) { }
+        constexpr stride_iterator( const Iterator_Type& it, std::integral auto const dt ) noexcept : iterator_( it ) , step_( static_cast<difference_type>(dt) ) { }
 
         constexpr stride_iterator() noexcept : iterator_( 0 ) , step_( 1 ) { }
         constexpr stride_iterator( const self_type& ) noexcept = default;
