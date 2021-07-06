@@ -197,6 +197,8 @@ namespace ceras
         constexpr self_type& reshape( std::vector< unsigned long > const& new_shape )
         {
             unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
+            if ( (*this).size() != new_size ) return resize( new_shape );
+
             better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
             (*this).shape_ = new_shape;
             return *this;

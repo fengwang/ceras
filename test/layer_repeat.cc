@@ -19,7 +19,7 @@ int main()
     }
 
     {
-        auto a = ceras::variable{ random<float>( {2, 3}, -1.0f, 1.0f ) };
+        auto a = ceras::variable{ random<float>( {3, 4}, -1.0f, 1.0f ) };
         std::cout << "Testing repeat(2,1) with a=\n" << a.data() << std::endl;
 
         auto la = ceras::repeat(2, 1)(a);
@@ -32,7 +32,7 @@ int main()
     }
 
     {
-        auto a = ceras::variable{ random<float>( {2, 3}, -1.0f, 1.0f ) };
+        auto a = ceras::variable{ random<float>( {4, 5}, -1.0f, 1.0f ) };
         std::cout << "Testing repeat(2) with a=\n" << a.data() << std::endl;
 
         auto la = ceras::repeat(2)(a);

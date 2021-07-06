@@ -1805,7 +1805,7 @@ namespace ceras
         {
             auto make_forward() const noexcept
             {
-                return []( unsigned long repeats, unsigned long axis ) noexcept
+                return []( unsigned long repeats, unsigned long axis, std::shared_ptr<std::any> forward_cache ) noexcept
                 {
                     return [=]<Tensor Tsor>( Tsor const& input ) noexcept
                     {
@@ -1819,7 +1819,10 @@ namespace ceras
                         // generate output tensor
                         std::vector<unsigned long> output_shape = input.shape();
                         output_shape[ax] *= repeats;
-                        Tsor ans{ output_shape };
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape );
+                        //Tsor ans{ output_shape };
 
                         // create 2D and 3D view
                         view_2d v2{ input.data(), iterations, stride };
@@ -1837,7 +1840,7 @@ namespace ceras
 
             auto make_backward() const noexcept
             {
-                return []( unsigned long repeats, unsigned long axis ) noexcept
+                return []( unsigned long repeats, unsigned long axis, std::shared_ptr<std::any> backward_cache ) noexcept
                 {
                     return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                     {
@@ -1850,7 +1853,11 @@ namespace ceras
                         unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
                         unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax+1, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
 
-                        auto ans = zeros_like( input );
+                        //auto ans = zeros_like( input );
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        ans.reset();
+
                         view_2d v2{ans.data(), iterations, stride };
                         view_3d v3{ grad.data(), iterations, repeats, stride };
 
@@ -1884,12 +1891,15 @@ namespace ceras
     {
         better_assert( repeats > 0, "repeat: repeats can not be zero." );
 
-        return [repeats, axis]<Expression Ex>( Ex const& ex ) noexcept
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [repeats, axis, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
-                repeat_context{}.make_forward()( repeats, axis ),
-                repeat_context{}.make_backward()( repeats, axis )
+                repeat_context{}.make_forward()( repeats, axis, forward_cache ),
+                repeat_context{}.make_backward()( repeats, axis, backward_cache )
             )
             ( ex );
         };
