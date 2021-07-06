@@ -406,6 +406,14 @@ unet: examples/unet/unet.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_unet.o examples/unet/unet.cc
 	$(LINK) -o $(BIN_DIR)/test_unet $(OBJECTS_DIR)/test_unet.o $(LFLAGS)
 
+mnist_conv2d_visualization: test/mnist_conv2d_visualization.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_visualization.o test/mnist_conv2d_visualization.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_visualization $(OBJECTS_DIR)/test_mnist_conv2d_visualization.o $(LFLAGS)
+
+mnist_tsne: test/mnist_tsne.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_tsne.o test/mnist_tsne.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_tsne $(OBJECTS_DIR)/test_mnist_tsne.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

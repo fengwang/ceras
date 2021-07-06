@@ -81,7 +81,8 @@ int main()
 
     //std::size_t const epoch = 100;
     //std::size_t const epoch = 10;
-    std::size_t const epoch = 10;
+    //std::size_t const epoch = 10;
+    std::size_t const epoch = 50;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
