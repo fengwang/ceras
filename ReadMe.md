@@ -60,7 +60,7 @@ m.summary( "./mnist_minimal.dot" );
 ```
 
 After generating a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot),
-we Convert it to a '.png' file by executing command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
+we convert it to a '.png' file by executing command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
 
 ![mnist minimal model computation graph](./assets/mnist_minimal.png)
 

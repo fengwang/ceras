@@ -29,7 +29,7 @@ namespace ceras
 
     template<unsigned N> string( char const ( & )[N] ) -> string < N - 1 >;
 
-    // st::string's operator == is not constexpr
+    // std::string's operator == is not constexpr
     inline constexpr bool string_equal( char const* b, char const* a ) noexcept
     {
         return (*a == *b) && (*a == '\0' || string_equal(a + 1, b + 1));
