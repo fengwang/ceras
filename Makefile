@@ -418,6 +418,10 @@ layer_repeat: test/layer_repeat.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_repeat.o test/layer_repeat.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_repeat $(OBJECTS_DIR)/test_layer_repeat.o $(LFLAGS)
 
+layer_reduce_min: test/layer_reduce_min.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_min.o test/layer_reduce_min.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_reduce_min $(OBJECTS_DIR)/test_layer_reduce_min.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

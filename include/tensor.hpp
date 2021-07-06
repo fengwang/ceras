@@ -399,6 +399,12 @@ namespace ceras
     template< typename T >
     struct view_2d
     {
+        typedef T value_type;
+        typedef value_type* row_type;
+        typedef const value_type* const_row_type;
+        typedef stride_iterator<value_type*> col_type;
+        typedef stride_iterator<const value_type*> const_col_type;
+
         T* data_;
         unsigned long row_;
         unsigned long col_;
@@ -427,25 +433,29 @@ namespace ceras
             return data_ + index * col_;
         }
 
-        constexpr auto shape() const noexcept
-        {
-            return std::make_pair( row_, col_ );
-        }
+        constexpr auto shape() const noexcept { return std::make_pair( row_, col_ ); }
+        constexpr unsigned long size() const noexcept { return row_ * col_; }
 
-        constexpr unsigned long size() const noexcept
-        {
-            return row_ * col_;
-        }
+        constexpr T* data() noexcept { return data_; }
+        constexpr const T* data() const noexcept { return data_; }
 
-        constexpr T* data() noexcept
-        {
-            return data_;
-        }
+        constexpr T* begin() noexcept { return data_; }
+        constexpr const T* end() const noexcept { return begin()+size(); }
 
-        constexpr const T* data() const noexcept
-        {
-            return data_;
-        }
+        constexpr unsigned long row() const noexcept { return row_; }
+        constexpr unsigned long col() const noexcept { return col_; }
+
+        constexpr row_type row_begin( unsigned long index = 0 ) noexcept { return begin() + index * col(); }
+        constexpr row_type row_end( unsigned long index = 0 ) noexcept { return begin() + (index+1) * col(); }
+
+        constexpr const_row_type row_begin( unsigned long index = 0 ) const noexcept { return begin() + index * col(); }
+        constexpr const_row_type row_end( unsigned long index = 0 ) const noexcept { return begin() + (index+1) * col(); }
+
+        constexpr col_type col_begin( unsigned long index = 0 ) noexcept { return col_type{ begin() + index, col() }; }
+        constexpr col_type col_end( unsigned long index = 0 ) noexcept { return col_begin(index) + row(); }
+
+        constexpr const_col_type col_begin( unsigned long index = 0 ) const noexcept { return const_col_type{ begin() + index, col() }; }
+        constexpr const_col_type col_end( unsigned long index = 0 ) const noexcept { return col_begin(index) + row(); }
     };
 
     template< typename T >
