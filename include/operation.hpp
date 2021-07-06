@@ -1799,6 +1799,105 @@ namespace ceras
         };
     }
 
+    namespace
+    {
+        struct repeat_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long repeats, unsigned long axis ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        if ( 1UL == repeats ) return input;
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        auto const& shape = input.shape();
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax+1, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape();
+                        output_shape[ax] *= repeats;
+                        Tsor ans{ output_shape };
+
+                        // create 2D and 3D view
+                        view_2d v2{ input.data(), iterations, stride };
+                        view_3d v3{ ans.data(), iterations, repeats, stride };
+
+                        // copy data
+                        for ( auto it : range( iterations ) )
+                            for ( auto re : range( repeats ) )
+                                std::copy_n( v2[it], stride, v3[it][re] );
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long repeats, unsigned long axis ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        // grad of shape [iterations, repeats, stride]
+                        // input of shape [iterations, stride]
+                        if ( 1UL == repeats ) return grad;
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        auto const& shape = input.shape();
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax+1, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+
+                        auto ans = zeros_like( input );
+                        view_2d v2{ans.data(), iterations, stride };
+                        view_3d v3{ grad.data(), iterations, repeats, stride };
+
+                        for ( auto id : range( iterations ) )
+                            for ( auto re : range( repeats ) )
+                                for ( auto st : range( stride ) )
+                                    v2[id][st] += v3[id][re][st];
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct repeat_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Repeats elements along an axis.
+    /// @param repeats The number of repetitions for each element. Defaults to the last axis.
+    /// @param axis The axis along which to repeat values.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} );
+    /// auto b0 = repeat( 2, 0 )( a ); // <- output shape is ( 4, 3, 5 )
+    /// auto b1 = repeat( 2, 1 )( a ); // <- output shape is ( 2, 6, 5 )
+    /// auto b2 = repeat( 2, 2 )( a ); // <- output shape is ( 2, 3, 10 )
+    /// auto bx = repeat( 2 )( a ); // <- output shape is ( 2, 3, 10 )
+    /// \endcode
+    inline auto repeat( unsigned long repeats, unsigned long axis=-1 ) noexcept
+    {
+        better_assert( repeats > 0, "repeat: repeats can not be zero." );
+
+        return [repeats, axis]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                repeat_context{}.make_forward()( repeats, axis ),
+                repeat_context{}.make_backward()( repeats, axis )
+            )
+            ( ex );
+        };
+    }
+
+
+
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM

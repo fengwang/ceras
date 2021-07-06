@@ -38,22 +38,6 @@ namespace ceras
         unsigned long memory_offset_;
         shared_vector vector_; //shared across different instances
 
-        tensor slice( unsigned long m, unsigned long n ) const noexcept
-        {
-            better_assert( m < n, "starting dimension larger than then ending dimension." );
-            better_assert( !shape_.empty(), "Cannot slice an empty tensor." );
-
-            unsigned long first_dim = shape_[0];
-            better_assert( n <= first_dim, "this tensor only has ", first_dim, " at the first dimension, too small for n = ", n );
-
-            unsigned long rest_dims = std::accumulate( shape_.begin()+1, shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } );
-
-            tensor ans = *this;
-            ans.shape_[0] = n - m;
-            ans.memory_offset_ = rest_dims * m + memory_offset_;
-            return ans;
-        }
-
         constexpr auto begin() noexcept
         {
             return data();
@@ -332,6 +316,22 @@ namespace ceras
         {
             tensor<U> ans{ (*this).shape() };
             std::copy( (*this).begin(), (*this).end(), ans.begin() );
+            return ans;
+        }
+
+        tensor slice( unsigned long m, unsigned long n ) const noexcept
+        {
+            better_assert( m < n, "starting dimension larger than then ending dimension." );
+            better_assert( !shape_.empty(), "Cannot slice an empty tensor." );
+
+            unsigned long first_dim = shape_[0];
+            better_assert( n <= first_dim, "this tensor only has ", first_dim, " at the first dimension, too small for n = ", n );
+
+            unsigned long rest_dims = std::accumulate( shape_.begin()+1, shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+
+            tensor ans = *this;
+            ans.shape_[0] = n - m;
+            ans.memory_offset_ = rest_dims * m + memory_offset_;
             return ans;
         }
 
