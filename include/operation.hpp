@@ -16,12 +16,6 @@
 
 namespace ceras
 {
-    //
-    // an operator is composed of
-    // 1. a left operator, a right operator and a lambda function, OR
-    // 2. an operator and a lambda function
-    //
-
     template< typename Operator, typename Forward_Action, typename Backward_Action >
     struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
     {
@@ -1759,7 +1753,7 @@ namespace ceras
     /// Example code:
     ///
     /// \code{.cpp}
-    /// auto a = variable{ random<float>( {16, 16, 3} );
+    /// auto a = variable{ random<float>( {16, 16, 3} ) };
     /// auto b = zero_padding_2d( {8,} )( a ); // shape for b is (8+16+8, 8+16+8, 3)
     /// auto c = zero_padding_2d( {8, 4} )( a ); // shape for c is (8+16+8, 4+16+4, 3)
     /// auto d = zero_padding_2d( {8, 4, 2, 1} )( a ); // shape for d is (8+16+4, 2+16+1, 3)
@@ -1877,12 +1871,13 @@ namespace ceras
     ///
     /// Example code:
     /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} );
+    /// auto a = variable{ random<float>( {2, 3, 5} };
     /// auto b0 = repeat( 2, 0 )( a ); // <- output shape is ( 4, 3, 5 )
     /// auto b1 = repeat( 2, 1 )( a ); // <- output shape is ( 2, 6, 5 )
     /// auto b2 = repeat( 2, 2 )( a ); // <- output shape is ( 2, 3, 10 )
     /// auto bx = repeat( 2 )( a ); // <- output shape is ( 2, 3, 10 )
     /// \endcode
+    ///
     inline auto repeat( unsigned long repeats, unsigned long axis=-1 ) noexcept
     {
         better_assert( repeats > 0, "repeat: repeats can not be zero." );
@@ -1895,7 +1890,8 @@ namespace ceras
             return make_unary_operator
             (
                 repeat_context{}.make_forward()( repeats, axis, forward_cache ),
-                repeat_context{}.make_backward()( repeats, axis, backward_cache )
+                repeat_context{}.make_backward()( repeats, axis, backward_cache ),
+                "Repeat"
             )
             ( ex );
         };
@@ -2001,12 +1997,13 @@ namespace ceras
     ///
     /// Example code:
     /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} );
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
     /// auto b = reduce_min( 0 )( a ); // <- output shape is ( 3, 5 )
     /// auto b = reduce_min( 1 )( a ); // <- output shape is ( 2, 5 )
     /// auto b = reduce_min( 2 )( a ); // <- output shape is ( 2, 3 )
     /// auto b = reduce_min( )( a ); // <- output shape is ( 2, 3 )
     /// \endcode
+    ///
     inline auto reduce_min( unsigned long axis=-1 ) noexcept
     {
         std::shared_ptr<std::any> index_cache = std::make_shared<std::any>();
@@ -2018,7 +2015,8 @@ namespace ceras
             return make_unary_operator
             (
                 reduce_min_context{}.make_forward()( axis, forward_cache, index_cache ),
-                reduce_min_context{}.make_backward()( axis, backward_cache, index_cache )
+                reduce_min_context{}.make_backward()( axis, backward_cache, index_cache ),
+                "ReduceMin"
             )
             ( ex );
         };
@@ -2121,16 +2119,17 @@ namespace ceras
 
     ///
     /// @brief Reduce maximum elements along an axis.
-    /// @param axis The axis along which to reduce maximal values. Defaults to the last axis.
+    /// @param axis The axis along which to reduce maximum values. Defaults to the last axis.
     ///
     /// Example code:
     /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} );
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
     /// auto b = reduce_max( 0 )( a ); // <- output shape is ( 3, 5 )
     /// auto b = reduce_max( 1 )( a ); // <- output shape is ( 2, 5 )
     /// auto b = reduce_max( 2 )( a ); // <- output shape is ( 2, 3 )
     /// auto b = reduce_max( )( a ); // <- output shape is ( 2, 3 )
     /// \endcode
+    ///
     inline auto reduce_max( unsigned long axis=-1 ) noexcept
     {
         std::shared_ptr<std::any> index_cache = std::make_shared<std::any>();
@@ -2142,13 +2141,124 @@ namespace ceras
             return make_unary_operator
             (
                 reduce_max_context{}.make_forward()( axis, forward_cache, index_cache ),
-                reduce_max_context{}.make_backward()( axis, backward_cache, index_cache )
+                reduce_max_context{}.make_backward()( axis, backward_cache, index_cache ),
+                "ReduceMax"
             )
             ( ex );
         };
     }
 
 
+
+    namespace
+    {
+        struct reduce_sum_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape(); // example: temporately being ( 2, 3, 4, 5 )
+                        std::copy( output_shape.begin()+ax+1, output_shape.end(), output_shape.begin()+ax ); // example: temporately being ( 2, 4, 5, 5 )
+                        output_shape.resize( output_shape.size() - 1 ); // example: output_shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape ); // example: ans shape is ( 2, 4, 5 )
+
+                        // create 2D and 3D view
+                        view_2d v2{ ans.data(), iterations, stride }; // example: viewing as a matrix of shape ( 2, 20 )
+                        view_3d v3{ input.data(), iterations, scales, stride }; // example: viewing as a tube of ( 2, 3, 20 )
+
+                        // reduce sum along the selected axis
+                        for ( auto it : range( iterations ) ) // example: range (2)
+                            for ( auto st : range( stride ) ) // example: range (20)
+                            {
+                                // reduce sum along the column of st
+                                v2[it][st] = std::accumulate( v3[it].col_begin(st), v3[it].col_end(st), value_type{0} );
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const& , Tsor const& grad ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        //std::vector<unsigned long> const& output_shape = grad.shape(); // example: output shape of ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
+                        ans.reset();
+
+                        view_3d v3{ ans.data(), iterations, scales, stride }; // example: view as a cube of ( 2, 3, 20 )
+                        view_2d v2{ grad.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+
+                        for ( auto it : range( iterations ) ) // example: range( 2 )
+                            for ( auto st : range( stride ) ) // example: range( 20 )
+                                std::fill( v3[it].col_begin( st ), v3[it].col_end( st ), v2[it][st] );
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct reduce_sum_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Reduce sum elements along an axis.
+    /// @param axis The axis along which to reduce sum.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = reduce_sum( 0 )( a ); // <- output shape is ( 3, 5 )
+    /// auto b = reduce_sum( 1 )( a ); // <- output shape is ( 2, 5 )
+    /// auto b = reduce_sum( 2 )( a ); // <- output shape is ( 2, 3 )
+    /// auto b = reduce_sum( -1 )( a ); // <- output shape is ( 2, 3 )
+    /// \endcode
+    ///
+    inline auto reduce_sum( unsigned long axis ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [axis, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                reduce_sum_context{}.make_forward()( axis, forward_cache ),
+                reduce_sum_context{}.make_backward()( axis, backward_cache ),
+                "ReduceSum"
+            )
+            ( ex );
+        };
+    }
 
 
 }//namespace ceras

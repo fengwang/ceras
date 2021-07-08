@@ -426,6 +426,10 @@ layer_reduce_max: test/layer_reduce_max.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_max.o test/layer_reduce_max.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_reduce_max $(OBJECTS_DIR)/test_layer_reduce_max.o $(LFLAGS)
 
+layer_reduce_sum: test/layer_reduce_sum.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_sum.o test/layer_reduce_sum.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_reduce_sum $(OBJECTS_DIR)/test_layer_reduce_sum.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
