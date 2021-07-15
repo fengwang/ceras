@@ -198,7 +198,7 @@ namespace ceras
                 std::string const& op_dot = _generate_dot( expr.op_, _generate_dot );
                 return expr_dot + arrow_relation + op_dot;
             }
-            if constexpr( is_binary_operator_v<Expr> )
+            else if constexpr( is_binary_operator_v<Expr> )
             {
                 // for LHS operator
                 auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op_ );
@@ -212,7 +212,7 @@ namespace ceras
 
                 return expr_dot + arrow_lhs_relation + arrow_rhs_relation + op_lhs_dot + op_rhs_dot;
             }
-            if constexpr ( is_variable_v<Expr> )
+            else if constexpr ( is_variable_v<Expr> )
             {
                 std::vector<unsigned long> const& shape = expr.shape();
                 bool const training_state = expr.trainable();
@@ -1265,14 +1265,6 @@ namespace ceras
         {
             return make_unary_operator
             (
-             /*
-                [stride, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
-                {
-                },
-                [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                {
-                },
-            */
                 up_sampling_2d_context{}.make_forward()( stride, forward_cache ),
                 up_sampling_2d_context{}.make_backward()( stride, backward_cache ),
                 "UpSampling2D"
@@ -2185,10 +2177,7 @@ namespace ceras
                         // reduce sum along the selected axis
                         for ( auto it : range( iterations ) ) // example: range (2)
                             for ( auto st : range( stride ) ) // example: range (20)
-                            {
-                                // reduce sum along the column of st
                                 v2[it][st] = std::accumulate( v3[it].col_begin(st), v3[it].col_end(st), value_type{0} );
-                            }
 
                         return ans;
                     };
@@ -2208,8 +2197,6 @@ namespace ceras
                         unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
                         unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
                         unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
-
-                        //std::vector<unsigned long> const& output_shape = grad.shape(); // example: output shape of ( 2, 4, 5 )
 
                         Tsor& ans = context_cast<Tsor>( backward_cache );
                         ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
