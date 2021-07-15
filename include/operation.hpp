@@ -580,7 +580,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), grad.begin(), []( auto& v, auto g ){ v = 0.5 * g / (std::sqrt(v)+eps); } );
                                         return ans;
                                     },
-                                    "Square Root"
+                                    "SquareRoot"
                 )( ex );
     }
 
@@ -603,6 +603,9 @@ namespace ceras
     {
         return sqrt( square(ex) + square(ey) );
     }
+
+
+
 
 
     ///
@@ -1596,6 +1599,39 @@ namespace ceras
     }
 
     ///
+    /// @brief Computes the arc tangent of y/x using the signs of arguments to determine the correct quadrant.
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr atan2( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "tensor shape mismatch." );
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto const l, auto const r, auto& a ) { a = std::atan2(l, r); } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& l_ans = context_cast<Tsor>( backward_cache_lhs );
+                l_ans.resize( lhs_input.shape() );
+                Tsor& r_ans = context_cast<Tsor>( backward_cache_rhs );
+                r_ans.resize( rhs_input.shape() );
+                for_each( grad.begin(), grad.end(), l_ans.begin(), r_ans.begin(), lhs_input.begin(), rhs_input.begin(), []( auto const g, auto& l, auto& r, auto const x, auto const y ) { auto const c = x*x+y*y; l = -g*y/c; r = g*x/c; } );
+                return std::make_tuple( l_ans, r_ans );
+            },
+            "Arctan2"
+        )( lhs_ex, rhs_ex );
+    }
+
+
+    ///
     /// `random_normal_like` produces random tensor from a normal distribution
     /// @param mean Mean of the normal distribution, a scalar.
     /// @param stddev Standard deviation of the normal distribution, a scalar.
@@ -1645,6 +1681,26 @@ namespace ceras
             []<Tensor Tsor>( Tsor const& tsor ) noexcept { return ones_like( tsor ); },
             []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
             "OnesLike"
+        )(ex);
+    }
+
+    ///
+    /// `zeros_like` produces a tensor of the same shape as the input expression, but with every element to be 0.
+    /// @return An unary operator that takes an unary operator, and producing an output tensor
+    /// Example Code:
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = zeros_like( va ); // this expression will produces a tensor of shape (3, 3, 3), with every element to be 0.
+    /// @endcode
+    ///
+    template< Expression Ex>
+    auto zeros_like( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept { return zeros_like( tsor ); },
+            []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
+            "ZerosLike"
         )(ex);
     }
 

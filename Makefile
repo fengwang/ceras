@@ -442,6 +442,10 @@ complex_multiplication: test/complex_multiplication.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_multiplication.o test/complex_multiplication.cc
 	$(LINK) -o $(BIN_DIR)/test_complex_multiplication $(OBJECTS_DIR)/test_complex_multiplication.o $(LFLAGS)
 
+layer_atan2: test/layer_atan2.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_atan2.o test/layer_atan2.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_atan2 $(OBJECTS_DIR)/test_layer_atan2.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

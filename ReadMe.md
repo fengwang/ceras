@@ -719,6 +719,19 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `concatenate`, or `concat`;
     - `maximum`;
     - `random_normal_like`.
+    - `sqrt`.
+    - `hypot`.
+    - `ones_like`.
+    - `zeros_like`.
+    - `atan2`.
++ [Complex](./include/complex_operator.hpp)
+    - `+`
+    - `-`
+    - `*`
+    - `real`
+    - `imag`
+    - `abs`
+    - `arg`
 + [Activations](./include/activation.hpp):
     - [`softmax`](#softmax);
     - `selu`;

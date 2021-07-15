@@ -25,15 +25,15 @@ namespace ceras
 
     ///
     /// @concept Complex
-    /// @brief A type that represents a complex operator.
+    /// @brief A type that represents a complex expression.
     ///
     template< typename T >
     concept Complex = is_complex_v<T>;
 
 
     ///
-    /// @bref Returns the real part of the complex operator.
-    /// @param c A complex operator.
+    /// @bref Returns the real part of the complex expression.
+    /// @param c A complex expression.
     ///
     template< Expression Real_Ex, Expression Imag_Ex >
     Real_Ex real( complex<Real_Ex, Imag_Ex> const& c ) noexcept
@@ -42,8 +42,8 @@ namespace ceras
     }
 
     ///
-    /// @bref Returns the imaginary part of the complex operator.
-    /// @param c A complex operator.
+    /// @bref Returns the imaginary part of the complex expression.
+    /// @param c A complex expression.
     ///
     template< Expression Real_Ex, Expression Imag_Ex >
     Imag_Ex imag( complex<Real_Ex, Imag_Ex> const& c ) noexcept
@@ -55,8 +55,8 @@ namespace ceras
     // +, -, * with complex and Expression and a lot of functions
 
     ///
-    /// @brief Returns the magnitude of the complex operator.
-    /// @param c Complex operator.
+    /// @brief Returns the magnitude of the complex expression.
+    /// @param c Complex expression.
     ///
     /// @code{.cpp}
     /// auto r = variable{ ... };
@@ -73,7 +73,7 @@ namespace ceras
 
 
     ///
-    /// @brief Returns the complex operator.
+    /// @brief Returns the complex expression.
     ///
     template< Complex C >
     auto operator + ( C const& c ) noexcept
@@ -82,7 +82,7 @@ namespace ceras
     }
 
     ///
-    /// @brief Negatives the complex operator.
+    /// @brief Negatives the complex expression.
     ///
     template< Complex C >
     auto operator - ( C const& c ) noexcept
@@ -92,7 +92,7 @@ namespace ceras
 
 
     ///
-    /// @brief Sums up two complex operators.
+    /// @brief Sums up two complex expressions.
     ///
     template< Complex Cl, Complex Cr >
     auto operator + ( Cl const& cl, Cr const& cr ) noexcept
@@ -102,7 +102,7 @@ namespace ceras
 
 
     ///
-    /// @brief Subtracts one complex operator from the other one.
+    /// @brief Subtracts one complex expression from the other one.
     ///
     template< Complex Cl, Complex Cr >
     auto operator - ( Cl const& cl, Cr const& cr ) noexcept
@@ -112,7 +112,7 @@ namespace ceras
 
 
     ///
-    /// @brief Multiplies two complex operators.
+    /// @brief Multiplies two complex expressions.
     /// Optimization here: (a+ib)*(c+id) = (ac-bd) + i(ad+bc) = (ac-bd) + i( (a+b)*(c+d)-ac-bd )
     ///
     /// @code{.cpp}
@@ -139,7 +139,60 @@ namespace ceras
 
 
 
+    ///
+    /// @brief Sums up a complex expression and an expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator + ( C const& c, E const& e ) noexcept
+    {
+        return complex{ real(c)+e, imag(c) };
+    }
 
+    ///
+    /// @brief Sums up a complex expression and an expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator + ( E const& e, C const& c ) noexcept
+    {
+        return c + e;
+    }
+
+
+    ///
+    /// @brief Subtracts an expression from a compression expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator - ( C const& c, E const& e ) noexcept
+    {
+        return complex{ real(c)-e, imag(c) };
+    }
+
+    ///
+    /// @brief Subtractsa complex expression from an expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator - ( E const& e, C const& c ) noexcept
+    {
+        return c + e;
+    }
+
+    ///
+    /// @brief Multiplies a complex expression with an expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator * ( C const& c, E const& e ) noexcept
+    {
+        return complex{ real(c)*e, imag(c)*e };
+    }
+
+    ///
+    /// @brief Multiplies an expression with a compression expression.
+    ///
+    template< Complex C, Expression E >
+    auto operator * ( E const& e, C const& c ) noexcept
+    {
+        return c * e;
+    }
 
 
 
