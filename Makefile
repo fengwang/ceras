@@ -434,6 +434,10 @@ layer_hypot: test/layer_hypot.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_hypot.o test/layer_hypot.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_hypot $(OBJECTS_DIR)/test_layer_hypot.o $(LFLAGS)
 
+complex_abs: test/complex_abs.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_abs.o test/complex_abs.cc
+	$(LINK) -o $(BIN_DIR)/test_complex_abs $(OBJECTS_DIR)/test_complex_abs.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

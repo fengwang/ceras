@@ -8,6 +8,7 @@
 #include "./config.hpp"
 #include "./loss.hpp"
 #include "./operation.hpp"
+#include "./complex_operator.hpp"
 #include "./optimizer.hpp"
 #include "./place_holder.hpp"
 #include "./session.hpp"
