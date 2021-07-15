@@ -46,7 +46,7 @@ namespace ceras
     /// @param c A complex operator.
     ///
     template< Expression Real_Ex, Expression Imag_Ex >
-    Real_Ex imag( complex<Real_Ex, Imag_Ex> const& c ) noexcept
+    Imag_Ex imag( complex<Real_Ex, Imag_Ex> const& c ) noexcept
     {
         return c.imag_;
     }
@@ -70,6 +70,75 @@ namespace ceras
     {
         return hypot( real(c), imag(c) );
     }
+
+
+    ///
+    /// @brief Returns the complex operator.
+    ///
+    template< Complex C >
+    auto operator + ( C const& c ) noexcept
+    {
+        return c;
+    }
+
+    ///
+    /// @brief Negatives the complex operator.
+    ///
+    template< Complex C >
+    auto operator - ( C const& c ) noexcept
+    {
+        return complex{ negative(real(c)), negative(imag(c)) };
+    }
+
+
+    ///
+    /// @brief Sums up two complex operators.
+    ///
+    template< Complex Cl, Complex Cr >
+    auto operator + ( Cl const& cl, Cr const& cr ) noexcept
+    {
+        return complex{ real(cl)+real(cr), imag(cl)+imag(cr) };
+    }
+
+
+    ///
+    /// @brief Subtracts one complex operator from the other one.
+    ///
+    template< Complex Cl, Complex Cr >
+    auto operator - ( Cl const& cl, Cr const& cr ) noexcept
+    {
+        return cl + (-cr);
+    }
+
+
+    ///
+    /// @brief Multiplies two complex operators.
+    /// Optimization here: (a+ib)*(c+id) = (ac-bd) + i(ad+bc) = (ac-bd) + i( (a+b)*(c+d)-ac-bd )
+    ///
+    /// @code{.cpp}
+    /// auto c1 = complex{ ..., ... };
+    /// auto c2 = complex{ ..., ... };
+    /// auto c12 = c1 * c2;
+    /// @endcode
+    ///
+    template< Complex Cl, Complex Cr >
+    auto operator * ( Cl const& cl, Cr const& cr ) noexcept
+    {
+        auto const& a = real(cl);
+        auto const& b = imag(cl);
+        auto const& c = real(cr);
+        auto const& d = imag(cr);
+        auto const& ac = a * c;         // 1st multiplication
+        auto const& bd = b * d;         // 2nd multiplication
+        auto const& a_b = a + b;
+        auto const& c_d = c + d;
+        auto const& abcd = a_b * c_d;   // 3rd multiplication
+
+        return complex{ ac-bd, abcd-ac-bd };
+    }
+
+
+
 
 
 

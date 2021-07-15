@@ -438,6 +438,10 @@ complex_abs: test/complex_abs.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_abs.o test/complex_abs.cc
 	$(LINK) -o $(BIN_DIR)/test_complex_abs $(OBJECTS_DIR)/test_complex_abs.o $(LFLAGS)
 
+complex_multiplication: test/complex_multiplication.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_multiplication.o test/complex_multiplication.cc
+	$(LINK) -o $(BIN_DIR)/test_complex_multiplication $(OBJECTS_DIR)/test_complex_multiplication.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
