@@ -73,6 +73,26 @@ namespace ceras
 
 
     ///
+    /// @brief Calculates the phase angle (in radians) of the complex expression.
+    /// @param c Complex expression.
+    /// Implemented as `atan2( imagec), real(c) )`.
+    ///
+    /// @code{.cpp}
+    /// auto r = variable{ ... };
+    /// auto i = variable{ ... };
+    /// auto c = complex{ r, i };
+    /// auto a = arg( c );
+    /// @endcode
+    ///
+    ///
+    template< Complex C >
+    auto arg( C const& c ) noexcept
+    {
+        return atan2( imag(c), real(c) );
+    }
+
+
+    ///
     /// @brief Returns the complex expression.
     ///
     template< Complex C >

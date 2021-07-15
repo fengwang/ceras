@@ -446,6 +446,10 @@ layer_atan2: test/layer_atan2.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_atan2.o test/layer_atan2.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_atan2 $(OBJECTS_DIR)/test_layer_atan2.o $(LFLAGS)
 
+complex_arg: test/complex_arg.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_arg.o test/complex_arg.cc
+	$(LINK) -o $(BIN_DIR)/test_complex_arg $(OBJECTS_DIR)/test_complex_arg.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
