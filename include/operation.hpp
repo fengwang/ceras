@@ -553,7 +553,70 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief Returns the square root of the input.
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the square root of the input operator.
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = sqrt(e);
+    /// @endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sqrt( Ex const& ex ) noexcept
+    {
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
+                                    {
+                                        Tsor ans = tsor.deep_copy(); // TODO: optimize out
+                                        std::for_each( ans.data(), ans.end(), []( auto & v ){ v = std::sqrt(v); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor ans = ones_like( input ); // TODO: optimize out
+                                        for_each( ans.begin(), ans.end(), grad.begin(), []( auto& v, auto g ){ v = 0.5 * g / (std::sqrt(v)+eps); } );
+                                        return ans;
+                                    },
+                                    "Square Root"
+                )( ex );
+    }
 
+    ///
+    /// @brief  Computes the square root of the sum of the squares of x and y.
+    ///
+    /// @param x The first operator.
+    /// @param y The second operator.
+    ///
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto x = variable<tensor<float>>{ /*...*/ };
+    /// auto y = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = hypot( x, y );
+    /// @endcode
+    ///
+    template <Expression Ex, Expression Ey>
+    auto constexpr hypot( Ex const& ex, Ey const& ey ) noexcept
+    {
+        return sqrt( square(ex) + square(ey) );
+    }
+
+
+    ///
+    /// @brief Returns the absolute value of the input.
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the absolute value of the input operator.
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = abs(e);
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr abs( Ex const& ex ) noexcept
     {

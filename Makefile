@@ -430,6 +430,10 @@ layer_reduce_sum: test/layer_reduce_sum.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_reduce_sum.o test/layer_reduce_sum.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_reduce_sum $(OBJECTS_DIR)/test_layer_reduce_sum.o $(LFLAGS)
 
+layer_hypot: test/layer_hypot.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_hypot.o test/layer_hypot.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_hypot $(OBJECTS_DIR)/test_layer_hypot.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
