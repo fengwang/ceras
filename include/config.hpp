@@ -41,6 +41,12 @@ namespace ceras
         inline constexpr unsigned long blas_mode = 0;
     #endif
 
+    #ifndef NOPARALLEL
+        inline constexpr unsigned long parallel_mode = 1;
+    #else
+        inline constexpr unsigned long parallel_mode = 0;
+    #endif
+
     #ifdef CUDA
         inline constexpr unsigned long cuda_mode = 1;
     #else
