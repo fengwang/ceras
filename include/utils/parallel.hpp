@@ -9,7 +9,7 @@ namespace ceras
 {
 
     template< typename Function, std::unsigned_integral Integer_Type >
-    void parallel( Function const& func, Integer_Type dim_first, Integer_Type dim_last, unsigned long threshold = 128 ) // 1d parallel
+    void parallel( Function const& func, Integer_Type dim_first, Integer_Type dim_last, unsigned long threshold = 8 ) // 1d parallel
     {
         if constexpr( parallel_mode == 0 )
         {
