@@ -160,8 +160,8 @@ namespace ceras
                 )( ex );
     }
 
+#if 0
     template <Expression Ex>
-    //auto constexpr tanh( Ex const& ex ) noexcept
     auto inline tanh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
@@ -189,7 +189,7 @@ namespace ceras
                                     "Tanh"
                 )( ex );
     }
-
+#endif
 
     namespace
     {

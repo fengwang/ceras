@@ -355,6 +355,7 @@ namespace ceras
         }
     }
 
+#if 0
     template <Expression Ex>
     auto constexpr log( Ex const& ex ) noexcept
     {
@@ -377,6 +378,7 @@ namespace ceras
                                     "Log"
                 )( ex );
     };
+#endif
 
     template <Expression Ex>
     auto constexpr negative( Ex const& ex ) noexcept
@@ -553,6 +555,7 @@ namespace ceras
                 )( ex );
     }
 
+#if 0
     ///
     /// @brief Returns the square root of the input.
     ///
@@ -583,6 +586,7 @@ namespace ceras
                                     "SquareRoot"
                 )( ex );
     }
+#endif
 
     ///
     /// @brief  Computes the square root of the sum of the squares of x and y.
@@ -608,6 +612,7 @@ namespace ceras
 
 
 
+#if 0
     ///
     /// @brief Returns the absolute value of the input.
     ///
@@ -641,7 +646,9 @@ namespace ceras
                                     "Abs"
                 )( ex );
     }//;
+#endif
 
+#if 0
     template <Expression Ex>
     [[deprecated("GCC might die here. Use exponential instead.")]]
     auto constexpr exp( Ex const& ex ) noexcept
@@ -663,6 +670,7 @@ namespace ceras
                                     "Exp"
                 )( ex );
     }
+#endif
 
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
@@ -2367,8 +2375,342 @@ namespace ceras
     }
 
 
+
+
+
+
     ///
-    /// @brief Computes cosine of the given expression.
+    /// @brief Computes Abs of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = abs( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr abs( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::abs(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * ((x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0)); } );
+                                        return ans;
+                                    },
+                                    "Abs"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Acos of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = acos( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr acos( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::acos(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g / std::sqrt(1.0-x*x); } );
+                                        return ans;
+                                    },
+                                    "Acos"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Acosh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = acosh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr acosh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::acosh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(x*x-1.0); } );
+                                        return ans;
+                                    },
+                                    "Acosh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Asin of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = asin( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr asin( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::asin(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0-x*x); } );
+                                        return ans;
+                                    },
+                                    "Asin"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Asinh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = asinh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr asinh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::asinh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0+x*x); } );
+                                        return ans;
+                                    },
+                                    "Asinh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Atan of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = atan( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr atan( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::atan(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1.0+x*x); } );
+                                        return ans;
+                                    },
+                                    "Atan"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Atanh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = atanh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr atanh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::atanh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1-x*x); } );
+                                        return ans;
+                                    },
+                                    "Atanh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cbert of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cbrt( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cbrt( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cbrt(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (3.0*o*o); } );
+                                        return ans;
+                                    },
+                                    "Cbert"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Ceil of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = ceil( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr ceil( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ceil(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Ceil"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cos of the given expression.
     ///
     /// Example code:
     /// \code{.cpp}
@@ -2392,12 +2734,1041 @@ namespace ceras
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::sin(x); } );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g * std::sin(x); } );
                                         return ans;
                                     },
                                     "Cos"
                 )( ex );
     };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cosh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cosh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cosh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cosh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::sinh(x); } );
+                                        return ans;
+                                    },
+                                    "Cosh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Erf of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = erf( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr erf( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erf(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{1.12837916709551257389} * g * std::exp(-x*x); } );
+                                        return ans;
+                                    },
+                                    "Erf"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Erfc of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = erfc( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr erfc( Ex const& ex ) noexcept
+    {
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erfc(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{-1.12837916709551257389} * g * std::exp(-x*x); } );
+                                        return ans;
+                                    },
+                                    "Erfc"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Exp of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = exp( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr exp( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::exp(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * o; } );
+                                        return ans;
+                                    },
+                                    "Exp"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Exp2 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = exp2( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr exp2( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::exp2(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = std::log(2.0) * g * o; } );
+                                        return ans;
+                                    },
+                                    "Exp2"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Expm1 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = expm1( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr expm1( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::expm1(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (o+1.0); } );
+                                        return ans;
+                                    },
+                                    "Expm1"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Fabs of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = fabs( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr fabs( Ex const& ex ) noexcept
+    {
+        return abs( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Floor of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = floor( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr floor( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::floor(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Floor"
+                )( ex );
+    };
+
+
+
+
+
+#if 0
+
+    ///
+    /// @brief Computes Ilogb of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = ilogb( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr ilogb( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ilogb(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Ilogb"
+                )( ex );
+    };
+
+#endif
+
+
+
+#if 0
+    ///
+    /// @brief Computes lgamma of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lgamma( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lgamma( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lgamma(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "lgamma"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Llrint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = llrint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr llrint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::llrint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Llrint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Llround of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = llround( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr llround( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::llround(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Llround"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
+                                        return ans;
+                                    },
+                                    "Log"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log10 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log10( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log10( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log10(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (2.30258509299404568402*x); } );
+                                        return ans;
+                                    },
+                                    "Log10"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log1p of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log1p( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log1p( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log1p(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
+                                        return ans;
+                                    },
+                                    "Log1p"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log2 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log2( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log2( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log2(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (0.69314718055994530942*x); } );
+                                        return ans;
+                                    },
+                                    "Log2"
+                )( ex );
+    };
+
+
+
+
+
+
+#if 0
+    ///
+    /// @brief Computes Logb of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = logb( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr logb( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::logb(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Logb"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Lrint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lrint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lrint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lrint(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Lrint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Lround of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lround( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lround( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lround(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Lround"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Nearbyint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = nearbyint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr nearbyint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::nearbyint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Nearbyint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Rint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = rint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr rint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::rint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Rint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Round of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = round( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr round( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::round(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Round"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sin of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sin( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sin( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sin(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cos(x); } );
+                                        return ans;
+                                    },
+                                    "Sin"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sinh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sinh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sinh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sinh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cosh(x); } );
+                                        return ans;
+                                    },
+                                    "Sinh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sqrt of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sqrt( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sqrt( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sqrt(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (o+o); } );
+                                        return ans;
+                                    },
+                                    "Sqrt"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Tan of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tan( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tan( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tan(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto x, auto o, auto g, auto& v ) noexcept { v = g * (1.0+o*o); } );
+                                        return ans;
+                                    },
+                                    "Tan"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Tanh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tanh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tanh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tanh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (1.0-o*o); } );
+                                        return ans;
+                                    },
+                                    "Tanh"
+                )( ex );
+    };
+
+
+
+
+
+#if 0
+
+    ///
+    /// @brief Computes Tgamma of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tgamma( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tgamma( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tgamma(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Tgamma"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Trunc of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = trunc( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr trunc( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::trunc(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Trunc"
+                )( ex );
+    };
+
+
+
+
 
 
 
