@@ -450,6 +450,10 @@ complex_arg: test/complex_arg.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_complex_arg.o test/complex_arg.cc
 	$(LINK) -o $(BIN_DIR)/test_complex_arg $(OBJECTS_DIR)/test_complex_arg.o $(LFLAGS)
 
+layer_cos: test/layer_cos.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_cos.o test/layer_cos.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_cos $(OBJECTS_DIR)/test_layer_cos.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

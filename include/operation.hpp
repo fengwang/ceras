@@ -2367,6 +2367,40 @@ namespace ceras
     }
 
 
+    ///
+    /// @brief Computes cosine of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cos( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cos( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cos(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::sin(x); } );
+                                        return ans;
+                                    },
+                                    "Cos"
+                )( ex );
+    };
+
+
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM

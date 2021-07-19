@@ -52,8 +52,6 @@ namespace ceras
     }
 
 
-    // +, -, * with complex and Expression and a lot of functions
-
     ///
     /// @brief Returns the magnitude of the complex expression.
     /// @param c Complex expression.
@@ -70,6 +68,62 @@ namespace ceras
     {
         return hypot( real(c), imag(c) );
     }
+
+
+    ///
+    /// @brief Returns the squared magnitude of the complex expression.
+    /// @param c Complex expression.
+    ///
+    /// @code{.cpp}
+    /// auto r = variable{ ... };
+    /// auto i = variable{ ... };
+    /// auto c = complex{ r, i };
+    /// auto a = norm( c );
+    /// @endcode
+    ///
+    template< Complex C >
+    auto norm( C const& c ) noexcept
+    {
+        auto const& r = real( c );
+        auto const& i = imag( c );
+        return hadamard_product( r, r ) + hadamard_product( i, i );
+    }
+
+    ///
+    /// @brief Returns the conjugate of the complex expression.
+    /// @param c Complex expression.
+    ///
+    /// @code{.cpp}
+    /// auto r = variable{ ... };
+    /// auto i = variable{ ... };
+    /// auto c = complex{ r, i };
+    /// auto a = conj( c );
+    /// @endcode
+    ///
+    template< Complex C >
+    auto conj( C const& c ) noexcept
+    {
+        return complex{ real(c), -imag(c) };
+    }
+
+
+    ///
+    /// @brief Returns with given magnitude and phase angle.
+    /// @param em Magnitude.
+    /// @param ep Phase.
+    ///
+    /// @code{.cpp}
+    /// auto r = variable{ ... };
+    /// auto i = variable{ ... };
+    /// auto a = polar( r, i );
+    /// @endcode
+    ///
+    template< Expression Em, Expression Ep >
+    auto polar( Em const& em, Ep const& ep ) noexcept
+    {
+        return complex{ hadamard_product( em, cos(ep) ), hadamard_product( em, sin(ep) ) };
+    }
+
 
 
     ///
@@ -127,7 +181,7 @@ namespace ceras
     template< Complex Cl, Complex Cr >
     auto operator - ( Cl const& cl, Cr const& cr ) noexcept
     {
-        return cl + (-cr);
+        return complex{ real(cl)-real(cr), imag(cl)-imag(cr) };
     }
 
 
@@ -213,7 +267,6 @@ namespace ceras
     {
         return c * e;
     }
-
 
 
 }//namespace ceras
