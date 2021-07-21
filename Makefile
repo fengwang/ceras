@@ -454,6 +454,10 @@ layer_cos: test/layer_cos.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_cos.o test/layer_cos.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_cos $(OBJECTS_DIR)/test_layer_cos.o $(LFLAGS)
 
+layer_tanh: test/layer_tanh.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_tanh.o test/layer_tanh.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_tanh $(OBJECTS_DIR)/test_layer_tanh.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

@@ -403,7 +403,7 @@ namespace ceras
     /// Reference: Ramachandran, Prajit, Barret Zoph, and Quoc V. Le. “Searching for Activation Functions.” ArXiv:1710.05941 [Cs], October 16, 2017. http://arxiv.org/abs/1710.05941.
     ///
     template< Expression Ex >
-    auto swish( Expression const& ex ) noexcept
+    auto swish( Ex const& ex ) noexcept
     {
         return hadamard_product( ex, sigmoid( ex ) );
     }
