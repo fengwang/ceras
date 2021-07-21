@@ -458,6 +458,10 @@ layer_tanh: test/layer_tanh.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_tanh.o test/layer_tanh.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_tanh $(OBJECTS_DIR)/test_layer_tanh.o $(LFLAGS)
 
+layer_relu6: test/layer_relu6.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_relu6.o test/layer_relu6.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_relu6 $(OBJECTS_DIR)/test_layer_relu6.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
