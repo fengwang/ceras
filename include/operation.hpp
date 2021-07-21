@@ -284,7 +284,6 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        //plus_context const context_;
         return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus")( lhs_ex, rhs_ex );
     }
 
@@ -292,6 +291,12 @@ namespace ceras
     auto constexpr operator + ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return plus( lhs_ex, rhs_ex );
+    }
+
+    template< Expression Ex >
+    auto constexpr operator + ( Ex const& ex ) noexcept
+    {
+        return ex;
     }
 
     namespace
@@ -396,6 +401,12 @@ namespace ceras
                                     "Negative"
                 )( ex );
     };
+
+    template <Expression Ex>
+    auto constexpr operator - ( Ex const& ex ) noexcept
+    {
+        return negative( ex );
+    }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr elementwise_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
@@ -1558,7 +1569,7 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr concat( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return concatenate( lhs_ex, rhs_ex );
+        return concatenate( lhs_ex, rhs_ex )();
     }
 
     // alias of 'concatenate'

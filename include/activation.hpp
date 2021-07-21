@@ -409,13 +409,41 @@ namespace ceras
 
     ///
     /// @brief Applies the swish activation function.
+    ///
     /// Reference: Ramachandran, Prajit, Barret Zoph, and Quoc V. Le. “Searching for Activation Functions.” ArXiv:1710.05941 [Cs], October 16, 2017. http://arxiv.org/abs/1710.05941.
+    ///
+    /// @param ex Input expression.
     ///
     template< Expression Ex >
     auto swish( Ex const& ex ) noexcept
     {
         return hadamard_product( ex, sigmoid( ex ) );
     }
+
+    ///
+    /// @brief An alias name of activation \link #swish.
+    ///
+    template< Expression Ex >
+    auto silu( Ex const& ex ) noexcept
+    {
+        return swish( ex );
+    }
+
+    ///
+    /// @brief Concatenated Rectified Linear Units, an activation function which preserves both positive and negative phase information while enforcing non-saturated non-linearity.
+    ///
+    /// Reference: Shang, Wenling, Kihyuk Sohn, Diogo Almeida, and Honglak Lee. “Understanding and Improving Convolutional Neural Networks via Concatenated Rectified Linear Units.” ArXiv:1603.05201 [Cs], July 19, 2016. http://arxiv.org/abs/1603.05201.
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ random<float>{ 3, 3 } };
+    /// auto c = crelu( v );
+    /// \endcode
+    template< Expression Ex >
+    auto crelu( Ex const& ex ) noexcept
+    {
+        return concatenate(-1)( relu(ex), relu(-ex) );
+    }
+
 
 
 
