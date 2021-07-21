@@ -506,11 +506,26 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief An alias name of mean_reduce.
+    ///
     template <Expression Ex>
     auto constexpr reduce_mean( Ex const& ex ) noexcept
     {
         return mean_reduce( ex );
     }
+
+    ///
+    /// @brief An alias name of mean_reduce.
+    ///
+    template <Expression Ex>
+    auto constexpr mean( Ex const& ex ) noexcept
+    {
+        return mean_reduce( ex );
+    }
+
+
+
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr minus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
@@ -1737,8 +1752,8 @@ namespace ceras
     /// auto eq = equal(l, r);
     /// @endcode
     ///
-    template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    template< Expression Lhs_Expression, Expression Rhs_Expression, std::floating_point FP >
+    auto constexpr equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, FP threshold=0.5 ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -1751,16 +1766,14 @@ namespace ceras
 
                 Tsor& ans = context_cast<Tsor>( forward_cache );
                 ans.resize( lhs_tensor.shape() );
-                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto l, auto r, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{0} : value_type{1}; } );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), [threshold]( auto l, auto r, auto& v ){ v = (std::abs(l-r) > threshold) ? value_type{0} : value_type{1}; } );
                 return ans;
             },
             [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
             {
-                // note: tensorflow has no gradient for operator Equal
                 typedef typename Tsor::value_type value_type;
                 Tsor& ans = context_cast<Tsor>( backward_cache );
-                ans.resize( lhs_input.shape() );
-                for_each( lhs_input.begin(), lhs_input.end(), rhs_input.begin(), grad.begin(), ans.begin(), []( auto l, auto r, auto g, auto& v ){ v = (std::abs(l-r) > eps) ? value_type{0} : value_type{g}; } );
+                std::fill( ans.begin(), ans.end(), value_type{0} );
                 return std::make_tuple( ans, ans );
             },
             "Equal"
@@ -3778,6 +3791,36 @@ namespace ceras
     };
 
 
+
+    ///
+    /// @breif Updating the first expression's value by assining the secnod to it. The first expression should be a 'value'.
+    /// @param lhs_ex A mutable value.
+    /// @param rhs_ex An expression to be assigned to lhs_ex.
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ ... };
+    /// auto x = constant{ ... } * constant{ ... };
+    /// assgin( v, x );
+    /// \endcode
+    ///
+    template< Variable Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr assign( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return make_binary_operator( []<Tensor Tsor>( Tsor& lhs_tensor, Tsor const& rhs_tensor ) noexcept // well, lhs_tensor can be 'Tensor&'
+                                     {
+                                        better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "Error with operator assign forward propagation: different shapes from two expressions.." );
+                                        lhs_tensor.reshape( rhs_tensor.shape() );
+                                        std::copy( rhs_tensor.begin(), rhs_tensor.end(), lhs_tensor.begin() );
+                                        return lhs_tensor;
+                                     },
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const&, Tsor const&, Tsor const& ) noexcept
+                                     {
+                                        auto z = zeros_like( lhs_input );
+                                        return std::make_tuple( z, z );
+                                     },
+                                     "Assign"
+                )( lhs_ex, rhs_ex );
+    };
 
 
 

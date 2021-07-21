@@ -10,10 +10,16 @@
 namespace ceras
 {
 
+    ///
+    /// @brief Creates a constant expression from a tensor-like object.
+    ///
+    /// \code{.cpp}
+    /// auto c = constant{ zeros<float>( {3, 3, 3} ) };
+    /// \endcode
+    ///
     template< Tensor Tsor >
     struct constant : enable_id<constant<Tsor>, "Constant">
     {
-        // Tsor is a shallow copy, and once an instance is initialized,it will never change
         Tsor data_;
 
         constant( Tsor const& data ) : enable_id<constant<Tsor>, "Constant">{}, data_{data} {}

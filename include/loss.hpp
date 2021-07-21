@@ -76,7 +76,7 @@ namespace ceras
             {
                 return []<Tensor Tsor>( Tsor const& ground_truth_input, Tsor const& prediction_input, [[maybe_unused]]Tsor const& output_data, [[maybe_unused]]Tsor const& grad ) noexcept
                 {
-                   // In our implementation, the grad is always 1. Unless this layer is nested as one loss in a weighted losses
+                   // In our implementation, the grad is always 1, unless this layer is nested contributing to a combined weighted loss
                    typename Tsor::value_type const factor = grad[0]; // the shape of grad is {1,}
                    Tsor ground_truth_gradient = ground_truth_input;
                    Tsor sm = softmax( prediction_input ) - ground_truth_input;

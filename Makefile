@@ -462,6 +462,10 @@ layer_relu6: test/layer_relu6.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_relu6.o test/layer_relu6.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_relu6 $(OBJECTS_DIR)/test_layer_relu6.o $(LFLAGS)
 
+layer_assign: test/layer_assign.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_assign.o test/layer_assign.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_assign $(OBJECTS_DIR)/test_layer_assign.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
