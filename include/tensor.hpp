@@ -250,7 +250,6 @@ namespace ceras
         constexpr self_type& operator += ( self_type const& other )
         {
             //better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch! -- current shape is ", shape(), " and other tensor shape is ", other.shape() );
-            debug_log( "self.shape is ", (*this).shape(), ", and the other shape is ", other.shape() );
             better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;
@@ -684,10 +683,6 @@ namespace ceras
 
         if ( 1 == rhs.ndim() )
             return multiply( lhs, reshape( rhs, {lhs.size(), 1UL} ), ans );
-
-
-        //debug_log( "matrix multiplication with lhs ", *(lhs.shape().begin()), " by ", *(lhs.shape().rbegin()) );
-        //debug_log( "matrix multiplication with rhs ", *(rhs.shape().begin()), " by ", *(rhs.shape().rbegin()), "\n" );
 
         better_assert( 2 == rhs.ndim(), "expecting rhs tensor has 2 dimensions, but got ", rhs.ndim() );
 
