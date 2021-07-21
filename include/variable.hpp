@@ -84,6 +84,11 @@ namespace ceras
             if (!trainable_) return;
 
             auto& state = *((*this).state_);
+            {
+                if (state.gradient_.shape() != state.data_.shape())
+                    state.gradient_.resize( state.data_.shape() );
+            }
+            debug_log( "variable updating, the shape for the grad is ", grad.shape(), ", and the shape for state.gradient is " , state.gradient_.shape(), ", the shape for state.data is ", state.data_.shape() );
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
 
             // apply regularizers

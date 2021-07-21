@@ -5,9 +5,10 @@ int main()
 {
     using namespace ceras;
 
-    auto a = ceras::variable{ ceras::random<float>( {3, 11}, -1.0f, 1.0f )  };
-    auto b = ceras::variable{ ceras::random<float>( {3, 11}, -1.0f, 1.0f )  };
-    auto ab = a+b;
+    auto a = ceras::variable{ ceras::random<float>( {3, 5}, -1.0f, 1.0f )  };
+    auto b = ceras::variable{ ceras::random<float>( {3, 5}, -1.0f, 1.0f )  };
+    auto ab = ceras::concatenate(-1)( a, b );
+    //auto ab = a+b;
     std::cout << "Testing relu6 with a=\n" << a.data() << std::endl;
     std::cout << "Testing relu6 with b=\n" << b.data() << std::endl;
 

@@ -18,22 +18,28 @@ namespace ceras
         }
     }
 
-    template< typename ...M >
-    inline void debug_print( M const& ... messages )
+    template< typename M >
+    inline void debug_print( M const&  message )
     {
         if constexpr (debug_mode)
         {
-            auto&& do_print = []( std::ostream& os, auto... args ){ ( os << ... << color::rize(args, "Green") ); };
             std::cout << color::rize( "DEBUG", "Yellow" ) << ": ";
-            do_print( std::cout, messages... );
+            std::cout << color::rize( message, "Green" );
             std::cout << std::endl;
         }
     }
 
-    template< typename ... M >
-    inline void debug_log( M const& ... message )
+    template< typename M >
+    inline void debug_log( M const& m )
     {
-        debug_print( message ... );
+        debug_print( m );
+    }
+
+    template< typename M, typename ... MS >
+    inline void debug_log( M const& m, MS const& ... message )
+    {
+        debug_log( m );
+        debug_log( message ... );
     }
 
 }//namespace ceras

@@ -3791,11 +3791,13 @@ namespace ceras
     };
 
 
+#if 0
 
     ///
     /// @breif Updating the first expression's value by assining the secnod to it. The first expression should be a 'value'.
     /// @param lhs_ex A mutable value.
     /// @param rhs_ex An expression to be assigned to lhs_ex.
+    /// TODO: Fixme, this implementation is wrong
     ///
     /// \code{.cpp}
     /// auto v = variable{ ... };
@@ -3808,21 +3810,19 @@ namespace ceras
     {
         return make_binary_operator( []<Tensor Tsor>( Tsor& lhs_tensor, Tsor const& rhs_tensor ) noexcept // well, lhs_tensor can be 'Tensor&'
                                      {
-                                        better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "Error with operator assign forward propagation: different shapes from two expressions.." );
                                         lhs_tensor.reshape( rhs_tensor.shape() );
                                         std::copy( rhs_tensor.begin(), rhs_tensor.end(), lhs_tensor.begin() );
                                         return lhs_tensor;
                                      },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const&, Tsor const&, Tsor const& ) noexcept
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& ) noexcept
                                      {
-                                        auto z = zeros_like( lhs_input );
-                                        return std::make_tuple( z, z );
+                                        return std::make_tuple( zeros_like( lhs_input ), zeros_like( rhs_input ) );
                                      },
                                      "Assign"
                 )( lhs_ex, rhs_ex );
     };
 
-
+#endif
 
 
 
