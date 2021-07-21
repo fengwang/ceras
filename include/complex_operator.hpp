@@ -89,6 +89,7 @@ namespace ceras
         return hadamard_product( r, r ) + hadamard_product( i, i );
     }
 
+
     ///
     /// @brief Returns the conjugate of the complex expression.
     /// @param c Complex expression.

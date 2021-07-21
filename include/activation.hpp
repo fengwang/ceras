@@ -232,24 +232,6 @@ namespace ceras
         return make_unary_operator(
                                     relu_context{}.make_forward()( forward_cache ),
                                     relu_context{}.make_backward(),
-                                    /*
-                                    [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape()  );
-                                        for ( auto idx : range( ans.size() ) ) // 1-D view of tensors input and ans
-                                            ans[idx] = std::max( input[idx], typename Tsor::value_type{0} );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor ans = grad; // shallow copy
-                                        const typename Tsor::value_type zero{0};
-                                        for ( auto idx : range( ans.size() ) ) // 1-D view of tensors input, grad and ans
-                                            ans[idx] = ( input[idx] > zero ) ? grad[idx] : zero;
-                                        return ans;
-                                    },
-                                    */
                                     "Relu"
                 )( ex );
     }
@@ -276,7 +258,7 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
                                             return ans;
                                         },
-                                        "Leaky Relu"
+                                        "LeakyRelu"
                     )( ex );
         };
     }
@@ -414,6 +396,19 @@ namespace ceras
                                     "GeLU"
                 )( ex );
     }
+
+
+    ///
+    /// @brief Applies the swish activation function.
+    /// Reference: Ramachandran, Prajit, Barret Zoph, and Quoc V. Le. “Searching for Activation Functions.” ArXiv:1710.05941 [Cs], October 16, 2017. http://arxiv.org/abs/1710.05941.
+    ///
+    template< Expression Ex >
+    auto swish( Expression const& ex ) noexcept
+    {
+        return hadamard_product( ex, sigmoid( ex ) );
+    }
+
+
 
 }//namespace ceras
 
