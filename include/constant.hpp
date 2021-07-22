@@ -1,36 +1,41 @@
-#ifndef KPBYAYBGSSGRCKIETQTYYWVCNKYILEVUGEMOYISEOEMFPYRAHQGEHUOPJWLKYSNNEBFVUIMTJ
-#define KPBYAYBGSSGRCKIETQTYYWVCNKYILEVUGEMOYISEOEMFPYRAHQGEHUOPJWLKYSNNEBFVUIMTJ
+#ifndef CONSTANT_HPP_INCLUDED_DLKJASLKJFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#define CONSTANT_HPP_INCLUDED_DLKJASLKJFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
 #include "./includes.hpp"
 #include "./tensor.hpp"
-#include "./utils/debug.hpp"
+#include "./utils/id.hpp"
+#include "./utils/better_assert.hpp"
+#include "./utils/enable_shared.hpp"
 
 namespace ceras
 {
 
+    ///
+    /// @brief Creates a constant expression from a tensor-like object.
+    ///
+    /// \code{.cpp}
+    /// auto c = constant{ zeros<float>( {3, 3, 3} ) };
+    /// \endcode
+    ///
     template< Tensor Tsor >
-    struct constant
+    struct constant : enable_id<constant<Tsor>, "Constant">
     {
-        std::shared_ptr<Tsor> data_;
+        Tsor data_;
 
-        constant() = delete;
-        constant( Tsor const& data ) : data_{ std::make_shared<Tsor>( data ) } {}
-        constant( constant const& ) = default;
-        constant( constant && ) = default;
+        constant( Tsor const& data ) : enable_id<constant<Tsor>, "Constant">{}, data_{data} {}
 
-        void backward( auto const& ) { }
+        void backward( auto ) const {}
 
-        Tsor const forward() const
+        Tsor forward() const
         {
-            return *data_;
+            return data_;
         }
 
-        std::vector<std::size_t> shape() const noexcept
+        auto shape() const
         {
-            return (*data_).shape();
+            return data_.shape();
         }
-
-    };//struct constant
+    };
 
     template< typename T >
     struct is_constant : std::false_type {};
@@ -46,5 +51,5 @@ namespace ceras
 
 }//namespace ceras
 
-#endif//KPBYAYBGSSGRCKIETQTYYWVCNKYILEVUGEMOYISEOEMFPYRAHQGEHUOPJWLKYSNNEBFVUIMTJ
+#endif//CONSTANT_HPP_INCLUDED_DLKJASLKJFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 

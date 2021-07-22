@@ -5,208 +5,286 @@
 #include "./place_holder.hpp"
 #include "./variable.hpp"
 #include "./constant.hpp"
+#include "./value.hpp"
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
 #include "./config.hpp"
 #include "./utils/context_cast.hpp"
+#include "./utils/for_each.hpp"
+#include "./utils/id.hpp"
+#include "./utils/enable_shared.hpp"
 
 namespace ceras
 {
-    // an operator is composed of
-    // 1. a left operator, a right operator and a lambda function, OR
-    // 2. an operator and a lambda function
-
-    // TODO: rewrite using overload idiom
-    struct operator_type_wrapper
-    {
-        //default type with default shallow copy, as
-        template< typename T >
-        T operator()( T const& t ) const noexcept { return t; };
-
-        template< typename T >
-        std::reference_wrapper<T> operator()( T & t ) const noexcept { return std::ref(t); };
-
-        //in case of a place holder, copy its reference, as place holder is not yet binded to a tensor already
-        template< Tensor Tsor >
-        std::reference_wrapper<place_holder<Tsor> const> operator()( place_holder<Tsor> const& ph ) const noexcept
-        {
-            return std::cref( ph );
-        }
-    };
-
-    struct forward_wrapper
-    {
-        template< typename T >
-        auto operator() ( T& t ) const noexcept { return t.forward(); }
-
-        template< Tensor Tsor>
-        auto operator() ( place_holder<Tsor> const& ph ) const noexcept { return ph.forward(); }
-
-        template< typename T >
-        auto operator() ( std::reference_wrapper<T const> t ) const noexcept { return t.get().forward(); };
-
-        template< typename T >
-        auto operator() ( std::reference_wrapper<T> t ) const noexcept { return t.get().forward(); };
-    };
-
-    struct backward_wrapper
-    {
-        template< typename Op > // here Operation can also be variable
-        auto operator() ( Op& op ) const noexcept
-        {
-            return [&op]<Tensor Tsor>( Tsor const& grad )
-            {
-                op.backward(grad);
-            };
-        }
-
-        template< Tensor Tsor >
-        auto operator() ( std::reference_wrapper<place_holder<Tsor> const> ) const noexcept { return [](auto){}; }; //for place_holder
-
-        template< Tensor Tsor >
-        auto operator() ( place_holder<Tsor> ) const noexcept { return [](auto){}; }; //for place_holder
-
-        template< typename Op > // Operation and also variable
-        auto operator() ( std::reference_wrapper<Op> op ) noexcept
-        {
-            return [op]<Tensor Tsor>(Tsor const& grad)
-            {
-                op.get().backward(grad);
-            };
-        }
-    };
-
-    // TODO:
-    // 1. in forward propagation, output of one layer is not pasted to the next layer, try to optimize here
-
     template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct unary_operator
+    struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
     {
-        decltype( operator_type_wrapper{}( std::declval<Operator>() ) ) op_;
+        Operator op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_;
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype( forward_wrapper{}(op_))>() ) ) tensor_type;
+        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
+
         tensor_type input_data_;
         tensor_type output_data_;
 
         unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            op_{operator_type_wrapper{}(op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
+            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
 
-        // update output_data, reset gradient
         auto forward()// const
         {
-            input_data_ = forward_wrapper{}( op_ );
+            input_data_ = op_.forward();
             output_data_ = forward_action_( input_data_ );
-
             return output_data_;
         }
 
-        // update gradient
-        template< Tensor Tsor>
-        void backward( Tsor const& grad )
+        void backward( tensor_type const& grad )
         {
             auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
-            backward_wrapper{}( op_ )( current_gradient );
+            op_.backward( current_gradient );
         }
+
     };
 
-    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action ) noexcept
+    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action, std::string const& name="Anonymous Unary Operator" ) noexcept
     {
-        return [&unary_forward_action, &unary_backward_action]( auto const& op ) noexcept
+        return [&unary_forward_action, &unary_backward_action, &name]( auto const& op ) noexcept
         {
-            return unary_operator{ op, unary_forward_action, unary_backward_action };
+            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action };
+            ans.name_ = name;
+            return ans;
         };
     };
 
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct binary_operator
+    struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">
     {
-        decltype( operator_type_wrapper{}( std::declval<Lhs_Operator>() ) ) lhs_op_;
-        decltype( operator_type_wrapper{}( std::declval<Rhs_Operator>() ) ) rhs_op_;
-        Forward_Action const& forward_action_;
-        Backward_Action const& backward_action_; // backward action for binary operator produces a tuple of two tensors
+        Lhs_Operator lhs_op_;
+        Rhs_Operator rhs_op_;
+        Forward_Action forward_action_;
+        Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype( forward_wrapper{}(lhs_op_))>(), std::declval<decltype( forward_wrapper{}(rhs_op_))>() ) ) tensor_type;
+        typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
+
         tensor_type lhs_input_data_;
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
         binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            lhs_op_{operator_type_wrapper{}(lhs_op)}, rhs_op_{operator_type_wrapper{}(rhs_op)}, forward_action_{ forward_action }, backward_action_{ backward_action } {}
+            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
 
-        auto forward()// const
+        auto forward()
         {
-            lhs_input_data_ = forward_wrapper{}( lhs_op_ );
-            rhs_input_data_ = forward_wrapper{}( rhs_op_ );
+            static_assert( !(is_value_v<Lhs_Operator> && is_value_v<Rhs_Operator>), "Not valid for two values" );
 
+            if constexpr ( is_value_v<Lhs_Operator> )
+            {
+                rhs_input_data_ = rhs_op_.forward();
+                lhs_input_data_ = lhs_op_.forward( rhs_input_data_ );
+            }
+            else if constexpr ( is_value_v<Rhs_Operator> )
+            {
+                lhs_input_data_ = lhs_op_.forward();
+                rhs_input_data_ = rhs_op_.forward( lhs_input_data_ );
+            }
+            else
+            {
+                lhs_input_data_ = lhs_op_.forward();
+                rhs_input_data_ = rhs_op_.forward();
+            }
             output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
             return output_data_;
         }
 
-        template< typename T, typename A >
-        void backward( tensor<T,A> const& grad )
+        void backward( tensor_type const& grad )
         {
             auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-            backward_wrapper{}( lhs_op_ )( current_gradient_lhs );
-            backward_wrapper{}( rhs_op_ )( current_gradient_rhs );
-
+            lhs_op_.backward( current_gradient_lhs );
+            rhs_op_.backward( current_gradient_rhs );
         }
+
     };
 
-    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action ) noexcept
+    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator" ) noexcept
     {
-        return [&binary_forward_action, &binary_backward_action]( auto const& lhs_op, auto const& rhs_op ) noexcept
+        return [&binary_forward_action, &binary_backward_action, &name]( auto const& lhs_op, auto const& rhs_op ) noexcept
         {
-            return binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
+            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
+            ans.name_ = name;
+            return ans;
         };
     };
 
     template< typename T >
-    struct is_operator : std::false_type {};
-
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct is_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
+    struct is_unary_operator : std::false_type{};
 
     template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct is_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
+    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
 
+    ///
+    /// If T is an instance of a unary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    ///
     template< class T >
-    inline constexpr bool is_operator_v = is_operator<T>::value;
+    inline constexpr bool is_unary_operator_v = is_unary_operator<T>::value;
+
+    ///
+    /// @concept Unary_Operator<>
+    /// @brief A type that represents an unary operator.
+    ///
+    template< typename T >
+    concept Unary_Operator = is_unary_operator_v<T>;
+
 
     template< typename T >
-    concept Operator = is_operator_v<T>;
+    struct is_binary_operator : std::false_type{};
 
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
+    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
+
+    ///
+    /// If T is an instance of a binary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    ///
+    template< class T >
+    inline constexpr bool is_binary_operator_v = is_binary_operator<T>::value;
+
+    ///
+    /// @concept Binary_Operator<>
+    /// @brief A type that represents a binary operator.
+    ///
     template< typename T >
-    concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T>;
+    concept Binary_Operator = is_binary_operator_v<T>;
+
+    ///
+    /// @concept Operator<>
+    /// @brief A type that represents an unary or a binary operator.
+    ///
+    template< typename T >
+    concept Operator = Unary_Operator<T> || Binary_Operator<T>;
+
+    ///
+    /// @concept Expression<>
+    /// @brief A type that represents a unary operator, a binary operator, a variable, a place_holder, a constant or a value
+    ///
+    template< typename T >
+    concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
+
+
+    ///
+    /// Generating the computation graph, in [graph description language](https://www.graphviz.org/documentation/).
+    /// @param ex An expression.
+    /// @return A string describing the computation graph, in graph description language.
+    ///
+    template< Expression Ex >
+    inline std::string computation_graph( Ex const& ex ) noexcept
+    {
+        auto generate_node_and_label = []<Expression Expr>( Expr const& expr ) noexcept
+        {
+            std::string const id = std::to_string( expr.id() );
+            std::string const name = expr.name();
+            std::string node = std::string{"n"} + id;
+            std::string label = name + std::string{"<"} + id + std::string{">"};
+            return std::make_tuple( node, label );
+        };
+
+        auto generate_dot = [&generate_node_and_label]<Expression Expr>( Expr const& expr, auto const& _generate_dot ) noexcept
+        {
+            auto const& [node, label] = generate_node_and_label( expr );
+            std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
+
+            if constexpr( is_unary_operator_v<Expr> )
+            {
+                auto const& [n_node, n_label] = generate_node_and_label( expr.op_ );
+                std::string const& arrow_relation = n_node + std::string{" -> "} + node + std::string{" ;\n"};
+                std::string const& op_dot = _generate_dot( expr.op_, _generate_dot );
+                return expr_dot + arrow_relation + op_dot;
+            }
+            else if constexpr( is_binary_operator_v<Expr> )
+            {
+                // for LHS operator
+                auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op_ );
+                std::string const& arrow_lhs_relation = n_lhs_node + std::string{" -> "} + node + std::string{" ;\n"};
+                std::string const& op_lhs_dot = _generate_dot( expr.lhs_op_, _generate_dot );
+
+                // for RHS operator
+                auto const& [n_rhs_node, n_rhs_label] = generate_node_and_label( expr.rhs_op_ );
+                std::string const& arrow_rhs_relation = n_rhs_node + std::string{" -> "} + node + std::string{" ;\n"};
+                std::string const& op_rhs_dot = _generate_dot( expr.rhs_op_, _generate_dot );
+
+                return expr_dot + arrow_lhs_relation + arrow_rhs_relation + op_lhs_dot + op_rhs_dot;
+            }
+            else if constexpr ( is_variable_v<Expr> )
+            {
+                std::vector<unsigned long> const& shape = expr.shape();
+                bool const training_state = expr.trainable();
+
+                // shape
+                std::stringstream ss;
+                std::copy( shape.begin(), shape.end(), std::ostream_iterator<unsigned long>( ss, " " ) );
+                std::string const& str_shape = ss.str() + (training_state ? std::string{"), trainable"} : std::string{"), non-trainable"});
+                // trainable state
+                std::string const& new_label = label + std::string{"[("} + str_shape + std::string{"]"};
+
+                if (!training_state)
+                    return node + std::string{" [shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
+
+                return node + std::string{" [peripheries=3,style=filled,color=\".7 .3 1.0\",shape=box,label=\""} + new_label + std::string{"\"] ;\n"};
+            }
+            else
+            {
+                return expr_dot;
+            }
+        };
+
+        std::string const& head = "\n\ndigraph g {\n";
+        std::string const& tail = "}\n\n";
+        return head + generate_dot( ex, generate_dot ) + tail;
+    }
+
+
+    namespace
+    {
+        // `plus_context` was nested in the `plus` function.
+        // But gcc compiler (11.1.0) has a lot of problems in deducing the context types (gcc may consume infnite memory and then get killed).
+        // Moving forward/backward algorithms here to make gcc happy, at a price of an extra indirection layer with redundant code.
+        struct plus_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                {
+                    better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
+                    better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
+                    return add( lhs_tensor, rhs_tensor );
+                };
+            }
+
+            auto const make_backward() const noexcept
+            {
+                return []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                   better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
+
+                   auto const& grad_fun = [&grad]( auto const& input )
+                   {
+                       Tsor ans = grad.deep_copy();
+                       while( input.ndim() < ans.ndim() )
+                           ans = sum( ans, 0 );
+                       auto const& shape = input.shape();
+                       for ( auto axis : range( input.ndim() ) )
+                           if ( shape[axis] == 1 )
+                              ans = sum( ans, axis, true );
+                       return ans;
+                   };
+                   return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
+                };
+            }
+        }; // plus_context
+    }//anonymous namespace
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-                                     {
-                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator plus: lhs_tensor contains Nan!" );
-                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator plus: rhs_tensor contains Nan!" );
-                                        return add( lhs_tensor, rhs_tensor );
-                                     },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
-                                     {
-                                        better_assert( !has_nan( grad ), "backprop: upcoming gradient for operator + contains NaN!" );
-
-                                        auto const& grad_fun = [&grad]( auto const& input )
-                                        {
-                                            Tsor ans = grad.deep_copy();
-                                            while( input.ndim() < ans.ndim() )
-                                                ans = sum( ans, 0 );
-                                            auto const& shape = input.shape();
-                                            for ( auto axis : range( input.ndim() ) )
-                                                if ( shape[axis] == 1 )
-                                                    ans = sum( ans, axis, true );
-                                            return ans;
-                                        };
-                                        return std::make_tuple( grad_fun( lhs_input), grad_fun( rhs_input ) );
-                                     }
-                )( lhs_ex, rhs_ex );
+        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus")( lhs_ex, rhs_ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -215,58 +293,74 @@ namespace ceras
         return plus( lhs_ex, rhs_ex );
     }
 
+    template< Expression Ex >
+    auto constexpr operator + ( Ex const& ex ) noexcept
+    {
+        return ex;
+    }
+
+    namespace
+    {
+        struct multiplication_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [forward_cache]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                    {
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        multiply( lhs_tensor, rhs_tensor, ans );
+                        return ans;
+                    };
+                };
+            }
+            auto make_backward() const noexcept
+            {
+                return []( std::shared_ptr<std::any> backward_cache_lhs, std::shared_ptr<std::any> backward_cache_rhs ) noexcept
+                {
+                    return [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                       // left branch <-- grad * rhs^T
+                       auto const& g_shape = grad.shape();
+                       auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
+                       auto const k = *(lhs_input.shape().rbegin()); // 13
+
+                       Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
+                       lhs_grad.resize( lhs_input.shape() );
+
+                       gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
+
+                       // right branch <-- lhs^T * grad
+                       Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
+                       rhs_grad.resize( rhs_input.shape() );
+                       gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
+
+                       return std::make_tuple( lhs_grad, rhs_grad );
+                    };
+                };
+            }
+        };//multiplication_context
+    }//anonymous namespace
+
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        //
-        // TODO: shared_ptr with any cache optimization causes segmentation fault, to be fixed
-        //
-        //std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        //std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
-        //std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
-        return make_binary_operator
-        (
-            []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-            {
-               //better_assert( !has_nan( lhs_tensor ), "forward propagation for operator *: lhs_tensor contains Nan!" );
-               //better_assert( !has_nan( rhs_tensor ), "forward propagation for operator *: rhs_tensor contains Nan!" );
-
-               return multiply( lhs_tensor, rhs_tensor );
-               //
-               //debug_print( "Start forward propagation of *" );
-               //Tsor& ans = context_cast<Tsor>( forward_cache );
-               //multiply( lhs_tensor, rhs_tensor, ans );
-               //return ans;
-            },
-            []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
-            {
-               //better_assert( !has_nan( grad ), "backprop: input gradient for operator * contains NaN!" );
-               // left branch <-- grad * rhs^T
-               auto const& g_shape = grad.shape();
-               auto const[m, n] = std::make_tuple( g_shape[0], g_shape[1] ); // 4, 1
-               auto const k = *(lhs_input.shape().rbegin()); // 13
-
-               Tsor lhs_grad{ lhs_input.shape() };
-               //Tsor& lhs_grad = context_cast<Tsor>( backward_cache_lhs );
-               //lhs_grad.resize( lhs_input.shape() );
-
-               gemm( grad.data(), false, rhs_input.data(), true, m, n, k, lhs_grad.data() );
-
-               //better_assert( !has_nan( lhs_grad ), "backprop: input gradient for operator * -- lhs result contains NaN!" );
-
-               // right branch <-- lhs^T * grad
-               Tsor rhs_grad{ rhs_input.shape() };
-               //Tsor& rhs_grad = context_cast<Tsor>( backward_cache_rhs );
-               //rhs_grad.resize( rhs_input.shape() );
-               gemm( lhs_input.data(), true, grad.data(), false, k, m, n, rhs_grad.data() );
-
-               //better_assert( !has_nan( rhs_grad ), "backprop: input gradient for operator * -- rhs result contains NaN!" );
-
-               return std::make_tuple( lhs_grad, rhs_grad );
-            }
-        )( lhs_ex, rhs_ex );
+        // case of Value * Operator and Operator * Value
+        if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
+        {
+            return elementwise_product( lhs_ex, rhs_ex );
+        }
+        else
+        {
+            std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+            std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+            std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply")( lhs_ex, rhs_ex );
+        }
     }
 
+#if 0
     template <Expression Ex>
     auto constexpr log( Ex const& ex ) noexcept
     {
@@ -274,7 +368,9 @@ namespace ceras
                                     {
                                         better_assert( !has_nan( input ), "forward propagation for operator log: input contains Nan!" );
                                         auto ans = input.deep_copy();
-                                        ans.map( [](auto & x){ x = std::log(x); } );
+                                        ans.map( [](auto & x){ better_assert( x+eps > 0, "log forward propagation, found an invalid value ", x ); x = std::log(x+eps); } );
+                                        better_assert( !has_nan( ans ), "forward propagation for operator log: output contains Nan!" );
+                                        better_assert( !has_inf( ans ), "forward propagation for operator log: output contains Inf!" );
                                         return ans;
                                     },
                                     []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
@@ -283,9 +379,11 @@ namespace ceras
                                         auto ans = elementwise_divide(grad, input); // TODO: error here
                                         better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
                                         return ans;
-                                    }
+                                    },
+                                    "Log"
                 )( ex );
     };
+#endif
 
     template <Expression Ex>
     auto constexpr negative( Ex const& ex ) noexcept
@@ -299,31 +397,53 @@ namespace ceras
                                     {
                                         better_assert( !has_nan( grad ), "input gradient for operator negative contains NaN!" );
                                         return -grad;
-                                    }
+                                    },
+                                    "Negative"
                 )( ex );
+    };
+
+    template <Expression Ex>
+    auto constexpr operator - ( Ex const& ex ) noexcept
+    {
+        return negative( ex );
+    }
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr elementwise_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                                     {
+                                        return elementwise_product( lhs_tensor, rhs_tensor );
+                                     },
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                                     {
+                                        auto const& grad_fun = [&grad]( auto const& input, auto const& other_input )
+                                        {
+                                            Tsor ans = elementwise_product( grad, other_input );
+                                            while( input.ndim() < ans.ndim() )
+                                                ans = sum( ans, 0 );
+                                            auto const& shape = input.shape();
+                                            for ( auto axis : range( input.ndim() ) )
+                                                if ( shape[axis] == 1 )
+                                                    ans = sum( ans, axis, true );
+                                            return ans;
+                                        };
+                                        return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
+                                     },
+                                     "HadamardProduct"
+                )( lhs_ex, rhs_ex );
     };
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr elementwise_multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
-                                     {
-                                        better_assert( !has_nan( lhs_tensor ), "forward propagation for operator elementwise_multiply: lhs_tensor contains Nan!" );
-                                        better_assert( !has_nan( rhs_tensor ), "forward propagation for operator elementwise_multiply: rhs_tensor contains Nan!" );
-                                        return elementwise_product( lhs_tensor, rhs_tensor );
-                                     },
-                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
-                                     {
-                                        better_assert( !has_nan( grad ), "input gradient for operator elementwise_multiply contains NaN!" );
-                                        return std::make_tuple( elementwise_product(grad, rhs_input), elementwise_product(grad, lhs_input) );
-                                     }
-                )( lhs_ex, rhs_ex );
-    };
+        return elementwise_product( lhs_ex, rhs_ex );
+    }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr hadamard_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return elementwise_multiply( lhs_ex, rhs_ex );
+        return elementwise_product( lhs_ex, rhs_ex );
     }
 
     template <Expression Ex>
@@ -341,10 +461,29 @@ namespace ceras
                                         Tsor ans = ones_like( input );
                                         ans *= grad[0];
                                         return ans;
-                                    }
+                                    },
+                                    "Sum"
                 )( ex );
     }
 
+    template <Expression Ex>
+    auto constexpr reduce_sum( Ex const& ex ) noexcept
+    {
+        return sum_reduce( ex );
+    }
+
+    ///
+    /// @brief Computes the mean of elements across all dimensions of an expression.
+    /// @param ex Incoming expression.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto va = place_holder<tensor<float>>{};
+    /// auto vb = variable{ random<float>{ 3, 4} };
+    /// auto diff = mean_reduce( va, vb );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto constexpr mean_reduce( Ex const& ex ) noexcept
     {
@@ -359,19 +498,67 @@ namespace ceras
                                         better_assert( grad.size() == 1, "mean_reduce should only output one value" );
                                         Tsor ans = ones_like( input );
                                         ans *= grad[0];
-                                        std::size_t const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
+                                        unsigned long const batch_size = (input.shape().size() == 1) ? 1 : (*(input.shape().begin()));
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
-                                    }
+                                    },
+                                    "Mean"
                 )( ex );
     }
+
+    ///
+    /// @brief An alias name of mean_reduce.
+    ///
+    template <Expression Ex>
+    auto constexpr reduce_mean( Ex const& ex ) noexcept
+    {
+        return mean_reduce( ex );
+    }
+
+    ///
+    /// @brief An alias name of mean_reduce.
+    ///
+    template <Expression Ex>
+    auto constexpr mean( Ex const& ex ) noexcept
+    {
+        return mean_reduce( ex );
+    }
+
+
+
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr minus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return plus( lhs_ex, negative(rhs_ex) );
+        if constexpr (is_value_v<Rhs_Expression>)
+        {
+            return negative( plus( negative(lhs_ex), rhs_ex ) );
+        }
+        else
+        {
+            return plus( lhs_ex, negative(rhs_ex) );
+        }
     }
 
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr operator - ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return minus( lhs_ex, rhs_ex );
+    }
+
+
+    ///
+    /// Returns the square of the input
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the squared value of the input operator.
+    ///
+    /// Example code:
+    /// @code
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto square = square(e);
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr square( Ex const& ex ) noexcept
     {
@@ -389,11 +576,81 @@ namespace ceras
                                         ans *= grad;
                                         ans *= typename Tsor::value_type{2};
                                         return ans;
-                                    }
+                                    },
+                                    "Square"
                 )( ex );
     }
 
+#if 0
+    ///
+    /// @brief Returns the square root of the input.
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the square root of the input operator.
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = sqrt(e);
+    /// @endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sqrt( Ex const& ex ) noexcept
+    {
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
+                                    {
+                                        Tsor ans = tsor.deep_copy(); // TODO: optimize out
+                                        std::for_each( ans.data(), ans.end(), []( auto & v ){ v = std::sqrt(v); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor ans = ones_like( input ); // TODO: optimize out
+                                        for_each( ans.begin(), ans.end(), grad.begin(), []( auto& v, auto g ){ v = 0.5 * g / (std::sqrt(v)+eps); } );
+                                        return ans;
+                                    },
+                                    "SquareRoot"
+                )( ex );
+    }
+#endif
 
+    ///
+    /// @brief  Computes the square root of the sum of the squares of x and y.
+    ///
+    /// @param x The first operator.
+    /// @param y The second operator.
+    ///
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto x = variable<tensor<float>>{ /*...*/ };
+    /// auto y = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = hypot( x, y );
+    /// @endcode
+    ///
+    template <Expression Ex, Expression Ey>
+    auto constexpr hypot( Ex const& ex, Ey const& ey ) noexcept
+    {
+        return sqrt( square(ex) + square(ey) );
+    }
+
+
+
+
+
+#if 0
+    ///
+    /// @brief Returns the absolute value of the input.
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the absolute value of the input operator.
+    ///
+    /// Example code:
+    /// @code{.cpp}
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto sqr = abs(e);
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr abs( Ex const& ex ) noexcept
     {
@@ -411,11 +668,15 @@ namespace ceras
                                         for ( auto idx : range( ans.size() ) )
                                             ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
                                         return ans;
-                                    }
+                                    },
+                                    "Abs"
                 )( ex );
     }//;
+#endif
 
+#if 0
     template <Expression Ex>
+    [[deprecated("GCC might die here. Use exponential instead.")]]
     auto constexpr exp( Ex const& ex ) noexcept
     {
         return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
@@ -431,12 +692,14 @@ namespace ceras
                                         Tsor ans = grad;
                                         grad *= output;
                                         return ans;
-                                    }
+                                    },
+                                    "Exp"
                 )( ex );
     }
+#endif
 
     template <typename Float> requires std::floating_point<Float>
-    auto constexpr clip( Float lower, Float upper ) noexcept
+    auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
     {
         return [lower, upper]<Expression Ex>( Ex const& ex ) noexcept
         {
@@ -457,7 +720,8 @@ namespace ceras
                                                            (input[idx] > upper) ? zero :
                                                            ans[idx];
                                             return ans;
-                                        }
+                                        },
+                                        "Clip"
                     )( ex );
         };
     }
@@ -470,7 +734,7 @@ namespace ceras
     //  false: do not consider the batch size
     //      - for an input of (1, 3, 4), expecting an incoming expression of shape like [12, 1]
     //      - expected output of shape [1, 3, 4]
-    auto inline reshape( std::vector<std::size_t> const& new_shape, bool include_batch_flag=true ) noexcept
+    auto inline reshape( std::vector<unsigned long> const& new_shape, bool include_batch_flag=true ) noexcept
     {
         return [new_shape, include_batch_flag]<Expression Ex>( Ex const& ex ) noexcept
         {
@@ -478,10 +742,11 @@ namespace ceras
             (
                 [new_shape, include_batch_flag]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    std::size_t const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
-                    std::size_t const total_size = tsor.size();
-                    std::size_t const batch_size = total_size / new_size;
-                    better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, got ",  batch_size*new_size, " but total input size is ", total_size );
+                    unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const total_size = tsor.size();
+                    unsigned long const batch_size = total_size / new_size;
+
+                    better_assert( batch_size * new_size == total_size, "size mismatch for reshape operator, expect ",  batch_size*new_size, " but total input size is ", total_size, ", where batch_size is ", batch_size );
 
                     if ( !include_batch_flag )
                     {
@@ -491,7 +756,7 @@ namespace ceras
                         return ans;
                     }
 
-                    std::vector<std::size_t> batched_new_shape;
+                    std::vector<unsigned long> batched_new_shape;
                     {
                         batched_new_shape.resize( 1 + new_shape.size() );
                         batched_new_shape[0] = batch_size;
@@ -507,7 +772,8 @@ namespace ceras
                     Tsor ans{ grad };
                     ans.reshape( input.shape() );
                     return ans;
-                }
+                },
+                "Reshape"
             )( ex );
         };
     }
@@ -520,8 +786,8 @@ namespace ceras
             []<Tensor Tsor>( Tsor const& tsor ) noexcept
             {
                 better_assert( tsor.ndim() > 1, "Expecting dimension of incoming tensor to be greater than 1, but got ", tsor.ndim() );
-                std::size_t const batch_size = *(tsor.shape().begin());
-                std::size_t const rem = tsor.size() / batch_size;
+                unsigned long const batch_size = *(tsor.shape().begin());
+                unsigned long const rem = tsor.size() / batch_size;
                 Tsor ans = tsor;
                 return ans.reshape( {batch_size, rem} );
             },
@@ -529,7 +795,8 @@ namespace ceras
             {
                 Tsor ans = grad;
                 return ans.reshape( input.shape() );
-            }
+            },
+            "Flatten"
         )( ex );
     }
 
@@ -545,7 +812,8 @@ namespace ceras
             []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
             {
                 return grad;
-            }
+            },
+            "Identity"
         )( ex );
     }
 
@@ -562,7 +830,7 @@ namespace ceras
 
                 typedef typename Tsor::value_type value_type;
 
-                std::vector<std::size_t> const shape = tsor.shape();
+                std::vector<unsigned long> const shape = tsor.shape();
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ tsor.data(), row, col };
 
@@ -580,11 +848,10 @@ namespace ceras
             {
                 typedef typename Tsor::value_type value_type;
 
-                std::vector<std::size_t> const shape = grad.shape();
+                std::vector<unsigned long> const shape = grad.shape();
                 auto const[row, col] = std::make_tuple( shape[0], shape[1] );
                 view_2d<value_type> v_in{ grad.data(), row, col };
 
-                //Tsor back_ans{ {col, row} }; // TODO: optimize it out with shared_ptr
                 Tsor& back_ans = context_cast<Tsor>( backward_cache );
                 back_ans.resize( {col, row} );
 
@@ -595,39 +862,40 @@ namespace ceras
                         v_out[c][r] = v_in[r][c];
 
                 return back_ans;
-            }
+            },
+            "Transpose"
         )( ex );
     }
 
-    auto inline img2col( std::size_t const row_kernel, std::size_t col_kernel=-1,
-                         std::size_t const row_padding=0, std::size_t col_padding=0,
-                         std::size_t const row_stride=1, std::size_t const col_stride=1,
-                         std::size_t const row_dilation=1, std::size_t const col_dilation=1 ) noexcept
+    auto inline img2col( unsigned long const row_kernel, unsigned long col_kernel=-1,
+                         unsigned long const row_padding=0, unsigned long col_padding=0,
+                         unsigned long const row_stride=1, unsigned long const col_stride=1,
+                         unsigned long const row_dilation=1, unsigned long const col_dilation=1 ) noexcept
     {
-        if ( col_kernel == (std::size_t)-1 ) col_kernel = row_kernel;
+        if ( col_kernel == (unsigned long)-1 ) col_kernel = row_kernel;
 
         std::shared_ptr<std::vector<std::uint32_t>> s_index_record = std::make_shared<std::vector<std::uint32_t>>(); // col_img[idx] = img[index_record[idx]]  -- (-1) for zero padding
 
         auto img2col_forward = [s_index_record]<Tensor Tsor>
         (
             Tsor const& input_img, Tsor& output_col_mat,
-            std::size_t kernel_row, std::size_t kernel_col,
-            std::size_t padding_row, std::size_t padding_col,
-            std::size_t stride_row, std::size_t stride_col,
-            std::size_t dilation_row, std::size_t dilation_col
+            unsigned long kernel_row, unsigned long kernel_col,
+            unsigned long padding_row, unsigned long padding_col,
+            unsigned long stride_row, unsigned long stride_col,
+            unsigned long dilation_row, unsigned long dilation_col
         ) noexcept
         {
             typedef typename Tsor::value_type value_type;
             std::vector<std::uint32_t>& index_record = *s_index_record; //32 bit should be enough for memory address offeset
 
-            std::vector<std::size_t> input_shape = input_img.shape();
+            std::vector<unsigned long> input_shape = input_img.shape();
             better_assert( input_shape.size() == 4, "Expecting a 4D tensor." );
             auto const [BS, R, C, CH] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
 
-            std::size_t const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
-            std::size_t const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
-            std::size_t const output_column_matrix_row = kernel_row * kernel_col * CH;
-            std::size_t const output_column_matrix_col = BS * output_row * output_col;
+            unsigned long const output_row = ( R + 2 * padding_row - ( dilation_row * (kernel_row - 1) + 1 ) ) / stride_row + 1;
+            unsigned long const output_col = ( C + 2 * padding_col - ( dilation_col * (kernel_col - 1) + 1 ) ) / stride_col + 1;
+            unsigned long const output_column_matrix_row = kernel_row * kernel_col * CH;
+            unsigned long const output_column_matrix_col = BS * output_row * output_col;
 
             output_col_mat.resize( {output_column_matrix_row, output_column_matrix_col} );
 
@@ -716,16 +984,17 @@ namespace ceras
                     Tsor& back_grad = context_cast<Tsor>( back_grad_cache );
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
-                }
+                },
+                "Img2Col"
             )( ex );
         };
     }
 
     auto inline conv2d
     (
-        std::size_t row_input, std::size_t col_input,
-        std::size_t const row_stride=1, std::size_t const col_stride=1,
-        std::size_t const row_dilation=1, std::size_t const col_dilation=1,
+        unsigned long row_input, unsigned long col_input,
+        unsigned long const row_stride=1, unsigned long const col_stride=1,
+        unsigned long const row_dilation=1, unsigned long const col_dilation=1,
         std::string const& padding="valid"
     ) noexcept
     {
@@ -737,24 +1006,24 @@ namespace ceras
         //
         return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
         {
-            std::vector<std::size_t> const& shape = rhs_ex.shape();
+            std::vector<unsigned long> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
             auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
             //TODO: optimization in case of small kernels of (1, 1), (3, 3)
-            std::size_t row_padding = 0;
-            std::size_t col_padding = 0;
+            unsigned long row_padding = 0;
+            unsigned long col_padding = 0;
             if ( padding == "same" )
             {
-                std::size_t const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
-                better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total );
-                std::size_t const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
+                unsigned long const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
+                better_assert( !(row_padding_total & 0x1), "Expecting total row padding to be even, but got ", row_padding_total, " With row input ", row_input, " and row_stride ", row_stride );
+                unsigned long const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
                 better_assert( !(col_padding_total & 0x1), "Expecting total col padding to be even, but got ", col_padding_total );
-                row_padding = row_padding_total >> 1;
-                col_padding = col_padding_total >> 1;
+                row_padding = ((row_kernel&1)+row_padding_total) >> 1;
+                col_padding = ((col_kernel&1)+col_padding_total) >> 1;
             }
 
-            std::size_t const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
-            std::size_t const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
+            unsigned long const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
+            unsigned long const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
 
             auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
 
@@ -805,7 +1074,6 @@ namespace ceras
 
                     Tsor& mask__ = std::any_cast<Tsor&>( mask_ );
 
-                    //Tsor ans =  input.deep_copy(); // deep copy as this will update value, TODO: optimize out with captured shared_ptr
                     Tsor& ans = context_cast<Tsor>( forward_cache );
                     ans.deep_copy( input );
 
@@ -820,21 +1088,112 @@ namespace ceras
 
                     Tsor& mask__ = std::any_cast<Tsor&>( *mask );
 
-                    //Tsor ans = grad.deep_copy();
                     Tsor& ans = context_cast<Tsor>( backward_cache );
                     ans.deep_copy( grad );
 
                     for ( auto idx : range( grad.size() ) )
                         ans[idx] *= mask__[idx];
                     return ans;
-                }
+                },
+                "Dropout"
             )( ex );
         };
     }
 
 
+    namespace
+    {
+
+        struct max_pooling_2d_context
+        {
+
+            auto make_forward() const noexcept
+            {
+                return  []( unsigned long stride, std::shared_ptr<std::any> mask, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        Tsor& mask__ = context_cast<Tsor>( mask );
+                        mask__.resize( input.shape() );
+
+
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+                        view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, row/stride, col/stride, channel} );
+
+                        view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
+
+                        for ( auto bs : range(batch_size) )
+                            for ( auto r : range(row/stride) ) // row for t1
+                                for ( auto c : range(col/stride) ) // col for t1
+                                    for ( auto ch : range(channel) )
+                                    {
+                                        unsigned long current_row_max = r * stride;
+                                        unsigned long current_col_max = c * stride;
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
+                                            {
+                                                if ( ts[bs][_r][_c][ch] > ts[bs][current_row_max][current_col_max][ch] )
+                                                {
+                                                    current_row_max = _r;
+                                                    current_col_max = _c;
+                                                }
+                                            }
+                                        tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
+                                        t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
+                                    }
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> mask, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& mask__ = std::any_cast<Tsor&>( *mask );
+                        view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
+                                            ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
+                        return ans;
+                    };
+                };
+            }
+
+        }; // max_pooling_2d_context
+
+    } // anonymous namespace
+
+
     // comment: maybe using function 'reduce' to reduce the cod complexity? at a price of performance?
-    inline auto max_pooling_2d( std::size_t stride ) noexcept
+    inline auto max_pooling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting max_pooling_2d stride greater than 1, but got ", stride );
 
@@ -846,77 +1205,22 @@ namespace ceras
         {
             return make_unary_operator
             (
+             /*
                 [stride, mask, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
                 {
-                    typedef typename Tsor::value_type value_type;
-                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
-
-                    Tsor& mask__ = context_cast<Tsor>( mask );
-                    mask__.resize( input.shape() );
-
-
-                    std::vector<std::size_t> shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-                    Tsor input_ = input;
-                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
-                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.resize( {batch_size, row/stride, col/stride, channel} );
-
-                    view_4d<value_type> t1{ ans.data(), batch_size, row/stride, col/stride, channel };
-
-                    for ( auto bs : range(batch_size) )
-                        for ( auto r : range(row/stride) ) // row for t1
-                            for ( auto c : range(col/stride) ) // col for t1
-                                for ( auto ch : range(channel) )
-                                {
-                                    std::size_t current_row_max = r * stride;
-                                    std::size_t current_col_max = c * stride;
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for ts
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for ts
-                                        {
-                                            if ( ts[bs][_r][_c][ch] > ts[bs][current_row_max][current_col_max][ch] )
-                                            {
-                                                current_row_max = _r;
-                                                current_col_max = _c;
-                                            }
-                                        }
-                                    tm[bs][current_row_max][current_col_max][ch] = 1.0; //mark as max
-                                    t1[bs][r][c][ch] = ts[bs][current_row_max][current_col_max][ch]; // update value
-                                }
-                    return ans;
                 },
                 [stride, mask, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
-                    typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-
-                    Tsor& mask__ = std::any_cast<Tsor&>( *mask );
-                    view_4d<value_type> tm{ mask__.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache );
-                    ans.resize( input.shape() );
-
-                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
-
-                    Tsor grad_ = grad;
-                    view_4d<value_type> tg{ grad_.data(), batch_size, row/stride, col/stride, channel };
-
-                    for ( auto bs : range( batch_size ) )
-                        for ( auto r : range( row ) )
-                            for ( auto c : range( col ) )
-                                for ( auto ch : range( channel ) )
-                                    if ( std::abs(tm[bs][r][c][ch] - 1.0) < 1.0e-5 )
-                                        ta[bs][r][c][ch] = tg[bs][r/stride][c/stride][ch];
-                    return ans;
-                }
+                },
+            */
+                max_pooling_2d_context{}.make_forward()( stride, mask, forward_cache ),
+                max_pooling_2d_context{}.make_backward()( stride, mask, backward_cache ),
+                "MaxPooling2D"
             )( ex );
         };
     }
 
-    inline auto average_pooling_2d( std::size_t stride ) noexcept
+    inline auto average_pooling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting average_pooling_2d stride greater than 1, but got ", stride );
 
@@ -932,7 +1236,7 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
 
-                    std::vector<std::size_t> shape = input.shape();
+                    std::vector<unsigned long> shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
                     Tsor input_ = input;
                     view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
@@ -956,7 +1260,7 @@ namespace ceras
                 [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
+                    std::vector<unsigned long> const& shape = input.shape();
                     auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
 
                     Tsor& ans = context_cast<Tsor>( backward_cache );
@@ -974,12 +1278,83 @@ namespace ceras
                                 for ( auto ch : range( channel ) )
                                     ta[bs][r][c][ch] = factor * tg[bs][r/stride][c/stride][ch];
                     return ans;
-                }
+                },
+                "AveragePooling2D"
             )( ex );
         };
     }
 
-    inline auto up_sampling_2d( std::size_t stride ) noexcept
+    namespace
+    {
+        struct up_sampling_2d_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, row*stride, col*stride, channel} );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> t1{ ans.data(), batch_size, row*stride, col*stride, channel };
+
+                        for ( auto bs : range(batch_size) )
+                            for ( auto r : range(row) ) // row for ts
+                                for ( auto c : range(col) ) // col for ts
+                                    for ( auto ch : range(channel) )
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for t1
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for t1
+                                                t1[bs][_r][_c][ch] = ts[bs][r][c][ch];
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long stride, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, row*stride, col*stride, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for tg
+                                            for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for tg
+                                                ta[bs][r][c][ch] += tg[bs][_r][_c][ch];
+                        return ans;
+                    };
+                };
+            }
+        }; // up_sampling_2d_context
+
+    } // anonymous namespace
+
+    inline auto up_sampling_2d( unsigned long stride ) noexcept
     {
         better_assert( stride > 1, "Expecting up_sampling_pooling_2d stride greater than 1, but got ", stride );
 
@@ -990,58 +1365,2465 @@ namespace ceras
         {
             return make_unary_operator
             (
-                [stride, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
-                {
-                    typedef typename Tsor::value_type value_type;
-                    better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
-
-                    std::vector<std::size_t> shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-                    Tsor input_ = input;
-                    view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
-
-                    Tsor& ans = context_cast<Tsor>( forward_cache );
-                    ans.resize( {batch_size, row*stride, col*stride, channel} );
-                    std::fill( ans.begin(), ans.end(), value_type{0} );
-
-                    view_4d<value_type> t1{ ans.data(), batch_size, row*stride, col*stride, channel };
-
-                    for ( auto bs : range(batch_size) )
-                        for ( auto r : range(row) ) // row for ts
-                            for ( auto c : range(col) ) // col for ts
-                                for ( auto ch : range(channel) )
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for t1
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for t1
-                                            t1[bs][_r][_c][ch] = ts[bs][r][c][ch];
-                    return ans;
-                },
-                [stride, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                {
-                    typedef typename Tsor::value_type value_type;
-                    std::vector<std::size_t> const& shape = input.shape();
-                    auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
-
-                    Tsor& ans = context_cast<Tsor>( backward_cache );
-                    ans.resize( input.shape() );
-                    std::fill( ans.begin(), ans.end(), value_type{0} );
-
-                    view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
-
-                    Tsor grad_ = grad;
-                    view_4d<value_type> tg{ grad_.data(), batch_size, row*stride, col*stride, channel };
-
-                    for ( auto bs : range( batch_size ) )
-                        for ( auto r : range( row ) )
-                            for ( auto c : range( col ) )
-                                for ( auto ch : range( channel ) )
-                                    for ( auto _r : range( (r*stride), ((r*stride)+stride) ) ) // row for tg
-                                        for ( auto _c : range( (c*stride), ((c*stride)+stride) ) ) // col for tg
-                                            ta[bs][r][c][ch] += tg[bs][_r][_c][ch];
-                    return ans;
-                }
+                up_sampling_2d_context{}.make_forward()( stride, forward_cache ),
+                up_sampling_2d_context{}.make_backward()( stride, backward_cache ),
+                "UpSampling2D"
             )( ex );
         };
     }
+
+
+    template< typename T=double > requires std::floating_point<T>
+    inline auto normalization_batch( T const momentum=0.98 ) noexcept
+    {
+        std::shared_ptr<std::any> global_average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> global_variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> average_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> variance_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    better_assert( input.ndim() > 1, "normalization_batch requires input dimension at least 2, got ", input.ndim() );
+
+                    typedef typename Tsor::value_type value_type;
+                    //typedef typename Tsor::allocator allocator;
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
+
+                    view_2d<value_type> input_{ input.data(), rest_dims, channels };
+
+                    // case of prediction phase, in this phase, the batch size could be 1, and it is not possible to calculate the variance
+                    if ( learning_phase == 0 ) // defined in 'config.hpp'
+                    {
+                        // fix for the special case when prediction is executed before the training, typically in a GAN
+                        Tsor& global_average_test = context_cast<Tsor>( global_average_cache );
+                        if ( global_average_test.empty() )
+                            return input;
+
+                        // normal case. i.e., the global_average_cache and global_variance_cache are not empty
+                        Tsor& global_average = context_extract<Tsor>( global_average_cache );
+                        Tsor& global_variance = context_extract<Tsor>( global_variance_cache );
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache, zeros_like( input ) );
+                        ans.resize( input.shape() ); // well, the batch sizes for training and for prediction are not necessarily same
+
+                        view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
+                        {
+                            for ( auto r : range( rest_dims ) )
+                                for ( auto c : range( channels ) )
+                                    ans_[r][c] = (input_[r][c] - global_average[c]) / std::sqrt( global_variance[c] + eps );
+                        }
+                        return ans;
+                    }
+
+                    //calculate average along the last channel
+                    Tsor& average = context_cast<Tsor>( average_cache );
+                    {
+                        average.resize( {channels, } );
+                        std::fill( average.begin(), average.end(), value_type{0} );
+
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                average[jdx] += input_[idx][jdx];
+
+                        average /= static_cast<value_type>(rest_dims);
+                    }
+
+                    //calculate Variance along the last channel
+                    Tsor& variance = context_cast<Tsor>( variance_cache );
+                    {
+                        variance.resize( {channels,} );
+                        std::fill( variance.begin(), variance.end(), value_type{0} );
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                variance[jdx] += std::pow( input_[idx][jdx] - average[jdx], 2 );
+
+                        variance /= static_cast<value_type>( rest_dims );
+                    }
+
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( input.shape() ); // the batch sizes for training and for prediction are not necessarily same
+                    view_2d<value_type> ans_{ ans.data(), rest_dims, channels };
+                    {
+                        for ( auto idx : range( rest_dims ) )
+                            for ( auto jdx : range( channels ) )
+                                ans_[idx][jdx] = ( input_[idx][jdx] - average[jdx] ) / std::sqrt( variance[jdx] + eps );
+                    }
+
+                    // update global average and global variance
+                    {
+                        Tsor& global_average = context_cast<Tsor>( global_average_cache, zeros_like( average ) );
+                        // Note: No obvious different is observed between initializing global_variance to zeros and to ones with MNIST example:
+                        //       initializing global_variance to zeros, after 10 epochs mnist gives an error of 0.026
+                        //       initializing global_variance to ones, after 10 epochs mnist gives an error of 0.028
+                        Tsor& global_variance = context_cast<Tsor>( global_variance_cache, zeros_like( variance ) );
+                        //Tsor& global_variance = context_cast<Tsor>( global_variance_cache, ones_like( variance ) );
+                        for ( auto idx : range( global_average.size() ) )
+                        {
+                            global_average[idx] = global_average[idx] * momentum + average[idx] * ( 1.0 - momentum );
+                            global_variance[idx] = global_variance[idx] * momentum + variance[idx] * ( 1.0 - momentum );
+                        }
+                    }
+
+                    return ans;
+                },
+
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    Tsor& variance = context_extract<Tsor>( variance_cache );
+
+                    std::vector<unsigned long> const& shape = input.shape();
+                    unsigned long const channels = *(shape.rbegin());
+                    unsigned long const rest_dims = input.size() / channels;
+
+                    Tsor& ans = context_cast<Tsor>( backward_cache, zeros_like( input ) );
+                    view_2d<value_type> ans_{ans.data(), rest_dims, channels };
+                    view_2d<value_type> grad_{grad.data(), rest_dims, channels };
+                    for ( auto r : range( rest_dims ) )
+                        for ( auto c : range( channels ) )
+                            ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
+                    return ans;
+                },
+                "Normalization"
+            )( ex );
+        };
+    }
+
+
+
+    template< typename T > requires std::floating_point<T>
+    inline auto batch_normalization( T const momentum=0.98 ) noexcept
+    {
+        return [=]<Expression Ex, Variable Va>( Ex const& ex, Va const& gamma, Va const& beta ) noexcept
+        {
+            return elementwise_product( normalization_batch(momentum)(ex), gamma ) + beta; // multiply and sum along the batch: normalization is of shape [BS, R, C, CH], gamma/beta are of shape [R, C, CH]
+        };
+    }
+
+
+
+    //
+    //  example:
+    //
+    //      variable<tensor<float>> a {... };
+    //      variable<tensor<float>> b {... };
+    //      auto cab = concatenate( a, b )();
+    //
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr concatenate( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return [&]( unsigned long axe = -1 ) noexcept
+        {
+            return make_binary_operator
+            (
+                [axe]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+                {
+                    return concatenate( lhs_tensor, rhs_tensor, axe );
+                },
+                [axe]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+
+                    Tsor l_ans{ lhs_input.shape() };
+                    Tsor r_ans{ rhs_input.shape() };
+                    better_assert(  l_ans.size() + r_ans.size() == grad.size(), "size mismatch: lhs size is ", l_ans.size(), " rhs size is ", r_ans.size(), " and grad size is ", grad.size(),
+                                    " with lhs dim is ", l_ans.ndim(), "  and rhs dim is ", r_ans.ndim() );
+
+                    // 2D view of grad
+                    unsigned long const ax = (axe == (unsigned long)(-1)) ? grad.ndim()-1 : axe;
+                    unsigned long const g_col = std::accumulate( grad.shape().begin()+ax, grad.shape().end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                    unsigned long const g_row = grad.size() / g_col;
+                    view_2d<value_type> v_g{ grad.data(), g_row, g_col };
+
+                    // 2D view of l_ans
+                    unsigned long const lhs_row = g_row;
+                    unsigned long const lhs_col = lhs_input.size() / lhs_row;
+                    view_2d<value_type> v_l{ l_ans.data(), lhs_row, lhs_col };
+
+                    // 2D view of r_ans
+                    unsigned long const rhs_row = g_row;
+                    unsigned long const rhs_col = rhs_input.size() / rhs_row;
+                    view_2d<value_type> v_r{ r_ans.data(), rhs_row, rhs_col };
+
+                    better_assert( g_col == lhs_col + rhs_col, "last dimension not agree" );
+
+                    for ( unsigned long idx = 0; idx != g_row; ++idx )
+                    {
+                        std::copy( v_g[idx], v_g[idx]+lhs_col, v_l[idx] );          // fill idx-th row of 'v_l'
+                        std::copy( v_g[idx]+lhs_col, v_g[idx]+g_col, v_r[idx] );    // fill idx-th row of 'v_r'
+                    }
+
+                    return std::make_tuple( l_ans, r_ans );
+                },
+                "Concatenate"
+            )( lhs_ex, rhs_ex );
+        };
+    }
+
+    // just to keep this interface agrees with Keras
+    inline auto concatenate( unsigned long axe = -1 )
+    {
+
+        return [=]< Expression Lhs_Expression, Expression Rhs_Expression >( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        {
+            return concatenate( lhs_ex, rhs_ex )( axe );
+        };
+    }
+
+    // alias of 'concatenate'
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr concat( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return concatenate( lhs_ex, rhs_ex )();
+    }
+
+    // alias of 'concatenate'
+    inline auto concat( unsigned long axe = -1 )
+    {
+        return concatenate( axe );
+    }
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr maximum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> mask_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "tensor shape mismatch." );
+
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+                mask.resize( lhs_tensor.shape() );
+
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), mask.begin(), []( auto const l, auto const r, auto& a, auto& m ) { m = l > r ? 1.0 : 0.0; a = l > r ? l : r; } );
+
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+
+                Tsor& l_ans = context_cast<Tsor>( backward_cache_lhs );
+                l_ans.resize( lhs_input.shape() );
+                Tsor& r_ans = context_cast<Tsor>( backward_cache_rhs );
+                r_ans.resize( rhs_input.shape() );
+
+                for_each( grad.begin(), grad.end(), mask.begin(), l_ans.begin(), r_ans.begin(), []( auto const g, auto const m, auto& l, auto& r ) { if ( m > 0.5 ) { l = g; r = 0.0; } else { l = 0.0; r = g; } } );
+
+                return std::make_tuple( l_ans, r_ans );
+            },
+            "Maximum"
+        )( lhs_ex, rhs_ex );
+    }
+
+    ///
+    /// @brief Computes the arc tangent of y/x using the signs of arguments to determine the correct quadrant.
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr atan2( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "tensor shape mismatch." );
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), []( auto const l, auto const r, auto& a ) { a = std::atan2(l, r); } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& l_ans = context_cast<Tsor>( backward_cache_lhs );
+                l_ans.resize( lhs_input.shape() );
+                Tsor& r_ans = context_cast<Tsor>( backward_cache_rhs );
+                r_ans.resize( rhs_input.shape() );
+                for_each( grad.begin(), grad.end(), l_ans.begin(), r_ans.begin(), lhs_input.begin(), rhs_input.begin(), []( auto const g, auto& l, auto& r, auto const x, auto const y ) { auto const c = x*x+y*y; l = -g*y/c; r = g*x/c; } );
+                return std::make_tuple( l_ans, r_ans );
+            },
+            "Arctan2"
+        )( lhs_ex, rhs_ex );
+    }
+
+
+    ///
+    /// `random_normal_like` produces random tensor from a normal distribution
+    /// @param mean Mean of the normal distribution, a scalar.
+    /// @param stddev Standard deviation of the normal distribution, a scalar.
+    /// @return An unary operator that takes an unary operator, and producing output tensor from a normal distribution. The shape of the output tensor has the same shape corresponding to the input unary operator.
+    ///
+    /// Example Code
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = random_normal_like( 1.0, 4.0 )( va ); // this expression will produces a tensor of shape (3, 3, 3) from a normal distribution with parameters (1.0, 4.0)
+    /// @endcode
+    ///
+    template< typename T=float > requires std::floating_point<T>
+    inline auto random_normal_like( T mean = 0.0, T stddev = 1.0 ) noexcept
+    {
+        return [=]<Expression Ex>(Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                {
+                    //debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
+                    return randn_like( tsor, mean, stddev );
+                },
+                []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                {
+                    return zeros_like( grad );
+                },
+                "RandomNormalLike"
+            )(ex);
+        };
+    }
+
+    ///
+    /// `ones_like` produces a tensor of the same shape as the input expression, but with every element to be 1.
+    /// @return An unary operator that takes an unary operator, and producing an output tensor
+    /// Example Code:
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = ones_like( va ); // this expression will produces a tensor of shape (3, 3, 3), with every element to be 1.
+    /// @endcode
+    ///
+    template< Expression Ex>
+    auto ones_like( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept { return ones_like( tsor ); },
+            []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
+            "OnesLike"
+        )(ex);
+    }
+
+    ///
+    /// `zeros_like` produces a tensor of the same shape as the input expression, but with every element to be 0.
+    /// @return An unary operator that takes an unary operator, and producing an output tensor
+    /// Example Code:
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = zeros_like( va ); // this expression will produces a tensor of shape (3, 3, 3), with every element to be 0.
+    /// @endcode
+    ///
+    template< Expression Ex>
+    auto zeros_like( Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            []<Tensor Tsor>( Tsor const& tsor ) noexcept { return zeros_like( tsor ); },
+            []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
+            "ZerosLike"
+        )(ex);
+    }
+
+    ///
+    /// Returns the truth value of (lhs == rhs) element-wise. [+1 for true, 0 for false]
+    ///
+    /// @param lhs_ex The first operator.
+    /// @param rhs_ex The second operator.
+    /// @return An instance of a binary operator that evaluate the element-wise equality of two input operators.
+    ///
+    /// Example code:
+    /// @code
+    /// auto l = variable<tensor<float>>{ /*...*/ };
+    /// auto r = place_holder<tensor<float>>{};
+    /// auto eq = equal(l, r);
+    /// @endcode
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression, std::floating_point FP >
+    auto constexpr equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, FP threshold=0.5 ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "equal: tensor shape mismatch." );
+
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), [threshold]( auto l, auto r, auto& v ){ v = (std::abs(l-r) > threshold) ? value_type{0} : value_type{1}; } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                Tsor& ans = context_cast<Tsor>( backward_cache );
+                std::fill( ans.begin(), ans.end(), value_type{0} );
+                return std::make_tuple( ans, ans );
+            },
+            "Equal"
+        )( lhs_ex, rhs_ex );
+    }
+
+    ///
+    /// Returns the sign. [1 for positive, 0 for 0 and -1 for negative]
+    ///
+    /// @param ex The input operator.
+    /// @return An instance of a unary_operator that evaluate the sign of the input operator.
+    ///
+    /// Example code:
+    /// @code
+    /// auto e = variable<tensor<float>>{ /*...*/ };
+    /// auto si = sign(e);
+    /// @endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sign( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& input ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( input.shape() );
+                for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ){ v = (value_type{0} < x) - (x < value_type{0}); } );
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const&input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                typedef typename Tsor::value_type value_type;
+                Tsor& ans = context_cast<Tsor>( backward_cache );
+                ans.resize( input.shape() );
+                std::fill( ans.begin(), ans.end(), value_type{0} ); //TF gives zeros, we follow TF here
+                return ans;
+            },
+            "Sign"
+        )( ex );
+    };
+
+
+
+    namespace
+    {
+        // An extra indirect layer to make gcc's life a bit easier.
+        // TODO: move detail to `zero_padding_2d` after gcc reaching his maturity.
+        struct zero_padding_2d_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+
+                        // 4D view of input tensor
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                        // 4D view of output tensor
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, top+row+bottom, left+col+right, channel} );
+                        view_4d<value_type> ta{ ans.data(), batch_size, top+row+bottom, left+col+right, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][top+r][left+c][ch] = ts[bs][r][c][ch];
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row, col, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, top+row+bottom, left+col+right, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][r][c][ch] = tg[bs][r+top][c+left][ch];
+                        return ans;
+                    };
+                };
+            }
+        }; // zero_padding_2d_context
+    }//anonymouse namespace
+
+    ///
+    /// @brief Zero-padding layer for 2D input. The input should have 4-dimensions: `(batch_size, row, col, channel)`. The output has 4-dimensions: `(batch_size, new_row, new_col, channel)`.
+    /// @param padding If a single integer, then apply symmetric padding to height and width. If two integers, then first is for height and the second is for width. If four integers, then is intepreted as`(top_pad, bottom_pad, left_pad, right_pad)`.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {16, 16, 3} ) };
+    /// auto b = zero_padding_2d( {8,} )( a ); // shape for b is (8+16+8, 8+16+8, 3)
+    /// auto c = zero_padding_2d( {8, 4} )( a ); // shape for c is (8+16+8, 4+16+4, 3)
+    /// auto d = zero_padding_2d( {8, 4, 2, 1} )( a ); // shape for d is (8+16+4, 2+16+1, 3)
+    /// \endcode
+    ///
+    inline auto zero_padding_2d( std::vector<unsigned long> const& padding ) noexcept
+    {
+        // extracting paddings
+        unsigned long top, bottom, left, right;
+        if ( padding.size() == 1 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[0], padding[0] );
+        else if (padding.size() == 2 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[1], padding[1] );
+        else if (padding.size() == 4 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[1], padding[2], padding[3] );
+        else
+            better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
+
+        // checking extracted paddings
+        better_assert( top >= 1, "Expecting zero_padding_2d top padding no less than 1, but got ", top );
+        better_assert( bottom >= 1, "Expecting zero_padding_2d bottom padding no less than 1, but got ", bottom );
+        better_assert( left >= 1, "Expecting zero_padding_2d left padding no less than 1, but got ", left );
+        better_assert( right >= 1, "Expecting zero_padding_2d right padding no less than 1, but got ", right );
+
+        // to avoid re-allocating memory for tensors
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                zero_padding_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
+                zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
+                "ZeroPadding2D"
+            )( ex );
+        };
+    }
+
+    namespace
+    {
+        struct repeat_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long repeats, unsigned long axis, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        if ( 1UL == repeats ) return input;
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        auto const& shape = input.shape();
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax+1, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape();
+                        output_shape[ax] *= repeats;
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape );
+
+                        // create 2D and 3D view
+                        view_2d v2{ input.data(), iterations, stride };
+                        view_3d v3{ ans.data(), iterations, repeats, stride };
+
+                        // copy data
+                        for ( auto it : range( iterations ) )
+                            for ( auto re : range( repeats ) )
+                                std::copy_n( v2[it], stride, v3[it][re] );
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long repeats, unsigned long axis, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        if ( 1UL == repeats ) return grad;
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        auto const& shape = input.shape();
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax+1, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        ans.reset();
+
+                        view_2d v2{ans.data(), iterations, stride };
+                        view_3d v3{ grad.data(), iterations, repeats, stride };
+
+                        for ( auto id : range( iterations ) )
+                            for ( auto re : range( repeats ) )
+                                for ( auto st : range( stride ) )
+                                    v2[id][st] += v3[id][re][st];
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct repeat_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Repeats elements along an axis.
+    /// @param repeats The number of repetitions for each element.
+    /// @param axis The axis along which to repeat values. Defaults to the last axis.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} };
+    /// auto b0 = repeat( 2, 0 )( a ); // <- output shape is ( 4, 3, 5 )
+    /// auto b1 = repeat( 2, 1 )( a ); // <- output shape is ( 2, 6, 5 )
+    /// auto b2 = repeat( 2, 2 )( a ); // <- output shape is ( 2, 3, 10 )
+    /// auto bx = repeat( 2 )( a ); // <- output shape is ( 2, 3, 10 )
+    /// \endcode
+    ///
+    inline auto repeat( unsigned long repeats, unsigned long axis=-1 ) noexcept
+    {
+        better_assert( repeats > 0, "repeat: repeats can not be zero." );
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [repeats, axis, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                repeat_context{}.make_forward()( repeats, axis, forward_cache ),
+                repeat_context{}.make_backward()( repeats, axis, backward_cache ),
+                "Repeat"
+            )
+            ( ex );
+        };
+    }
+
+
+    namespace
+    {
+        struct reduce_min_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape(); // example: temporately being ( 2, 3, 4, 5 )
+                        std::copy( output_shape.begin()+ax+1, output_shape.end(), output_shape.begin()+ax ); // example: temporately being ( 2, 4, 5, 5 )
+                        output_shape.resize( output_shape.size() - 1 ); // example: output_shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape ); // example: ans shape is ( 2, 4, 5 )
+
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        // create 2D and 3D view
+                        view_2d v2{ ans.data(), iterations, stride }; // example: viewing as a matrix of shape ( 2, 20 )
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ input.data(), iterations, scales, stride }; // example: viewing as a tube of ( 2, 3, 20 )
+
+                        // reduce minimal elements along the selected axis
+                        for ( auto it : range( iterations ) ) // example: range (2)
+                            for ( auto st : range( stride ) ) // example: range (20)
+                            {
+                                // reduce the minimal elements along the column of st
+                                auto min_itor = std::min_element( v3[it].col_begin(st), v3[it].col_end(st) );
+                                v2[it][st] = *min_itor;
+
+                                // record the minimal position offset with respect to the head of the column
+                                unsigned long const offset = std::distance( v3[it].col_begin(st), min_itor );
+                                v_index[it][st] = offset;
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> backward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        std::vector<unsigned long> const& output_shape = grad.shape(); // example: output shape of ( 2, 4, 5 )
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
+                        ans.reset();
+
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ ans.data(), iterations, scales, stride }; // example: view as a cube of ( 2, 3, 20 )
+                        view_2d v2{ grad.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+
+                        for ( auto it : range( iterations ) ) // example: range( 2 )
+                            for ( auto st : range( stride ) ) // example: range( 20 )
+                            {
+                                unsigned long const offset = v_index[it][st]; // get the offset from record
+                                v3[it][offset][st] = v2[it][st]; // only the element at the minimal position has gradient back-propagated
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct reduce_min_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Reduce minimal elements along an axis.
+    /// @param axis The axis along which to reduce minimal values. Defaults to the last axis.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = reduce_min( 0 )( a ); // <- output shape is ( 3, 5 )
+    /// auto b = reduce_min( 1 )( a ); // <- output shape is ( 2, 5 )
+    /// auto b = reduce_min( 2 )( a ); // <- output shape is ( 2, 3 )
+    /// auto b = reduce_min( )( a ); // <- output shape is ( 2, 3 )
+    /// \endcode
+    ///
+    inline auto reduce_min( unsigned long axis=-1 ) noexcept
+    {
+        std::shared_ptr<std::any> index_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [axis, index_cache, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                reduce_min_context{}.make_forward()( axis, forward_cache, index_cache ),
+                reduce_min_context{}.make_backward()( axis, backward_cache, index_cache ),
+                "ReduceMin"
+            )
+            ( ex );
+        };
+    }
+
+
+
+    namespace
+    {
+        struct reduce_max_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape(); // example: temporately being ( 2, 3, 4, 5 )
+                        std::copy( output_shape.begin()+ax+1, output_shape.end(), output_shape.begin()+ax ); // example: temporately being ( 2, 4, 5, 5 )
+                        output_shape.resize( output_shape.size() - 1 ); // example: output_shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape ); // example: ans shape is ( 2, 4, 5 )
+
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        // create 2D and 3D view
+                        view_2d v2{ ans.data(), iterations, stride }; // example: viewing as a matrix of shape ( 2, 20 )
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ input.data(), iterations, scales, stride }; // example: viewing as a tube of ( 2, 3, 20 )
+
+                        // reduce maximal elements along the selected axis
+                        for ( auto it : range( iterations ) ) // example: range (2)
+                            for ( auto st : range( stride ) ) // example: range (20)
+                            {
+                                // reduce the maximal elements along the column of st
+                                auto max_itor = std::max_element( v3[it].col_begin(st), v3[it].col_end(st) );
+                                v2[it][st] = *max_itor;
+
+                                // record the maximal position offset with respect to the head of the column
+                                unsigned long const offset = std::distance( v3[it].col_begin(st), max_itor );
+                                v_index[it][st] = offset;
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> backward_cache, std::shared_ptr<std::any> index_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const& , Tsor const& grad ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        std::vector<unsigned long> const& output_shape = grad.shape(); // example: output shape of ( 2, 4, 5 )
+                        tensor<unsigned long>& index = context_cast<tensor<unsigned long>>( index_cache );
+                        index.resize( output_shape ); // example: index shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
+                        ans.reset();
+
+                        view_2d v_index{ index.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+                        view_3d v3{ ans.data(), iterations, scales, stride }; // example: view as a cube of ( 2, 3, 20 )
+                        view_2d v2{ grad.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+
+                        for ( auto it : range( iterations ) ) // example: range( 2 )
+                            for ( auto st : range( stride ) ) // example: range( 20 )
+                            {
+                                unsigned long const offset = v_index[it][st]; // get the offset from record
+                                v3[it][offset][st] = v2[it][st]; // only the element at the maximal position has gradient back-propagated
+                            }
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct reduce_max_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Reduce maximum elements along an axis.
+    /// @param axis The axis along which to reduce maximum values. Defaults to the last axis.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = reduce_max( 0 )( a ); // <- output shape is ( 3, 5 )
+    /// auto b = reduce_max( 1 )( a ); // <- output shape is ( 2, 5 )
+    /// auto b = reduce_max( 2 )( a ); // <- output shape is ( 2, 3 )
+    /// auto b = reduce_max( )( a ); // <- output shape is ( 2, 3 )
+    /// \endcode
+    ///
+    inline auto reduce_max( unsigned long axis=-1 ) noexcept
+    {
+        std::shared_ptr<std::any> index_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [axis, index_cache, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                reduce_max_context{}.make_forward()( axis, forward_cache, index_cache ),
+                reduce_max_context{}.make_backward()( axis, backward_cache, index_cache ),
+                "ReduceMax"
+            )
+            ( ex );
+        };
+    }
+
+
+
+    namespace
+    {
+        struct reduce_sum_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        // generate output tensor
+                        std::vector<unsigned long> output_shape = input.shape(); // example: temporately being ( 2, 3, 4, 5 )
+                        std::copy( output_shape.begin()+ax+1, output_shape.end(), output_shape.begin()+ax ); // example: temporately being ( 2, 4, 5, 5 )
+                        output_shape.resize( output_shape.size() - 1 ); // example: output_shape is ( 2, 4, 5 )
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( output_shape ); // example: ans shape is ( 2, 4, 5 )
+
+                        // create 2D and 3D view
+                        view_2d v2{ ans.data(), iterations, stride }; // example: viewing as a matrix of shape ( 2, 20 )
+                        view_3d v3{ input.data(), iterations, scales, stride }; // example: viewing as a tube of ( 2, 3, 20 )
+
+                        // reduce sum along the selected axis
+                        for ( auto it : range( iterations ) ) // example: range (2)
+                            for ( auto st : range( stride ) ) // example: range (20)
+                                v2[it][st] = std::accumulate( v3[it].col_begin(st), v3[it].col_end(st), value_type{0} );
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long axis, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const& , Tsor const& grad ) noexcept
+                    {
+                        unsigned long const ax = std::min( axis, input.shape().size()-1 );
+
+                        // example: for an input tensor of shape ( 2, 3, 4, 5 ), and axis is 1
+                        auto const& shape = input.shape(); // example: the shape is ( 2, 3, 4, 5 )
+                        unsigned long const stride = std::accumulate( shape.begin()+ax+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the stride is 20
+                        unsigned long const iterations = std::accumulate( shape.begin(), shape.begin()+ax, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } ); // example: the iterations is 2
+                        unsigned long const scales = shape[ax]; // the elements in the dimenstion to reduce. example: scales is 3
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( shape ); // example: ans shape is ( 2, 3, 4, 5 )
+                        ans.reset();
+
+                        view_3d v3{ ans.data(), iterations, scales, stride }; // example: view as a cube of ( 2, 3, 20 )
+                        view_2d v2{ grad.data(), iterations, stride }; // example: viewing as a matrix of ( 2, 20 )
+
+                        for ( auto it : range( iterations ) ) // example: range( 2 )
+                            for ( auto st : range( stride ) ) // example: range( 20 )
+                                std::fill( v3[it].col_begin( st ), v3[it].col_end( st ), v2[it][st] );
+
+                        return ans;
+                    };
+                };
+            }
+        };//struct reduce_sum_context
+    }//anonymous namespace
+
+
+    ///
+    /// @brief Reduce sum elements along an axis.
+    /// @param axis The axis along which to reduce sum.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = reduce_sum( 0 )( a ); // <- output shape is ( 3, 5 )
+    /// auto b = reduce_sum( 1 )( a ); // <- output shape is ( 2, 5 )
+    /// auto b = reduce_sum( 2 )( a ); // <- output shape is ( 2, 3 )
+    /// auto b = reduce_sum( -1 )( a ); // <- output shape is ( 2, 3 )
+    /// \endcode
+    ///
+    inline auto reduce_sum( unsigned long axis ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [axis, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                reduce_sum_context{}.make_forward()( axis, forward_cache ),
+                reduce_sum_context{}.make_backward()( axis, backward_cache ),
+                "ReduceSum"
+            )
+            ( ex );
+        };
+    }
+
+
+
+
+
+
+    ///
+    /// @brief Computes Abs of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = abs( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr abs( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::abs(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * ((x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0)); } );
+                                        return ans;
+                                    },
+                                    "Abs"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Acos of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = acos( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr acos( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::acos(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g / std::sqrt(1.0-x*x); } );
+                                        return ans;
+                                    },
+                                    "Acos"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Acosh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = acosh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr acosh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::acosh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(x*x-1.0); } );
+                                        return ans;
+                                    },
+                                    "Acosh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Asin of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = asin( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr asin( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::asin(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0-x*x); } );
+                                        return ans;
+                                    },
+                                    "Asin"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Asinh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = asinh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr asinh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::asinh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0+x*x); } );
+                                        return ans;
+                                    },
+                                    "Asinh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Atan of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = atan( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr atan( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::atan(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1.0+x*x); } );
+                                        return ans;
+                                    },
+                                    "Atan"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Atanh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = atanh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr atanh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::atanh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1-x*x); } );
+                                        return ans;
+                                    },
+                                    "Atanh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cbert of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cbrt( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cbrt( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cbrt(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (3.0*o*o); } );
+                                        return ans;
+                                    },
+                                    "Cbert"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Ceil of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = ceil( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr ceil( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ceil(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Ceil"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cos of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cos( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cos( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cos(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g * std::sin(x); } );
+                                        return ans;
+                                    },
+                                    "Cos"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Cosh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = cosh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr cosh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::cosh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::sinh(x); } );
+                                        return ans;
+                                    },
+                                    "Cosh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Erf of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = erf( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr erf( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erf(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{1.12837916709551257389} * g * std::exp(-x*x); } );
+                                        return ans;
+                                    },
+                                    "Erf"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Erfc of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = erfc( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr erfc( Ex const& ex ) noexcept
+    {
+
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erfc(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{-1.12837916709551257389} * g * std::exp(-x*x); } );
+                                        return ans;
+                                    },
+                                    "Erfc"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Exp of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = exp( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr exp( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::exp(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * o; } );
+                                        return ans;
+                                    },
+                                    "Exp"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Exp2 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = exp2( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr exp2( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::exp2(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = std::log(2.0) * g * o; } );
+                                        return ans;
+                                    },
+                                    "Exp2"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Expm1 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = expm1( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr expm1( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::expm1(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (o+1.0); } );
+                                        return ans;
+                                    },
+                                    "Expm1"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Fabs of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = fabs( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr fabs( Ex const& ex ) noexcept
+    {
+        return abs( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Floor of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = floor( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr floor( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::floor(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Floor"
+                )( ex );
+    };
+
+
+
+
+
+#if 0
+
+    ///
+    /// @brief Computes Ilogb of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = ilogb( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr ilogb( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ilogb(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Ilogb"
+                )( ex );
+    };
+
+#endif
+
+
+
+#if 0
+    ///
+    /// @brief Computes lgamma of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lgamma( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lgamma( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lgamma(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "lgamma"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Llrint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = llrint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr llrint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::llrint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Llrint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Llround of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = llround( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr llround( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::llround(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Llround"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
+                                        return ans;
+                                    },
+                                    "Log"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log10 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log10( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log10( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log10(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (2.30258509299404568402*x); } );
+                                        return ans;
+                                    },
+                                    "Log10"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log1p of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log1p( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log1p( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log1p(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
+                                        return ans;
+                                    },
+                                    "Log1p"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Log2 of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = log2( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr log2( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::log2(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (0.69314718055994530942*x); } );
+                                        return ans;
+                                    },
+                                    "Log2"
+                )( ex );
+    };
+
+
+
+
+
+
+#if 0
+    ///
+    /// @brief Computes Logb of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = logb( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr logb( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::logb(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Logb"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Lrint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lrint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lrint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lrint(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Lrint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Lround of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = lround( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr lround( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lround(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Lround"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Nearbyint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = nearbyint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr nearbyint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::nearbyint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Nearbyint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Rint of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = rint( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr rint( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::rint(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Rint"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Round of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = round( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr round( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::round(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Round"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sin of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sin( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sin( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sin(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cos(x); } );
+                                        return ans;
+                                    },
+                                    "Sin"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sinh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sinh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sinh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sinh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cosh(x); } );
+                                        return ans;
+                                    },
+                                    "Sinh"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Sqrt of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = sqrt( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr sqrt( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::sqrt(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (o+o); } );
+                                        return ans;
+                                    },
+                                    "Sqrt"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Tan of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tan( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tan( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tan(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto x, auto o, auto g, auto& v ) noexcept { v = g * (1.0+o*o); } );
+                                        return ans;
+                                    },
+                                    "Tan"
+                )( ex );
+    };
+
+
+
+
+
+
+    ///
+    /// @brief Computes Tanh of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tanh( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tanh( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tanh(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (1.0-o*o); } );
+                                        return ans;
+                                    },
+                                    "Tanh"
+                )( ex );
+    };
+
+
+
+
+
+#if 0
+
+    ///
+    /// @brief Computes Tgamma of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = tgamma( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr tgamma( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tgamma(x); } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        return ans;
+                                    },
+                                    "Tgamma"
+                )( ex );
+    };
+#endif
+
+
+
+
+
+    ///
+    /// @brief Computes Trunc of the given expression.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = trunc( a );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr trunc( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::trunc(x); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        return grad;
+                                    },
+                                    "Trunc"
+                )( ex );
+    };
+
+
+#if 0
+
+    ///
+    /// @breif Updating the first expression's value by assining the secnod to it. The first expression should be a 'value'.
+    /// @param lhs_ex A mutable value.
+    /// @param rhs_ex An expression to be assigned to lhs_ex.
+    /// TODO: Fixme, this implementation is wrong
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ ... };
+    /// auto x = constant{ ... } * constant{ ... };
+    /// assgin( v, x );
+    /// \endcode
+    ///
+    template< Variable Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr assign( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return make_binary_operator( []<Tensor Tsor>( Tsor& lhs_tensor, Tsor const& rhs_tensor ) noexcept // well, lhs_tensor can be 'Tensor&'
+                                     {
+                                        lhs_tensor.reshape( rhs_tensor.shape() );
+                                        std::copy( rhs_tensor.begin(), rhs_tensor.end(), lhs_tensor.begin() );
+                                        return lhs_tensor;
+                                     },
+                                     []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& ) noexcept
+                                     {
+                                        return std::make_tuple( zeros_like( lhs_input ), zeros_like( rhs_input ) );
+                                     },
+                                     "Assign"
+                )( lhs_ex, rhs_ex );
+    };
+
+#endif
+
 
 
 }//namespace ceras

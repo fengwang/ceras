@@ -16,7 +16,8 @@ int main()
 
     {
         std::cerr << "Test Case " << 1 << std::endl;
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         tensor<double> _x{ {2, 1}, {1, 2} };
         s.bind( x, _x );
         auto result = s.run( z );
@@ -25,7 +26,8 @@ int main()
     if (0) //failure case
     {
         std::cerr << "Test Case " << 2 << std::endl;
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         auto result = s.run( z );
         std::cout << "Result:\n" << result << std::endl;
     }
@@ -33,7 +35,8 @@ int main()
     auto sz = sigmoid( z );
     {
         std::cerr << "Test Case " << 3 << std::endl;
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         tensor<double> _x{ {2, 1}, {1, 2} };
         s.bind( x, _x );
         auto result = s.run( sz );
@@ -47,7 +50,8 @@ int main()
         auto b = variable{ tensor<double>{{1, 1}, {0.0}} };
         auto p = sigmoid( w * x + b );
         auto _x = tensor<double>{ {3, 1}, {3.0, 2.0, 1.0} };
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         s.bind( x, _x );
         auto result = s.run( p );
         std::cout << "Result:\n" << result << std::endl;
@@ -68,7 +72,8 @@ int main()
 
         std::cout << "X is\n" << _x << std::endl;
 
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         s.bind( x, _x );
         auto result = s.run( p );
         std::cout << "Result of p:\n" << result << std::endl;
@@ -107,7 +112,8 @@ int main()
 
         std::cout << "X is\n" << _x << std::endl;
 
-        session<tensor<double>> s;
+        //session<tensor<double>> s;
+        auto& s = ceras::get_default_session<ceras::tensor<double>>();
         s.bind( x, _x );
         auto result = s.run( pp );
         std::cout << "Result of pp:\n" << result << std::endl;

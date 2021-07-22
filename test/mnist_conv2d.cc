@@ -63,15 +63,16 @@ int main()
     auto loss = cross_entropy_loss( ground_truth, output );
 
     // preparing training
-    std::size_t const batch_size = 10;
+    std::size_t const batch_size = 5;
     tensor<float> input_images{ {batch_size, 28*28} };
     tensor<float> output_labels{ {batch_size, 10} };
 
-    std::size_t const epoch = 1;
+    std::size_t const epoch = 2;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session
-    session<tensor_type> s;
+    //auto& s = get_default_session<tensor_type>();
+    auto& s = get_default_session<tensor_type>().get();
     s.bind( input, input_images );
     s.bind( ground_truth, output_labels );
 

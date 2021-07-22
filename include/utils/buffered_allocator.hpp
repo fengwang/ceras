@@ -2,10 +2,15 @@
 #define BUFFERED_ALLOCATOR_HPP_INCLUDED_DPSIOJASLKJ3489UASLIKJASOI8UJ3498UAFDSJA
 
 #include "../includes.hpp"
+#include "../config.hpp"
+#include "../backend/cuda.hpp"
 
 namespace ceras
 {
 
+    //
+    // Warning: this allocator is only designed for tensor
+    //
     template< typename T, std::size_t BYTES > requires (not std::same_as<T, void>)
     struct buffered_allocator
     {
@@ -28,12 +33,18 @@ namespace ceras
         [[nodiscard]] constexpr T* allocate( std::size_t const n )
         {
             const std::size_t bytes = sizeof(T) * n;
-
-            if ( bytes <= BYTES )
+            if ( bytes <= BYTES ) // use stack in case of small memory
                 return reinterpret_cast<T*>( cache_.data() );
 
-            std::allocator<T> a;
-            return a.allocate( bytes );
+            if constexpr( cuda_mode ) // cuda host allocation to accelerate the cudaMemcpy
+            {
+                return allocate_host<T>( n );
+            }
+            else // default heap allocation
+            {
+                std::allocator<T> a;
+                return a.allocate( bytes );
+            }
         }
 
         constexpr void deallocate( T* p, std::size_t const n )
@@ -43,8 +54,15 @@ namespace ceras
             if ( bytes <= BYTES )
                 return;
 
-            std::allocator<T> a;
-            a.deallocate( p, n );
+            if constexpr( cuda_mode )
+            {
+                deallocate_host( p );
+            }
+            else
+            {
+                std::allocator<T> a;
+                a.deallocate( p, n );
+            }
         }
 
         std::array<std::byte, BYTES> cache_;

@@ -12,7 +12,7 @@ void test_44()
     auto va = ceras::variable{ a };
     auto ta = ceras::transpose( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after transpose:\n" << ans << std::endl;
 }
@@ -26,7 +26,7 @@ void test_44_back()
     auto va = ceras::variable{ a };
     auto ta = ceras::transpose( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
 
     auto grad = ceras::random<double>( {3, 4} );

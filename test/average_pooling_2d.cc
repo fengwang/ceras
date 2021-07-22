@@ -14,7 +14,8 @@ void test_1()
     auto va = ceras::variable{ a };
     auto ta = ceras::average_pooling_2d( 2 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after average_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 }
@@ -30,7 +31,8 @@ void test_2()
     auto va = ceras::variable{ a };
     auto ta = ceras::average_pooling_2d( 2 )( va );
 
-    ceras::session<ceras::tensor<double>> s;
+    //auto& s = ceras::get_default_session<ceras::tensor<double>>();
+    auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto ans = s.run( ta );
     std::cout << "after average_pooling_2d(2):\n" << ceras::squeeze(ans) << std::endl;
 
@@ -38,7 +40,7 @@ void test_2()
     std::cout << "gradient generated as:\n" << ceras::squeeze(grad) << std::endl;
     ta.backward( grad );
 
-    auto new_g = *(va.gradient_);
+    auto new_g = va.gradient();
     std::cout << "propageated gradient:\n" << ceras::squeeze(new_g) << std::endl;
 }
 

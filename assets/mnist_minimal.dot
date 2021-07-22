@@ -1,0 +1,36 @@
+
+
+digraph g {
+n134 [label="Plus<134>"] ;
+n112 -> n134 ;
+n108 -> n134 ;
+n112 [label="Multiply<112>"] ;
+n83 -> n112 ;
+n103 -> n112 ;
+n83 [label="Relu<83>"] ;
+n66 -> n83 ;
+n66 [label="Plus<66>"] ;
+n52 -> n66 ;
+n48 -> n66 ;
+n52 [label="Multiply<52>"] ;
+n31 -> n52 ;
+n43 -> n52 ;
+n31 [label="Relu<31>"] ;
+n22 -> n31 ;
+n22 [label="Plus<22>"] ;
+n16 -> n22 ;
+n12 -> n22 ;
+n16 [label="Multiply<16>"] ;
+n3 -> n16 ;
+n7 -> n16 ;
+n3 [label="Reshape<3>"] ;
+n0 -> n3 ;
+n0 [label="PlaceHolder<0>"] ;
+n7 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<7>[(784 512 ), trainable]"] ;
+n12 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<12>[(1 512 ), trainable]"] ;
+n43 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<43>[(512 256 ), trainable]"] ;
+n48 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<48>[(1 256 ), trainable]"] ;
+n103 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<103>[(256 10 ), trainable]"] ;
+n108 [peripheries=3,style=filled,color=".7 .3 1.0",shape=box,label="Variable<108>[(1 10 ), trainable]"] ;
+}
+

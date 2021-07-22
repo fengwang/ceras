@@ -5,37 +5,56 @@
 #include "./tensor.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/debug.hpp"
+#include "./utils/id.hpp"
+#include "./utils/enable_shared.hpp"
+#include "./utils/state.hpp"
 
 namespace ceras
 {
 
     template< Tensor Tsor >
-    struct place_holder
+    struct place_holder_state
     {
-        std::shared_ptr<Tsor> data_;
+        Tsor data_;
+        std::vector< unsigned long> shape_hint_;
+    };
 
-        place_holder() { }
+    template< Tensor Tsor >
+    struct place_holder : enable_id< place_holder<Tsor>, "PlaceHolder" >, enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
+    {
+        typedef Tsor tensor_type;
 
-        ~place_holder() { }
+        place_holder( place_holder const& other) = default;
+        place_holder( place_holder && other) = default;
+        place_holder& operator = ( place_holder const& other) = default;
+        place_holder& operator = ( place_holder && other) = default;
+
+        place_holder()
+        {
+            (*this).state_ = std::make_shared<place_holder_state<Tsor>>();
+        }
+
+        place_holder( std::vector<unsigned long> const& shape_hint )
+        {
+            (*this).state_ = std::make_shared<place_holder_state<Tsor>>();
+            (*((*this).state_)).shape_hint_ = shape_hint;
+        }
+
+        void bind( Tsor data )
+        {
+            better_assert( (*this).state_, "Error with empty state." );
+            (*((*this).state_)).data_ = data;
+        }
 
         Tsor const forward() const
         {
-            better_assert( data_, "This place holder does not hold a data!" );
-            return *data_;
+            better_assert( (*this).state_, "Error with empty state." );
+            better_assert( !((*((*this).state_)).data_.empty()), "Error with empty tensor." );
+            return (*((*this).state_)).data_;
         }
 
-        void bind( Tsor const& data )
-        {
-            data_ = std::make_shared<Tsor>(data);
-        }
+        void reset() { }
 
-        void reset()
-        {
-            data_.reset();
-        }
-
-        // note: should not be written as 'void backward( ... ) const'
-        // reason: cannot pass object of non-trivial type through variadic method
         void backward( auto ) const noexcept { }
     };
 
@@ -51,6 +70,41 @@ namespace ceras
     template< typename T >
     concept Place_Holder = is_place_holder_v<T>;
 
+    template< Place_Holder Ph >
+    bool operator == ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() == rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator != ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() != rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator < ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() < rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator > ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() < rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator <= ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() <= rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    bool operator >= ( Ph const& lhs, Ph const& rhs )
+    {
+        return lhs.id() >= rhs.id();
+    }
 
 }//namespace ceras
 

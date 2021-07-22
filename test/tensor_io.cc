@@ -22,8 +22,8 @@ TEST_CASE("tensor_add", "[tensor_add]")
             unsigned long dims = dims_ + 1;
 
             auto a = random<double>( {dims, dims} );
-            savetxt( "./iotest.txt", a );
-            auto b = loadtxt<double>( "./iotest.txt" ).reshape({dims, dims});
+            save_tensor( "./iotest.txt", a );
+            auto b = load_tensor<double>( "./iotest.txt" ).reshape({dims, dims});
 
 
             auto diff = a - b;

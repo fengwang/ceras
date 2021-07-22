@@ -29,6 +29,7 @@ _Pragma( "clang diagnostic pop" )
 #define RESTORE_WARNINGS
 #endif
 
+#include "../config.hpp"
 #include "../includes.hpp"
 #include "./lexical_cast.hpp"
 
@@ -107,53 +108,45 @@ namespace color
     //      auto new_message = color::rize( "I am a banana!", "Yellow", "Green" );
     //      std::cout << new_message << std::endl;
     //
-    inline std::string rize( std::string const& source,
-                             std::string foreground_color = "Default",
-                             std::string background_color = "Default",
-                             std::string set_formatting = "Default",
-                             std::string reset_formatting = "All"
-                           )
+    inline std::string rize( std::string const& source, std::string foreground_color = "Default", std::string background_color = "Default", std::string set_formatting = "Default", std::string reset_formatting = "All")
     {
-        std::string const control = "\033";
+        if constexpr( ceras::is_windows_platform )
+        {
+            return source;
+        }
+        else
+        {
+            std::string const control = "\033";
 
-        if ( color_foreground.find( foreground_color ) == color_foreground.end() )
-            foreground_color = "Default";
+            if ( color_foreground.find( foreground_color ) == color_foreground.end() )
+                foreground_color = "Default";
 
-        if ( color_background.find( background_color ) == color_background.end() )
-            background_color = "Default";
+            if ( color_background.find( background_color ) == color_background.end() )
+                background_color = "Default";
 
-        if ( formatting_set.find( set_formatting ) == formatting_set.end() )
-            set_formatting = "Default";
+            if ( formatting_set.find( set_formatting ) == formatting_set.end() )
+                set_formatting = "Default";
 
-        if ( formatting_reset.find( reset_formatting ) == formatting_reset.end() )
-            reset_formatting = "All";
+            if ( formatting_reset.find( reset_formatting ) == formatting_reset.end() )
+                reset_formatting = "All";
 
-        std::string ans =   control  + std::string{"["} +
-                            formatting_set.at( set_formatting ) + std::string{";"} +
-                            color_background.at( background_color ) + std::string{";"} +
-                            color_foreground.at( foreground_color ) + std::string{"m"} +
-                            source +
-                            control + std::string{"["} +
-                            formatting_reset.at( reset_formatting ) + std::string{"m"};
-        return ans;
+            std::string ans =   control  + std::string{"["} +
+                                formatting_set.at( set_formatting ) + std::string{";"} +
+                                color_background.at( background_color ) + std::string{";"} +
+                                color_foreground.at( foreground_color ) + std::string{"m"} +
+                                source +
+                                control + std::string{"["} +
+                                formatting_reset.at( reset_formatting ) + std::string{"m"};
+            return ans;
+        }
     }
-    inline std::string rize( char const* const source,
-                             std::string foreground_color = "Default",
-                             std::string background_color = "Default",
-                             std::string set_formatting = "Default",
-                             std::string reset_formatting = "All"
-                           )
+    inline std::string rize( char const* const source, std::string foreground_color = "Default", std::string background_color = "Default", std::string set_formatting = "Default", std::string reset_formatting = "All")
     {
         return rize( std::string{source}, foreground_color, background_color, set_formatting, reset_formatting );
     }
 
     template< typename T >
-    inline std::string rize( T const& source,
-                             std::string foreground_color = "Default",
-                             std::string background_color = "Default",
-                             std::string set_formatting = "Default",
-                             std::string reset_formatting = "All"
-                           )
+    inline std::string rize( T const& source, std::string foreground_color = "Default", std::string background_color = "Default", std::string set_formatting = "Default", std::string reset_formatting = "All")
     {
         return rize( ceras::lexical_cast<std::string>( source ), foreground_color, background_color, set_formatting, reset_formatting );
     }

@@ -52,3 +52,71 @@ TEST_CASE("buffered_tensor_add", "[buffered_tensor_add]")
     }
 }
 
+void print( auto vec )
+{
+    for ( auto i = 0UL; i != vec.size(); ++i )
+        std::cout << vec[i] << " ";
+    std::cout << std::endl;
+}
+
+
+TEST_CASE("vec", "[vec]")
+{
+    using namespace ceras;
+
+    std::vector<int, buffered_allocator<int,50>> vec;
+    unsigned long const N = 60;
+
+    //increase
+    for ( auto i = 0UL; i != N; ++i )
+    {
+        vec.push_back( i );
+        //vec.resize( i+1 );
+        print( vec );
+    }
+
+    //decrease
+    for ( auto i = 0UL; i != N; ++i )
+    {
+        vec.resize( N - i - 1 );
+        print( vec );
+    }
+
+}
+
+std::string create_string( unsigned long N )
+{
+    std::string str;
+    str.resize( N );
+    std::string dat = std::to_string( N );
+    std::fill( str.begin(), str.end(), dat[0] );
+    return str;
+}
+
+
+TEST_CASE("vstring", "[vstring]")
+{
+    using namespace ceras;
+
+    std::vector<std::string, buffered_allocator<std::string,1000000>> vec;
+    unsigned long const N = 25;
+
+    //increase
+    for ( auto i = 0UL; i != N; ++i )
+    {
+        vec.push_back( create_string(i) );
+        //vec.resize( i+1 );
+        print( vec );
+    }
+
+    //decrease
+    for ( auto i = 0UL; i != N; ++i )
+    {
+        vec.resize( N - i - 1 );
+        print( vec );
+    }
+
+}
+
+
+
