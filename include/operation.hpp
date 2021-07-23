@@ -1205,14 +1205,6 @@ namespace ceras
         {
             return make_unary_operator
             (
-             /*
-                [stride, mask, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept // [BS, R, C, CH] --> [BS, R/s, C/s, CH]
-                {
-                },
-                [stride, mask, backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                {
-                },
-            */
                 max_pooling_2d_context{}.make_forward()( stride, mask, forward_cache ),
                 max_pooling_2d_context{}.make_backward()( stride, mask, backward_cache ),
                 "MaxPooling2D"
@@ -1371,6 +1363,7 @@ namespace ceras
             )( ex );
         };
     }
+
 
 
     template< typename T=double > requires std::floating_point<T>
@@ -1823,8 +1816,6 @@ namespace ceras
 
     namespace
     {
-        // An extra indirect layer to make gcc's life a bit easier.
-        // TODO: move detail to `zero_padding_2d` after gcc reaching his maturity.
         struct zero_padding_2d_context
         {
             auto make_forward() const noexcept
