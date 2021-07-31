@@ -1004,7 +1004,8 @@ namespace ceras
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
         //
-        return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
+        //return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
+        return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
         {
             std::vector<unsigned long> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );

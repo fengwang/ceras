@@ -340,12 +340,7 @@ namespace ceras
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
                                         std::copy( input.begin(), input.end(), ans.begin() );
-                                        ans.map([](auto& x)
-                                                {
-                                                    x = ( x > value_type{1} )  ? value_type{1} :
-                                                        ( x < value_type{-1} ) ? value_type{0} :
-                                                        (x+value_type{1})/value_type{2};
-                                                });
+                                        ans.map([](auto& x) { x = ( x > value_type{1} )  ? value_type{1} : ( x < value_type{-1} ) ? value_type{0} : (x+value_type{1})/value_type{2}; });
                                         return ans;
                                     },
                                     []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept

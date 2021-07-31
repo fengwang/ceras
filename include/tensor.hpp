@@ -243,7 +243,7 @@ namespace ceras
         template< typename Function >
         constexpr self_type& map( Function const& f )
         {
-            std::for_each( (*this).data(), (*this).data()+(*this).size(), [&f]( auto& v ){ f(v); } );
+            for_each( (*this).data(), (*this).data()+(*this).size(), [&f]( auto& v ){ f(v); } );
             return *this;
         }
 
