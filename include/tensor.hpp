@@ -9,6 +9,7 @@
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/id.hpp"
+#include "./utils/list.hpp"
 #include "./backend/cuda.hpp"
 
 namespace ceras
@@ -395,6 +396,20 @@ namespace ceras
 
         return os_ << os.str();
     }
+
+    template< typename T >
+    struct view_1d
+    {
+        T* data;
+        unsigned long dims;
+
+        constexpr T& operator[]( unsigned long idx ) noexcept { return data[idx]; }
+        constexpr T const& operator[]( unsigned long idx ) const noexcept { return data[idx]; }
+    };// view_1d
+
+    template< typename T >
+    using array = view_1d<T>;
+
 
     template< typename T >
     struct view_2d
@@ -1396,6 +1411,61 @@ namespace ceras
 
     template<typename T >
     using tesseract = view_4d<T>;
+
+
+    template<typename T, unsigned long N>
+    struct view;
+
+    template<typename T>
+    view<T, 1> :: view_1d<T>
+    {
+        using view_1d<T>::view_1d;
+    };
+
+    template<typename T>
+    view<T, 2> :: view_2d<T>
+    {
+        using view_2d<T>::view_2d;
+    };
+
+    template<typename T>
+    view<T, 3> :: view_3d<T>
+    {
+        using view_3d<T>::view_3d;
+    };
+
+    template<typename T>
+    view<T, 4> :: view_4d<T>
+    {
+        using view_4d<T>::view_4d;
+    };
+
+    template< typename T, unsigned long N >
+    struct view
+    {
+        T* data_;
+        std::array<unsigned long, N> shape_;
+
+        template< typename T, typename ... Sizes >
+        constexpr view( T* data, Sizes ... sizes ) noexcept :  data_{ data }, shape_{ sizes... } {}
+
+
+        constexpr view<T, N-1> operator []( unsigned long index ) noexcept
+        {
+            constexpr unsigned long first_dim = shape_[0];
+            constexpr unsigned long offsets = std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
+            constexpr T* new_data = data_ + offsets;
+
+            std::array<T, N-1> new_shape;
+        }
+
+
+
+    };
+
+
+
+
 
 }//namespace ceras
 

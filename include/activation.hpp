@@ -10,10 +10,18 @@
 
 namespace ceras
 {
-    // TODO:
-    // for expression/activation with only single input/output, the corresponding tensor can be reused without allocating new memory
-    //
 
+    ///
+    /// @brief Softmax activation function, an unary operator.
+    ///
+    /// @param ex An input operator
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = softmax( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto constexpr softmax( Ex const& ex ) noexcept
     {
@@ -44,12 +52,22 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief Scaled Exponential Linear Unit (SELU) activation function, an unary operator. If `x>0`, returns 1.0507 x; Otherwise, returns 1.67326*1.0507*(exp(x)-1)
+    ///
+    /// @param ex An input operator
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = selu( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline selu( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        //TODO: optimize backward_cache out by reusing grad
 
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -80,12 +98,22 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief Softplus function, an unary operator. Returns `log(exp(x)+1)`.
+    ///
+    /// @param ex An input operator
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = softplus( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline softplus( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        //TODO: optimize backward_cache out by reusing grad
 
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -106,12 +134,23 @@ namespace ceras
                 )( ex );
     }
 
+
+    ///
+    /// @brief Softsign function, an unary operator. Returns ` x / (abs(x) + 1)`.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = softsign( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline softsign( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        //TODO: optimize backward_cache out by reusing grad
 
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
@@ -132,13 +171,22 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief Sigmoid function, an unary operator. Returns `1 / (exp(-x) + 1)`.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = sigmoid( y );
+    /// \endcode
+    ///
     template <Expression Ex>
-    //auto constexpr sigmoid( Ex const& ex ) noexcept
     auto inline sigmoid( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        //TODO: optimize backward_cache out by reusing grad
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
@@ -196,6 +244,17 @@ namespace ceras
 
     }//anonymous namespace
 
+    ///
+    /// @brief Relu function, an unary operator. Returns `x` if positive, `0` otherwise.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = relu( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto relu( Ex const& ex ) noexcept
     {
@@ -238,6 +297,17 @@ namespace ceras
 
     }//anonymous namespace
 
+    ///
+    /// @brief Rectified Linear 6 function, an unary operator. Returns `min(max(features, 0), 6)`.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = relu6( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto relu6( Ex const& ex ) noexcept
     {
@@ -245,8 +315,20 @@ namespace ceras
         return make_unary_operator( relu6_context{}.make_forward()( forward_cache ), relu6_context{}.make_backward(), "Relu6")( ex );
     }
 
+
+    ///
+    /// @brief Leaky Rectified Linear function, an unary operator. Returns `x` if positive, `alpha x` otherwise. `alpha` defaults to 0.2.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = leaky_relu(0.1f)( y );
+    /// \endcode
+    ///
     template< typename T > requires std::floating_point<T>
-    auto leaky_relu( T const factor ) noexcept
+    auto leaky_relu( T const factor=0.2 ) noexcept
     {
         better_assert( factor > T{0}, "Expecting leak_relu with a factor greater than 0, but got factor = ", factor );
         better_assert( factor < T{1}, "Expecting leak_relu with a factor less than 1, but got factor = ", factor );
@@ -278,6 +360,18 @@ namespace ceras
         return negative( relu( ex ) );
     }
 
+
+    ///
+    /// @brief Exponential Linear function, an unary operator. Returns `x` if positive, `alpha* (exp(x)-1)` otherwise. `alpha` defaults to 0.2.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = elu(0.1f)( y );
+    /// \endcode
+    ///
     template< typename T=float > requires std::floating_point<T>
     auto elu( T const alpha=1.0 ) noexcept
     {
@@ -304,6 +398,17 @@ namespace ceras
         };
     }
 
+    ///
+    /// @brief Exponential function, an unary operator. Returns `exp(x)`.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = exponential( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline exponential( Ex const& ex ) noexcept
     {
@@ -329,6 +434,17 @@ namespace ceras
                 )( ex );
     }
 
+    ///
+    /// @brief Hard Sigmoid function, an unary operator. Piecewise linear approximation of the sigmoid function.
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = hard_sigmoid( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline hard_sigmoid( Ex const& ex ) noexcept
     {
@@ -354,11 +470,22 @@ namespace ceras
                 )( ex );
     }
 
-    // GAUSSIAN ERROR LINEAR UNITS (GELUS) https://arxiv.org/pdf/1606.08415.pdf
-    // f(x) = 0.5x (1 + tanh[\sqrt{2/π}(x + 0.044715x^3)])
-    // df = x ( 1 + tanh[\sqrt{2/π}(x + 0.044715x^3)] ) +  \sqrt(2/π) x sech^2[\sqrt(2/π) x (1+0.44715x^2) (1+0.134145x^2) ]
-    // where sec^2(x) = 1 - tanh^2(x)
-    // derivative generated using service from https://www.symbolab.com/solver/derivative-calculator
+    ///
+    /// @brief Gaussian Error function, an unary operator.
+    /// GAUSSIAN ERROR LINEAR UNITS (GELUS) https://arxiv.org/pdf/1606.08415.pdf
+    /// $f(x) = 0.5x (1 + tanh[\sqrt{2/\pi}(x + 0.044715x^3)])$
+    /// $df = x ( 1 + tanh[\sqrt{2/\pi}(x + 0.044715x^3)] ) +  \sqrt(2/\pi) x sech^2[\sqrt(2/\pi) x (1+0.44715x^2) (1+0.134145x^2) ]$
+    /// where $sec^2(x) = 1 - tanh^2(x)$
+    /// derivative generated using service from https://www.symbolab.com/solver/derivative-calculator
+    ///
+    /// @param ex An input operator.
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = gelu( y );
+    /// \endcode
+    ///
     template <Expression Ex>
     auto inline gelu( Ex const& ex ) noexcept
     {
@@ -403,7 +530,7 @@ namespace ceras
 
 
     ///
-    /// @brief Applies the swish activation function.
+    /// @brief Swish activation function.
     ///
     /// Reference: Ramachandran, Prajit, Barret Zoph, and Quoc V. Le. “Searching for Activation Functions.” ArXiv:1710.05941 [Cs], October 16, 2017. http://arxiv.org/abs/1710.05941.
     ///
