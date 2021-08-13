@@ -560,14 +560,56 @@ namespace ceras
     /// auto v = variable{ random<float>{ 3, 3 } };
     /// auto c = crelu( v );
     /// \endcode
+    ///
     template< Expression Ex >
     auto crelu( Ex const& ex ) noexcept
     {
         return concatenate(-1)( relu(ex), relu(-ex) );
     }
 
+    ///
+    /// @brief Tank shrink function.
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ random<float>{ 3, 3 } };
+    /// auto c = tank_shrink( v );
+    /// \endcode
+    ///
+    template< Expression Ex >
+    auto tank_shrink( Ex const& ex ) noexcept
+    {
+        return ex - tanh( ex );
+    }
 
 
+    ///
+    /// @brief Mish function.
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ random<float>{ 3, 3 } };
+    /// auto c = mish( v );
+    /// \endcode
+    ///
+    template< Expression Ex >
+    auto mish( Ex const& ex ) noexcept
+    {
+        return ex*tanh(softplus(ex));
+    }
+
+
+    ///
+    /// @brief Lisht function.
+    ///
+    /// \code{.cpp}
+    /// auto v = variable{ random<float>{ 3, 3 } };
+    /// auto c = lisht( v );
+    /// \endcode
+    ///
+    template< Expression Ex >
+    auto lisht( Ex const& ex ) noexcept
+    {
+        return ex*tanh(ex);
+    }
 
 }//namespace ceras
 
