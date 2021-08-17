@@ -650,6 +650,7 @@ for ( auto e : range( epoch ) )
 {
     for ( auto i : range( iteration_per_epoch ) )
     {
+        // update input_images, output_labels for the current batch
         s.run( loss ); //forward pass
         s.run( optimizer ); //backward pass
     }

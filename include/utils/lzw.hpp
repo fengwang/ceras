@@ -1,676 +1,575 @@
-#ifndef LZW_HPP_INCLUDED_ADSFLKSALKJSALKJASLKJSALSAKJSALKJLKJASLKFSDJLKASJFDFFFFFFFFF
-#define LZW_HPP_INCLUDED_ADSFLKSALKJSALKJASLKJSALSAKJSALKJLKJASLKFSDJLKASJFDFFFFFFFFF
+#ifndef LZW_HPP_INCLUDED_DPIHJASFLDKJAS8U4LAFJLASKJSALKJDFASLFKJDSFALKJASLKFJAAD
+#define LZW_HPP_INCLUDED_DPIHJASFLDKJAS8U4LAFJLASKJSALKJDFASLFKJDSFALKJASLKFJAAD
 
-// credit goes to https://github.com/glampert/compression-algorithms/blob/master/lzw.hpp
+
+#include "../includes.hpp"
+#include "./better_assert.hpp"
+
 
 namespace lzw
 {
+    // interfaces:
+    // void compress(std::istream& is, std::ostream& os);
+    // int decompress(std::istream& is, std::ostream& os);
 
-    namespace lzw_details
+    namespace details
     {
-        inline
-        void fatalError( const char* const message )
+
+        // adapted from http://www.cplusplus.com/articles/iL18T05o/#Version6
+
+        /// Type used to store and retrieve codes.
+        using CodeType = std::uint32_t;
+
+        namespace globals
         {
-            std::fprintf( stderr, "LZW encoder/decoder error: %s\n", message );
-            std::abort();
-        }
 
-        struct BitStreamWriter final
+            /// Dictionary Maximum Size (when reached, the dictionary will be reset)
+            const CodeType dms {512 * 1024};
+
+        } // namespace globals
+
+        ///
+        /// @brief Special codes used by the encoder to control the decoder.
+        /// @todo Metacodes should not be hardcoded to match their index.
+        ///
+        enum class MetaCode : CodeType
         {
-                BitStreamWriter( const BitStreamWriter& ) = delete;
-                BitStreamWriter& operator = ( const BitStreamWriter& ) = delete;
-
-                BitStreamWriter();
-                explicit BitStreamWriter( std::int64_t initialSizeInBits, std::int64_t growthGranularity = 2 );
-
-                void allocate( std::int64_t bitsWanted );
-                void setGranularity( std::int64_t growthGranularity );
-                std::uint8_t* release();
-
-                void appendBit( std::int64_t bit );
-                void appendBitsU64( std::uint64_t num, std::int64_t bitCount );
-
-                std::string toBitString() const; // Useful for debugging.
-                void appendBitString( const std::string& bitStr );
-
-                std::int64_t getByteCount() const;
-                std::int64_t getBitCount()  const;
-                const std::uint8_t* getBitStream() const;
-
-                ~BitStreamWriter();
-
-            private:
-
-                void internalInit();
-                static std::uint8_t* allocBytes( std::int64_t bytesWanted, std::uint8_t* oldPtr, std::int64_t oldSize );
-
-                std::uint8_t* stream;  // Growable buffer to store our bits. Heap allocated & owned by the class instance.
-                std::int64_t bytesAllocated;    // Current size of heap-allocated stream buffer *in bytes*.
-                std::int64_t granularity;       // Amount bytesAllocated multiplies by when auto-resizing in appendBit().
-                std::int64_t currBytePos;       // Current byte being written to, from 0 to bytesAllocated-1.
-                std::int64_t nextBitPos;        // Bit position within the current byte to access next. 0 to 7.
-                std::int64_t numBitsWritten;    // Number of bits in use from the stream buffer, not including byte-rounding padding.
+            Eof = 1u << CHAR_BIT,   ///< End-of-file.
         };
 
-
-        struct BitStreamReader final
+        ///
+        /// @brief Encoder's custom dictionary type.
+        ///
+        struct EncoderDictionary
         {
-                BitStreamReader( const BitStreamReader& ) = delete;
-                BitStreamReader& operator = ( const BitStreamReader& ) = delete;
 
-                BitStreamReader( const BitStreamWriter& bitStreamWriter );
-                BitStreamReader( const std::uint8_t* bitStream, std::int64_t byteCount, std::int64_t bitCount );
-
-                bool isEndOfStream() const;
-                bool readNextBit( std::int64_t& bitOut );
-                std::uint64_t readBitsU64( std::int64_t bitCount );
-                void reset();
-
-            private:
-
-                const std::uint8_t* stream;  // Pointer to the external bit stream. Not owned by the reader.
-                const std::int64_t sizeInBytes;       // Size of the stream *in bytes*. Might include padding.
-                const std::int64_t sizeInBits;        // Size of the stream *in bits*, padding *not* include.
-                std::int64_t currBytePos;             // Current byte being read in the stream.
-                std::int64_t nextBitPos;              // Bit position within the current byte to access next. 0 to 7.
-                std::int64_t numBitsRead;             // Total bits read from the stream so far. Never includes byte-rounding padding.
-        };
-
-        constexpr std::int64_t Nil            = -1;
-        constexpr std::int64_t MaxDictBits    = 12;
-        constexpr std::int64_t StartBits      = 9;
-        constexpr std::int64_t FirstCode      = ( 1 << ( StartBits - 1 ) ); // 256
-        constexpr std::int64_t MaxDictEntries = ( 1 << MaxDictBits );   // 4096
-
-        struct Dictionary final
-        {
-            struct Entry
+            ///
+            /// @brief Binary search tree node.
+            ///
+            struct Node
             {
-                std::int64_t code;
-                std::int64_t value;
+
+                ///
+                /// @brief Default constructor.
+                /// @param c    byte that the Node will contain
+                ///
+                explicit Node(char c): first(globals::dms), c(c), left(globals::dms), right(globals::dms)
+                {
+                }
+
+                CodeType    first;  ///< Code of first child string.
+                char        c;      ///< Byte.
+                CodeType    left;   ///< Code of child node with byte < `c`.
+                CodeType    right;  ///< Code of child node with byte > `c`.
             };
 
-            // Dictionary entries 0-255 are always reserved to the byte/ASCII range.
-            std::int64_t size;
-            Entry entries[MaxDictEntries];
+            ///
+            /// @brief Default constructor.
+            /// @details It builds the `initials` cheat sheet.
+            ///
+            EncoderDictionary()
+            {
+                const long int minc = std::numeric_limits<char>::min();
+                const long int maxc = std::numeric_limits<char>::max();
+                CodeType k {0};
 
-            Dictionary();
-            std::int64_t findIndex( std::int64_t code, std::int64_t value ) const;
-            bool add( std::int64_t code, std::int64_t value );
-            bool flush( std::int64_t& codeBitsWidth );
+                for (long int c = minc; c <= maxc; ++c)
+                {
+                    initials[static_cast<unsigned char> (c)] = k++;
+                }
+
+                vn.reserve(globals::dms);
+                reset();
+            }
+
+            ///
+            /// @brief Resets dictionary to its initial contents.
+            /// @note Adds dummy nodes to account for the metacodes.
+            ///
+            void reset()
+            {
+                vn.clear();
+                const long int minc = std::numeric_limits<char>::min();
+                const long int maxc = std::numeric_limits<char>::max();
+
+                for (long int c = minc; c <= maxc; ++c)
+                {
+                    vn.push_back(Node(c));
+                }
+
+                // add dummy nodes for the metacodes
+                vn.push_back(Node('\x00')); // MetaCode::Eof
+            }
+
+            ///
+            /// @brief Searches for a pair (`i`, `c`) and inserts the pair if it wasn't found.
+            /// @param i                code to search for
+            /// @param c                attached byte to search for
+            /// @return The index of the pair, if it was found.
+            /// @retval globals::dms    if the pair wasn't found
+            ///
+            CodeType search_and_insert(CodeType i, char c)
+            {
+                if (i == globals::dms)
+                {
+                    return search_initials(c);
+                }
+
+                const CodeType vn_size = vn.size();
+                CodeType ci {vn[i].first}; // Current Index
+
+                if (ci != globals::dms)
+                {
+                    while (true)
+                        if (c < vn[ci].c)
+                        {
+                            if (vn[ci].left == globals::dms)
+                            {
+                                vn[ci].left = vn_size;
+                                break;
+                            }
+                            else
+                            {
+                                ci = vn[ci].left;
+                            }
+                        }
+                        else if (c > vn[ci].c)
+                        {
+                            if (vn[ci].right == globals::dms)
+                            {
+                                vn[ci].right = vn_size;
+                                break;
+                            }
+                            else
+                            {
+                                ci = vn[ci].right;
+                            }
+                        }
+                        else // c == vn[ci].c
+                        {
+                            return ci;
+                        }
+                }
+                else
+                {
+                    vn[i].first = vn_size;
+                }
+
+                vn.push_back(Node(c));
+                return globals::dms;
+            }
+
+            ///
+            /// @brief Fakes a search for byte `c` in the one-byte area of the dictionary.
+            /// @param c    byte to search for
+            /// @return The code associated to the searched byte.
+            ///
+            CodeType search_initials(char c) const
+            {
+                return initials[static_cast<unsigned char> (c)];
+            }
+
+            ///
+            /// @brief Returns the number of dictionary entries.
+            ///
+            std::vector<Node>::size_type size() const
+            {
+                return vn.size();
+            }
+
+
+            /// Vector of nodes on top of which the binary search tree is implemented.
+            std::vector<Node> vn;
+
+            /// Cheat sheet for mapping one-byte strings to their codes.
+            std::array < CodeType, 1u << CHAR_BIT > initials;
         };
 
-
-        // Round up to the next power-of-two number, e.g. 37 => 64
-        static inline std::int64_t nextPowerOfTwo( std::int64_t num )
+        ///
+        /// @brief Helper structure for use in `CodeWriter` and `CodeReader`.
+        ///
+        struct ByteCache
         {
-            --num;
 
-            for ( std::size_t i = 1; i < sizeof( num ) * 8; i <<= 1 )
+            ///
+            /// @brief Default constructor.
+            ///
+            ByteCache(): used(0), data(0x00)
             {
-                num = num | num >> i;
             }
 
-            return ++num;
-        }
+            std::size_t     used;   ///< Bits currently in use.
+            unsigned char   data;   ///< The bits of the cached byte.
+        };
 
-        inline
-        BitStreamWriter::BitStreamWriter()
+        ///
+        /// @brief Variable binary width code writer.
+        ///
+        struct CodeWriter
         {
-            // 8192 bits for a start (1024 bytes). It will resize if needed.
-            // Default granularity is 2.
-            internalInit();
-            allocate( 8192 );
-        }
-
-        inline
-        BitStreamWriter::BitStreamWriter( const std::int64_t initialSizeInBits, const std::int64_t growthGranularity )
-        {
-            internalInit();
-            setGranularity( growthGranularity );
-            allocate( initialSizeInBits );
-        }
-
-        inline
-        BitStreamWriter::~BitStreamWriter()
-        {
-            if ( stream != nullptr )
+            ///
+            /// @brief Default constructor.
+            /// @param [out] os     Output Stream to write codes to
+            ///
+            explicit CodeWriter(std::ostream& os): os(os), bits(CHAR_BIT + 1)
             {
-                std::free( stream );
-            }
-        }
-
-
-        inline
-        void BitStreamWriter::internalInit()
-        {
-            stream         = nullptr;
-            bytesAllocated = 0;
-            granularity    = 2;
-            currBytePos    = 0;
-            nextBitPos     = 0;
-            numBitsWritten = 0;
-        }
-
-        inline
-        void BitStreamWriter::allocate( std::int64_t bitsWanted )
-        {
-            // Require at least a byte.
-            if ( bitsWanted <= 0 )
-            {
-                bitsWanted = 8;
             }
 
-            // Round upwards if needed:
-            if ( ( bitsWanted % 8 ) != 0 )
+            ///
+            /// @brief Destructor.
+            /// @note Writes `MetaCode::Eof` and flushes the last byte to the stream.
+            ///
+            ~CodeWriter()
             {
-                bitsWanted = nextPowerOfTwo( bitsWanted );
-            }
+                write(static_cast<CodeType>(MetaCode::Eof));
 
-            // We might already have the required count.
-            const std::int64_t sizeInBytes = bitsWanted / 8;
-
-            if ( sizeInBytes <= bytesAllocated )
-            {
-                return;
-            }
-
-            stream = allocBytes( sizeInBytes, stream, bytesAllocated );
-            bytesAllocated = sizeInBytes;
-        }
-
-        inline
-        void BitStreamWriter::appendBit( const std::int64_t bit )
-        {
-            const std::uint32_t mask = std::uint32_t( 1 ) << nextBitPos;
-            stream[currBytePos] = ( stream[currBytePos] & ~mask ) | ( -bit & mask );
-            ++numBitsWritten;
-
-            if ( ++nextBitPos == 8 )
-            {
-                nextBitPos = 0;
-
-                if ( ++currBytePos == bytesAllocated )
+                // write the incomplete leftover byte as-is
+                if (lo.used != 0)
                 {
-                    allocate( bytesAllocated * granularity * 8 );
-                }
-            }
-        }
-
-        inline
-        void BitStreamWriter::appendBitsU64( const std::uint64_t num, const std::int64_t bitCount )
-        {
-            assert( bitCount <= 64 );
-
-            for ( std::int64_t b = 0; b < bitCount; ++b )
-            {
-                const std::uint64_t mask = std::uint64_t( 1 ) << b;
-                const std::int64_t bit = !!( num & mask );
-                appendBit( bit );
-            }
-        }
-
-        inline
-        void BitStreamWriter::appendBitString( const std::string& bitStr )
-        {
-            for ( std::size_t i = 0; i < bitStr.length(); ++i )
-            {
-                appendBit( bitStr[i] == '0' ? 0 : 1 );
-            }
-        }
-
-        inline
-        std::string BitStreamWriter::toBitString() const
-        {
-            std::string bitString;
-            std::int64_t usedBytes = numBitsWritten / 8;
-            std::int64_t leftovers = numBitsWritten % 8;
-
-            if ( leftovers != 0 )
-            {
-                ++usedBytes;
-            }
-
-            assert( usedBytes <= bytesAllocated );
-
-            for ( std::int64_t i = 0; i < usedBytes; ++i )
-            {
-                const std::int64_t nBits = ( leftovers == 0 ) ? 8 : ( i == usedBytes - 1 ) ? leftovers : 8;
-
-                for ( std::int64_t j = 0; j < nBits; ++j )
-                {
-                    bitString += ( stream[i] & ( 1 << j ) ? '1' : '0' );
+                    os.put(static_cast<char>(lo.data));
                 }
             }
 
-            return bitString;
-        }
-
-
-        inline
-        std::uint8_t* BitStreamWriter::release()
-        {
-            std::uint8_t* oldPtr = stream;
-            internalInit();
-            return oldPtr;
-        }
-
-        inline
-        void BitStreamWriter::setGranularity( const std::int64_t growthGranularity )
-        {
-            granularity = ( growthGranularity >= 2 ) ? growthGranularity : 2;
-        }
-
-        inline
-        std::int64_t BitStreamWriter::getByteCount() const
-        {
-            std::int64_t usedBytes = numBitsWritten / 8;
-            std::int64_t leftovers = numBitsWritten % 8;
-
-            if ( leftovers != 0 )
+            ///
+            /// @brief Getter for `CodeWriter::bits`.
+            ///
+            std::size_t get_bits() const
             {
-                ++usedBytes;
+                return bits;
             }
 
-            assert( usedBytes <= bytesAllocated );
-            return usedBytes;
-        }
-
-        inline
-        std::int64_t BitStreamWriter::getBitCount() const
-        {
-            return numBitsWritten;
-        }
-
-        inline
-        const std::uint8_t* BitStreamWriter::getBitStream() const
-        {
-            return stream;
-        }
-
-        inline
-        std::uint8_t* BitStreamWriter::allocBytes( const std::int64_t bytesWanted, std::uint8_t* oldPtr, const std::int64_t oldSize )
-        {
-            std::uint8_t* newMemory = static_cast<std::uint8_t*>( std::malloc( bytesWanted ) );
-            std::memset( newMemory, 0, bytesWanted );
-
-            if ( oldPtr != nullptr )
+            ///
+            /// @brief Resets internal binary width.
+            /// @note Default value is `CHAR_BIT + 1`.
+            ///
+            void reset_bits()
             {
-                std::memcpy( newMemory, oldPtr, oldSize );
-                std::free( oldPtr );
+                bits = CHAR_BIT + 1;
             }
 
-            return newMemory;
-        }
-
-
-        inline
-        BitStreamReader::BitStreamReader( const BitStreamWriter& bitStreamWriter ) : stream( bitStreamWriter.getBitStream() ), sizeInBytes( bitStreamWriter.getByteCount() ),
-            sizeInBits( bitStreamWriter.getBitCount() )
-        {
-            reset();
-        }
-
-        inline
-        BitStreamReader::BitStreamReader( const std::uint8_t* bitStream, const std::int64_t byteCount, const std::int64_t bitCount ) : stream( bitStream ), sizeInBytes( byteCount ), sizeInBits( bitCount )
-        {
-            reset();
-        }
-
-        inline
-        bool BitStreamReader::readNextBit( std::int64_t& bitOut )
-        {
-            if ( numBitsRead >= sizeInBits )
+            ///
+            /// @brief Increases internal binary width by one.
+            /// @throws std::overflow_error     internal binary width cannot be increased
+            /// @remarks The exception should never be thrown, under normal circumstances.
+            ///
+            void increase_bits()
             {
-                return false; // We are done.
+                ++bits;
             }
 
-            const std::uint32_t mask = std::uint32_t( 1 ) << nextBitPos;
-            bitOut = !!( stream[currBytePos] & mask );
-            ++numBitsRead;
-
-            if ( ++nextBitPos == 8 )
+            ///
+            /// @brief Writes the code `k` with a binary width of `CodeWriter::bits`.
+            /// @param k            code to be written
+            /// @return Whether or not the stream can be used for output.
+            /// @retval true        the output stream can still be used
+            /// @retval false       the output stream can no longer be used
+            ///
+            bool write(CodeType k)
             {
-                nextBitPos = 0;
-                ++currBytePos;
-            }
+                std::size_t remaining_bits {bits};
 
-            return true;
-        }
-
-        inline
-        std::uint64_t BitStreamReader::readBitsU64( const std::int64_t bitCount )
-        {
-            assert( bitCount <= 64 );
-            std::uint64_t num = 0;
-
-            for ( std::int64_t b = 0; b < bitCount; ++b )
-            {
-                std::int64_t bit;
-
-                if ( !readNextBit( bit ) )
+                if (lo.used != 0)
                 {
-                    fatalError( "Failed to read bits from stream! Unexpected end." );
-                    break;
+                    lo.data |= k << lo.used;
+                    os.put(static_cast<char>(lo.data));
+                    k >>= CHAR_BIT - lo.used;
+                    remaining_bits -= CHAR_BIT - lo.used;
+                    lo.used = 0;
+                    lo.data = 0x00;
                 }
 
-                // Based on a "Stanford bit-hack":
-                // http://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
-                const std::uint64_t mask = std::uint64_t( 1 ) << b;
-                num = ( num & ~mask ) | ( -bit & mask );
+                while (remaining_bits != 0)
+                    if (remaining_bits >= CHAR_BIT)
+                    {
+                        os.put(static_cast<char>(k));
+                        k >>= CHAR_BIT;
+                        remaining_bits -= CHAR_BIT;
+                    }
+                    else
+                    {
+                        lo.used = remaining_bits;
+                        lo.data = k;
+                        break;
+                    }
+
+                return os.good();
             }
 
-            return num;
-        }
 
-        inline
-        void BitStreamReader::reset()
+            std::ostream&    os;    ///< Output Stream.
+            std::size_t     bits;   ///< Binary width of codes.
+            ByteCache       lo;     ///< LeftOvers.
+        };
+
+        ///
+        /// @brief Variable binary width code reader.
+        ///
+        struct CodeReader
         {
-            currBytePos = 0;
-            nextBitPos  = 0;
-            numBitsRead = 0;
-        }
-
-        inline
-        bool BitStreamReader::isEndOfStream() const
-        {
-            return numBitsRead >= sizeInBits;
-        }
-
-        // ========================================================
-        // class Dictionary:
-        // ========================================================
-
-        inline
-        Dictionary::Dictionary()
-        {
-            // First 256 dictionary entries are reserved to the byte/ASCII
-            // range. Additional entries follow for the character sequences
-            // found in the input. Up to 4096 - 256 (MaxDictEntries - FirstCode).
-            size = FirstCode;
-
-            for ( std::int64_t i = 0; i < size; ++i )
+            ///
+            /// @brief Default constructor.
+            /// @param [in] is      Input Stream to read codes from
+            ///
+            explicit CodeReader(std::istream& is): is(is), bits(CHAR_BIT + 1), feofmc(false)
             {
-                entries[i].code  = Nil;
-                entries[i].value = i;
-            }
-        }
-
-        inline
-        std::int64_t Dictionary::findIndex( const std::int64_t code, const std::int64_t value ) const
-        {
-            if ( code == Nil )
-            {
-                return value;
             }
 
-            for ( std::int64_t i = 0; i < size; ++i )
+            ///
+            /// @brief Getter for `CodeReader::bits`.
+            ///
+            std::size_t get_bits() const
             {
-                if ( entries[i].code == code && entries[i].value == value )
+                return bits;
+            }
+
+            ///
+            /// @brief Resets internal binary width.
+            /// @note Default value is `CHAR_BIT + 1`.
+            ///
+            void reset_bits()
+            {
+                bits = CHAR_BIT + 1;
+            }
+
+            ///
+            /// @brief Increases internal binary width by one.
+            /// @throws std::overflow_error     if internal binary width cannot be increased
+            /// @remarks The exception should never be thrown, under normal circumstances.
+            ///
+            void increase_bits()
+            {
+                ++bits;
+            }
+
+            ///
+            /// @brief Reads the code `k` with a binary width of `CodeReader::bits`.
+            /// @param [out] k      code to be read
+            /// @return Whether or not the stream can be used for input.
+            /// @retval true        the input stream can still be used
+            /// @retval false       the input stream can no longer be used
+            ///
+            bool read(CodeType& k)
+            {
+                // ready-made bit masks
+                static const std::array<unsigned long int, 9> masks { {0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF} };
+                std::size_t remaining_bits {bits};
+                std::size_t offset {lo.used};
+                unsigned char temp;
+                k = lo.data;
+                remaining_bits -= lo.used;
+                lo.used = 0;
+                lo.data = 0x00;
+
+                while (remaining_bits != 0 && is.get(reinterpret_cast<char&>(temp)))
+                    if (remaining_bits >= CHAR_BIT)
+                    {
+                        k |= static_cast<CodeType>(temp) << offset;
+                        offset += CHAR_BIT;
+                        remaining_bits -= CHAR_BIT;
+                    }
+                    else
+                    {
+                        k |= static_cast<CodeType>(temp & masks[remaining_bits]) << offset;
+                        lo.used = CHAR_BIT - remaining_bits;
+                        lo.data = temp >> remaining_bits;
+                        break;
+                    }
+
+                if (k == static_cast<CodeType>(MetaCode::Eof))
                 {
-                    return i;
-                }
-            }
-
-            return Nil;
-        }
-
-        inline
-        bool Dictionary::add( const std::int64_t code, const std::int64_t value )
-        {
-            if ( size == MaxDictEntries )
-            {
-                fatalError( "Dictionary overflowed!" );
-                return false;
-            }
-
-            entries[size].code  = code;
-            entries[size].value = value;
-            ++size;
-            return true;
-        }
-
-        inline
-        bool Dictionary::flush( std::int64_t& codeBitsWidth )
-        {
-            if ( size == ( 1 << codeBitsWidth ) )
-            {
-                ++codeBitsWidth;
-
-                if ( codeBitsWidth > MaxDictBits )
-                {
-                    // Clear the dictionary (except the first 256 byte entries).
-                    codeBitsWidth = StartBits;
-                    size = FirstCode;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // ========================================================
-        // easyEncode() implementation:
-        // ========================================================
-
-        inline
-        void easyEncode( const std::uint8_t* uncompressed, std::int64_t uncompressedSizeBytes, std::uint8_t** compressed, std::int64_t* compressedSizeBytes, std::int64_t* compressedSizeBits )
-        {
-            if ( uncompressed == nullptr || compressed == nullptr )
-            {
-                fatalError( "lzw_details::easyEncode(): Null data pointer(s)!" );
-                return;
-            }
-
-            if ( uncompressedSizeBytes <= 0 || compressedSizeBytes == nullptr || compressedSizeBits == nullptr )
-            {
-                fatalError( "lzw_details::easyEncode(): Bad in/out sizes!" );
-                return;
-            }
-
-            // LZW encoding context:
-            std::int64_t code = Nil;
-            std::int64_t codeBitsWidth = StartBits;
-            Dictionary dictionary;
-            // Output bit stream we write to. This will allocate
-            // memory as needed to accommodate the encoded data.
-            BitStreamWriter bitStream;
-
-            for ( ; uncompressedSizeBytes > 0; --uncompressedSizeBytes, ++uncompressed )
-            {
-                const std::int64_t value = *uncompressed;
-                const std::int64_t index = dictionary.findIndex( code, value );
-
-                if ( index != Nil )
-                {
-                    code = index;
-                    continue;
-                }
-
-                // Write the dictionary code using the minimum bit-with:
-                bitStream.appendBitsU64( code, codeBitsWidth );
-
-                // Flush it when full so we can restart the sequences.
-                if ( !dictionary.flush( codeBitsWidth ) )
-                {
-                    // There's still space for this sequence.
-                    dictionary.add( code, value );
-                }
-
-                code = value;
-            }
-
-            // Residual code at the end:
-            if ( code != Nil )
-            {
-                bitStream.appendBitsU64( code, codeBitsWidth );
-            }
-
-            // Pass ownership of the compressed data buffer to the user pointer:
-            *compressedSizeBytes = bitStream.getByteCount();
-            *compressedSizeBits  = bitStream.getBitCount();
-            *compressed          = bitStream.release();
-        }
-
-        // ========================================================
-        // easyDecode() and helpers:
-        // ========================================================
-
-        inline
-        static bool outputByte( std::int64_t code, std::uint8_t*& output, std::int64_t outputSizeBytes, std::int64_t& bytesDecodedSoFar )
-        {
-            if ( bytesDecodedSoFar >= outputSizeBytes )
-            {
-                fatalError( "Decoder output buffer too small!" );
-                return false;
-            }
-
-            assert( code >= 0 && code < 256 );
-            *output++ = static_cast<std::uint8_t>( code );
-            ++bytesDecodedSoFar;
-            return true;
-        }
-
-        inline
-        static bool outputSequence( const Dictionary& dict, std::int64_t code, std::uint8_t*& output, std::int64_t outputSizeBytes, std::int64_t& bytesDecodedSoFar, std::int64_t& firstByte )
-        {
-            // A sequence is stored backwards, so we have to write
-            // it to a temp then output the buffer in reverse.
-            std::int64_t i = 0;
-            std::uint8_t sequence[MaxDictEntries];
-
-            do
-            {
-                assert( i < MaxDictEntries - 1 && code >= 0 );
-                sequence[i++] = dict.entries[code].value;
-                code = dict.entries[code].code;
-            }
-            while ( code >= 0 );
-
-            firstByte = sequence[--i];
-
-            for ( ; i >= 0; --i )
-            {
-                if ( !outputByte( sequence[i], output, outputSizeBytes, bytesDecodedSoFar ) )
-                {
+                    feofmc = true;
                     return false;
                 }
+
+                return is.good();
             }
 
-            return true;
-        }
-
-        inline
-        std::int64_t easyDecode( const std::uint8_t* compressed, const std::int64_t compressedSizeBytes, const std::int64_t compressedSizeBits, std::uint8_t* uncompressed, const std::int64_t uncompressedSizeBytes )
-        {
-            if ( compressed == nullptr || uncompressed == nullptr )
+            ///
+            /// @brief Returns if EF is considered corrupted.
+            /// @retval true    didn't find end-of-file metacode
+            /// @retval false   found end-of-file metacode
+            ///
+            bool corrupted() const
             {
-                fatalError( "lzw_details::easyDecode(): Null data pointer(s)!" );
-                return 0;
+                return !feofmc;
             }
 
-            if ( compressedSizeBytes <= 0 || compressedSizeBits <= 0 || uncompressedSizeBytes <= 0 )
-            {
-                fatalError( "lzw_details::easyDecode(): Bad in/out sizes!" );
-                return 0;
-            }
-
-            std::int64_t code          = Nil;
-            std::int64_t prevCode      = Nil;
-            std::int64_t firstByte     = 0;
-            std::int64_t bytesDecoded  = 0;
-            std::int64_t codeBitsWidth = StartBits;
-            // We'll reconstruct the dictionary based on the
-            // bit stream codes. Unlike Huffman encoding, we
-            // don't store the dictionary as a prefix to the data.
-            Dictionary dictionary;
-            BitStreamReader bitStream( compressed, compressedSizeBytes, compressedSizeBits );
-
-            // We check to avoid an overflow of the user buffer.
-            // If the buffer is smaller than the decompressed size,
-            // fatalError() is called. If that doesn't throw or
-            // terminate we break the loop and return the current
-            // decompression count.
-            while ( !bitStream.isEndOfStream() )
-            {
-                assert( codeBitsWidth <= MaxDictBits );
-                code = static_cast<int>( bitStream.readBitsU64( codeBitsWidth ) );
-
-                if ( prevCode == Nil )
-                {
-                    if ( !outputByte( code, uncompressed, uncompressedSizeBytes, bytesDecoded ) )
-                    {
-                        break;
-                    }
-
-                    firstByte = code;
-                    prevCode  = code;
-                    continue;
-                }
-
-                if ( code >= dictionary.size )
-                {
-                    if ( !outputSequence( dictionary, prevCode, uncompressed, uncompressedSizeBytes, bytesDecoded, firstByte ) )
-                    {
-                        break;
-                    }
-
-                    if ( !outputByte( firstByte, uncompressed, uncompressedSizeBytes, bytesDecoded ) )
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    if ( !outputSequence( dictionary, code, uncompressed, uncompressedSizeBytes, bytesDecoded, firstByte ) )
-                    {
-                        break;
-                    }
-                }
-
-                dictionary.add( prevCode, firstByte );
-
-                if ( dictionary.flush( codeBitsWidth ) )
-                {
-                    prevCode = Nil;
-                }
-                else
-                {
-                    prevCode = code;
-                }
-            }
-
-            return bytesDecoded;
-        }
-
-    }//namespace lzw_details
-
-
-    inline auto compress() noexcept
-    {
-        return []<typename OutputIterator>( std::uint8_t const* begin, std::uint8_t const* end, OutputIterator output ) noexcept
-        {
-            std::int64_t compressed_size_bytes = 0;
-            std::int64_t compressed_size_bits = 0;
-            std::uint8_t* compressed_data = nullptr;
-            lzw_details::easyEncode( begin, end-begin, &compressed_data, &compressed_size_bytes, &compressed_size_bits );
-            std::copy_n( compressed_data, compressed_size_bytes, output );
-            std::free( compressed_data );
-            return compressed_size_bits;
+            std::istream&    is;    ///< Input Stream.
+            std::size_t     bits;   ///< Binary width of codes.
+            bool            feofmc; ///< Found End-Of-File MetaCode.
+            ByteCache       lo;     ///< LeftOvers.
         };
+
+        ///
+        /// @brief Computes the minimum number of bits required to store the value of `n`.
+        /// @param n    number to be evaluated
+        /// @return Number of required bits.
+        ///
+        inline std::size_t required_bits(unsigned long int n)
+        {
+            std::size_t r {1};
+
+            while ((n >>= 1) != 0)
+            {
+                ++r;
+            }
+
+            return r;
+        }
+
+    }//namespace details
+
+    ///
+    /// @brief Compresses the contents of `is` and writes the result to `os`.
+    /// @param [in] is      input stream
+    /// @param [out] os     output stream
+    ///
+    inline void compress(std::istream& is, std::ostream& os)
+    {
+        using namespace details;
+        EncoderDictionary ed;
+        CodeWriter cw(os);
+        CodeType i {globals::dms}; // Index
+        char c;
+        bool rbwf {false}; // Reset Bit Width Flag
+
+        while (is.get(c))
+        {
+            // dictionary's maximum size was reached
+            if (ed.size() == globals::dms)
+            {
+                ed.reset();
+                rbwf = true;
+            }
+
+            const CodeType temp {i};
+
+            if ((i = ed.search_and_insert(temp, c)) == globals::dms)
+            {
+                cw.write(temp);
+                i = ed.search_initials(c);
+
+                if (required_bits(ed.size() - 1) > cw.get_bits())
+                {
+                    cw.increase_bits();
+                }
+            }
+
+            if (rbwf)
+            {
+                cw.reset_bits();
+                rbwf = false;
+            }
+        }
+
+        if (i != globals::dms)
+        {
+            cw.write(i);
+        }
     }
 
-    inline auto uncompress( std::int64_t uncompressed_size_bytes, std::int64_t compressed_size_bits ) noexcept
+    ///
+    /// @brief Decompresses the contents of `is` and writes the result to `os`.
+    /// @param [in] is      input stream
+    /// @param [out] os     output stream
+    /// @return 0 for success, -1 for failure
+    ///
+    inline int decompress(std::istream& is, std::ostream& os)
     {
-        return [=]<typename OutputIterator>( std::uint8_t const* begin, std::uint8_t const* end, OutputIterator output ) noexcept
+        using namespace details;
+        std::vector<std::pair<CodeType, char>> dictionary;
+        // "named" lambda function, used to reset the dictionary to its initial contents
+        const auto reset_dictionary = [&dictionary]
         {
-            std::vector<std::uint8_t> uncompressed( uncompressed_size_bytes, 0 );
-            lzw_details::easyDecode( begin, end-begin, compressed_size_bits, uncompressed.data(), uncompressed_size_bytes );
-            std::copy(uncompressed.begin(), uncompressed.end(), output);
+            dictionary.clear();
+            dictionary.reserve(globals::dms);
+
+            const long int minc = std::numeric_limits<char>::min();
+            const long int maxc = std::numeric_limits<char>::max();
+
+            for (long int c = minc; c <= maxc; ++c)
+                dictionary.push_back({globals::dms, static_cast<char>(c)});
+
+            // add dummy elements for the metacodes
+            dictionary.push_back({0, '\x00'}); // MetaCode::Eof
         };
+        const auto rebuild_string = [&dictionary](CodeType k) -> const std::vector<char>*
+        {
+            static std::vector<char> s; // String
+
+            s.clear();
+
+            // the length of a string cannot exceed the dictionary's number of entries
+            s.reserve(globals::dms);
+
+            while (k != globals::dms)
+            {
+                s.push_back(dictionary[k].second);
+                k = dictionary[k].first;
+            }
+
+            std::reverse(s.begin(), s.end());
+            return &s;
+        };
+        reset_dictionary();
+        CodeReader cr(is);
+        CodeType i {globals::dms}; // Index
+        CodeType k; // Key
+
+        while (true)
+        {
+            // dictionary's maximum size was reached
+            if (dictionary.size() == globals::dms)
+            {
+                reset_dictionary();
+                cr.reset_bits();
+            }
+
+            if (required_bits(dictionary.size()) > cr.get_bits())
+            {
+                cr.increase_bits();
+            }
+
+            if (!cr.read(k))
+            {
+                break;
+            }
+
+            if (k > dictionary.size())
+            {
+                better_assert(false, "lzw::invalid compression code with k = ", k, " but dictionary size ", dictionary.size());
+                return -1;
+            }
+
+            const std::vector<char>* s; // String
+
+            if (k == dictionary.size())
+            {
+                dictionary.push_back({i, rebuild_string(i)->front()});
+                s = rebuild_string(k);
+            }
+            else
+            {
+                s = rebuild_string(k);
+
+                if (i != globals::dms)
+                    dictionary.push_back({i, s->front()});
+            }
+
+            os.write(&s->front(), s->size());
+            i = k;
+        }
+
+        if (cr.corrupted())
+        {
+            better_assert(false, "lzw::corrupted comressed file.");
+            return -1;
+        }
+
+        return 0;
     }
 
 }//namespace lzw
 
-#endif//LZW_HPP_INCLUDED_ADSFLKSALKJSALKJASLKJSALSAKJSALKJLKJASLKFSDJLKASJFDFFFFFFFFF
+#endif
 
