@@ -7,6 +7,7 @@
 #include "./variable.hpp"
 #include "./utils/singleton.hpp"
 #include "./utils/debug.hpp"
+#include "./utils/lzw.hpp"
 
 namespace ceras
 {
@@ -76,6 +77,44 @@ namespace ceras
 
         void save( std::string const& file_path ) const
         {
+            // find a tmp file
+            char* tmp_file_path = std::tmpnam( nullptr );
+
+            // save original to tmp file
+            save_original( tmp_file_path );
+
+            // compress tmp file to file_path
+            {
+                std::ifstream ifs{ tmp_file_path, std::ios_base::binary };
+                std::ofstream ofs( file_path, std::ios_base::binary );
+                lzw::compress( ifs, ofs );
+            }
+
+            // remove original
+            std::remove( tmp_file_path );
+        }
+
+        void restore( std::string const& file_path )
+        {
+            // find a tmp file
+            char* tmp_file_path = std::tmpnam( nullptr );
+
+            // uncompress tmp file
+            {
+                std::ifstream ifs( file_path, std::ios_base::binary );
+                std::ofstream ofs{ tmp_file_path, std::ios_base::binary };
+                lzw::decompress( ifs, ofs );
+            }
+
+            // restore original from tmp file to file_path
+            restore_original( tmp_file_path );
+
+            // remove tmp file
+            std::remove( tmp_file_path );
+        }
+
+        void save_original( std::string const& file_path ) const
+        {
             std::ofstream ofs{ file_path };
             better_assert( ofs.good(), "failed to open file ", file_path );
 
@@ -95,7 +134,7 @@ namespace ceras
             ofs.close();
         }
 
-        void restore( std::string const& file_path )
+        void restore_original( std::string const& file_path )
         {
             std::ifstream ifs{ file_path };
             better_assert( ifs.good(), "failed to open file ", file_path );
