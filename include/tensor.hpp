@@ -9,6 +9,7 @@
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/id.hpp"
+#include "./utils/list.hpp"
 #include "./backend/cuda.hpp"
 
 namespace ceras
@@ -243,7 +244,7 @@ namespace ceras
         template< typename Function >
         constexpr self_type& map( Function const& f )
         {
-            std::for_each( (*this).data(), (*this).data()+(*this).size(), [&f]( auto& v ){ f(v); } );
+            for_each( (*this).data(), (*this).data()+(*this).size(), [&f]( auto& v ){ f(v); } );
             return *this;
         }
 
@@ -395,6 +396,20 @@ namespace ceras
 
         return os_ << os.str();
     }
+
+    template< typename T >
+    struct view_1d
+    {
+        T* data;
+        unsigned long dims;
+
+        constexpr T& operator[]( unsigned long idx ) noexcept { return data[idx]; }
+        constexpr T const& operator[]( unsigned long idx ) const noexcept { return data[idx]; }
+    };// view_1d
+
+    template< typename T >
+    using array = view_1d<T>;
+
 
     template< typename T >
     struct view_2d
@@ -1353,7 +1368,7 @@ namespace ceras
         /// @param col The third dimension of the 4-D tensor, also for the column in the CNN layers.
         /// @param channel The last dimension of the 4-D tensor, also for the channel in the CNN layers.
         ///
-        constexpr view_4d( T* data, unsigned long batch_size, unsigned long row, unsigned long col, unsigned long channel ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
+        constexpr view_4d( T* data=nullptr, unsigned long batch_size=0, unsigned long row=0, unsigned long col=0, unsigned long channel=0 ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
 
         ///
         /// Giving a view_3d interface for operator [].
@@ -1396,6 +1411,78 @@ namespace ceras
 
     template<typename T >
     using tesseract = view_4d<T>;
+
+
+    template<typename T, unsigned long N>
+    struct view;
+
+    template<typename T>
+    struct view<T, 1> : view_1d<T>
+    {
+        using view_1d<T>::view_1d;
+    };
+
+    template<typename T>
+    struct view<T, 2> : view_2d<T>
+    {
+        using view_2d<T>::view_2d;
+    };
+
+    template<typename T>
+    struct view<T, 3> : view_3d<T>
+    {
+        using view_3d<T>::view_3d;
+    };
+
+    template<typename T>
+    struct view<T, 4> : view_4d<T>
+    {
+        using view_4d<T>::view_4d;
+
+        view( T* data, std::array<unsigned long, 4> const& shape ) noexcept : view_4d<T>{ data, shape[0], shape[1], shape[2], shape[3] } {}
+    };
+
+    ///
+    /// @brief N-Dimentional view of 1D memory.
+    ///
+    /// \code{.cpp}
+    /// auto t = random<float>( {1, 2, 3, 4, 5, 6, 7} );
+    /// auto v = view<float, 7>{ t.data(), {1, 1, 6, 4, 5, 6, 7} }; // view as different shape tensor
+    /// std::cout << v[0][0][5][3][4][5][6];
+    /// \endcode
+    ///
+    template< typename T, unsigned long N >
+    struct view
+    {
+        T* data_;
+        std::array<unsigned long, N> shape_;
+
+        constexpr view( T* data, std::array<unsigned long, N> const& shape ) noexcept :  data_{ data }, shape_{ shape } {}
+
+        view<T, N-1> operator []( unsigned long index ) noexcept
+        {
+            unsigned long first_dim = shape_[0];
+            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
+            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
+
+            std::array<unsigned long, N-1> new_shape;
+            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
+            return view<T, N-1>{ data_+offsets, new_shape };
+        }
+
+        view<T, N-1> operator []( unsigned long index ) const noexcept
+        {
+            unsigned long first_dim = shape_[0];
+            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
+            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
+
+            std::array<unsigned long, N-1> new_shape;
+            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
+            return view<T, N-1>{ data_+offsets, new_shape };
+        }
+
+    }; // struct view
+
 
 }//namespace ceras
 

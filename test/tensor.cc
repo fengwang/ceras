@@ -310,6 +310,14 @@ int main()
         std::cout << x << std::endl;
     }
 
+    {
+        ceras::tensor<float> t = ceras::random<float>( {1, 2, 3, 4, 5, 6, 7} );
+
+        auto v = ceras::view<float, 7>{t.data(), {1, 2, 3,4 ,5, 6, 7}};
+        //auto v = ceras::view{t.data(), {1, 2, 3,4 ,5, 6, 7}};
+        std::cout << v[0][1][2][3][4][5][6] << std::endl;
+        std::cout << v[0][1][2][1][2][5][3] << std::endl;
+    }
 
 
     return 0;

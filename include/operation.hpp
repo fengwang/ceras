@@ -1004,7 +1004,8 @@ namespace ceras
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
         //
-        return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
+        //return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
+        return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
         {
             std::vector<unsigned long> const& shape = rhs_ex.shape();
             better_assert( shape.size() == 4 );
@@ -1622,6 +1623,45 @@ namespace ceras
                 return std::make_tuple( l_ans, r_ans );
             },
             "Maximum"
+        )( lhs_ex, rhs_ex );
+    }
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr minimum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> mask_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
+        return make_binary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
+            {
+                better_assert( lhs_tensor.shape() == rhs_tensor.shape(), "tensor shape mismatch." );
+
+                Tsor& ans = context_cast<Tsor>( forward_cache );
+                ans.resize( lhs_tensor.shape() );
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+                mask.resize( lhs_tensor.shape() );
+
+                for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), mask.begin(), []( auto const l, auto const r, auto& a, auto& m ) { m = l > r ? 0.0: 1.0 ; a = l > r ? r: l; } );
+
+                return ans;
+            },
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            {
+                Tsor& mask = context_cast<Tsor>( mask_cache ); // 1 if lhs element is larger, 0 if rhs element is larger
+
+                Tsor& l_ans = context_cast<Tsor>( backward_cache_lhs );
+                l_ans.resize( lhs_input.shape() );
+                Tsor& r_ans = context_cast<Tsor>( backward_cache_rhs );
+                r_ans.resize( rhs_input.shape() );
+
+                for_each( grad.begin(), grad.end(), mask.begin(), l_ans.begin(), r_ans.begin(), []( auto const g, auto const m, auto& l, auto& r ) { if ( m < 0.5 ) { l = g; r = 0.0; } else { l = 0.0; r = g; } } );
+
+                return std::make_tuple( l_ans, r_ans );
+            },
+            "Minmum"
         )( lhs_ex, rhs_ex );
     }
 
