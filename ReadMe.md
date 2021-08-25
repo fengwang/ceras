@@ -724,18 +724,62 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `conv2d`;
     - `drop_out`;
     - `max_pooling_2d`;
+    - `zero_padding_2d`;
+    - `repeat`;
     - `average_pooling_2d`;
     - `up_sampling_2d`;
     - `batch_normalization`;
     - `instance_normalization`;
     - `concatenate`, or `concat`;
     - `maximum`;
+    - `minimum`;
     - `random_normal_like`.
     - `sqrt`.
     - `hypot`.
     - `ones_like`.
     - `zeros_like`.
     - `atan2`.
+    - `equal`.
+    - `sign`.
+    - `reduce_min`.
+    - `reduce_max`.
+    - `reduce_sum`.
+    - `abs`.
+    - `acos`.
+    - `acosh`.
+    - `asin`.
+    - `asinh`.
+    - `atan`.
+    - `atanh`.
+    - `cbrt`.
+    - `ceil`.
+    - `cos`.
+    - `cosh`.
+    - `erf`.
+    - `erfc`.
+    - `exp`.
+    - `exp2`.
+    - `expm1`.
+    - `fabs`.
+    - `floor`.
+    - `llrint`.
+    - `llround`.
+    - `log`.
+    - `log10`.
+    - `log1p`.
+    - `log2`.
+    - `lrint`.
+    - `lround`.
+    - `nearbyint`.
+    - `rint`.
+    - `round`.
+    - `sin`.
+    - `sinh`.
+    - `sqrt`.
+    - `tan`.
+    - `tanh`.
+    - `trunc`.
+
 + [Complex](./include/complex_operator.hpp)
     - `+`
     - `-`
@@ -743,6 +787,9 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `real`
     - `imag`
     - `abs`
+    - `norm`
+    - `conj`
+    - `polar`
     - `arg`
 + [Activations](./include/activation.hpp):
     - [`softmax`](#softmax);
@@ -757,6 +804,12 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `exponential`;
     - `hard_sigmoid`;
     - `gelu`.
+    - `swish`.
+    - `silu`.
+    - `crelu`.
+    - `tank_shrink`.
+    - `mish`.
+    - `lisht`.
 + [Losses](./include/loss.hpp):
     - [`mae`](#mae);
     - `mse`;
