@@ -1028,9 +1028,8 @@ The full code is [here](./test/optimize.cc).
 + recurrent operations
 + provide a single-header file
 
-## [Documentation](http://fengwang.github.io/ceras/html/index.html)
+## [Documentation](https://fengwang.github.io/ceras/files.html)
 
-Under construction.
 
 
 ## License
