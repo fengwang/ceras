@@ -34,7 +34,7 @@ namespace ceras
     template< typename T > requires std::floating_point<T>
     void cblas_gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, std::size_t m, std::size_t n, std::size_t k, T* C )
     {
-        if constexpr( blas_mode )
+        if constexpr( cblas_mode )
         {
             T const alpha = 1.0;
             T const beta = 0.0;

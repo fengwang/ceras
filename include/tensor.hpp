@@ -564,7 +564,7 @@ namespace ceras
             else
                 gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
         }
-        else if constexpr( blas_mode )
+        else if constexpr( cblas_mode )
         {
             cblas_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
         }

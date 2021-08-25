@@ -34,10 +34,10 @@ namespace ceras
         inline constexpr unsigned long debug_mode = 1;
     #endif
 
-    #ifdef BLAS
-        inline constexpr unsigned long blas_mode = 1;
+    #ifdef CBLAS
+        inline constexpr unsigned long cblas_mode = 1;
     #else
-        inline constexpr unsigned long blas_mode = 0;
+        inline constexpr unsigned long cblas_mode = 0;
     #endif
 
     #ifndef NOPARALLEL

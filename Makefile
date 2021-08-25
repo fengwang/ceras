@@ -16,7 +16,7 @@ OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=nativ
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DBLAS
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCBLAS
 
 CXX           = g++
 #CXX           = clang++
