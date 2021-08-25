@@ -2,10 +2,13 @@
 
 ----
 
+<div align="center">
+
 ![What I cannot create, I do not understand.](./assets/Feynman.png)
 
 What I cannot create, I do not understand. -- Richard Feynman
 
+</div>
 
 __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
@@ -30,14 +33,15 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 
 A `model` is a way to organize layers. Here is an example to build a sequential model.
 
-First, we include the header and use the namespace of this library:
+First, we include the header and use the namespace of `ceras`:
 
 ```cpp
 #include "./include/ceras.hpp"
 using namespace ceras;
 ```
 
-Then we compose layers using a functional interface to build up a computation graph:
+
+Then we compose layers using a functional interface. This builds up a computation graph:
 
 ```cpp
 auto input = Input(); // shape( 28, 28 )
@@ -47,25 +51,26 @@ auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
 auto output = Dense( 10, 256 )( l2 );
 ```
 
-We build up a model by collecting the input layer and the output layer of the computation graph:
+We generate a model by collecting the input layer and the output layer of this computation graph:
 
 ```cpp
 auto m = model{ input, output };
 ```
 
-We can dump the structure of this computation graph to double check the architecture:
+We can dump the structure to double check the architecture visually:
 
 ```cpp
 m.summary( "./mnist_minimal.dot" );
 ```
 
 After generating a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot),
-we convert it to a '.png' file by executing command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
+we convert it to a '.png' file by running `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`.
+Here `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
 
 ![mnist minimal model computation graph](./assets/mnist_minimal.png)
 
 
-Before feeding a training set to this model, we configure the training hyper-parameters
+Before feeding a training set to this model, we neet to configure the training hyper-parameters
 
 ```cpp
 unsigned long batch_size = 10;
@@ -94,7 +99,7 @@ We can evaluate the performance this way:
 auto error = cm.evaluate( test_data_of_784, test_data_of_10, batch_size );
 ```
 
-We can also calssify new samples:
+We can also make predictions from the new samples:
 
 ```cpp
 auto prediction = cm.predict( new_data_of_784 );
@@ -118,7 +123,7 @@ using namespace ceras;
 auto input = place_holder<tensor<float>>{}; // 1-D, 28x28 pixels
 ```
 
-Then we define the first layer with relu activation
+Then we define the first layer with a relu activation
 
 ```cpp
 // 1st layer
@@ -127,7 +132,7 @@ auto b1 = variable{ zeros<float>( { 1, 256 } ) };
 auto l1 = relu( input * w1 + b1 );
 ```
 
-The second layer with relu/sigmoid activation
+The second layer with a relu or a sigmoid activation
 
 ```cpp
 // 2nd layer
@@ -814,6 +819,7 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - [`mae`](#mae);
     - `mse`;
     - `cross_entropy`;
+    - `binary_entropy`;
     - [`hinge_loss`](#hingeloss).
 + [Optimizers](./include/optimizer.hpp):
     - `sgd`;
