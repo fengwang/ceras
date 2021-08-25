@@ -11,6 +11,7 @@
 #include "./utils/id.hpp"
 #include "./utils/list.hpp"
 #include "./backend/cuda.hpp"
+#include "./backend/cblas.hpp"
 
 namespace ceras
 {
@@ -563,6 +564,10 @@ namespace ceras
             else
                 gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
         }
+        else if constexpr( blas_mode )
+        {
+            cblas_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+        }
         else
         {
             gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
@@ -736,27 +741,6 @@ namespace ceras
     template< Tensor Tsor >
     Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
-#if 0
-        better_assert( lhs.shape() == rhs.shape(), "elementwise_product: shapes not match!" );
-        Tsor ans{ lhs.shape() };
-        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z ){ z = x*y; } );
-        return ans;
-#endif
-#if 0
-        better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
-        better_assert( !has_nan( lhs ), "lhs parameter for elementwise_product has nan!" );
-        better_assert( !has_nan( rhs ), "rhs parameter for elementwise_product has nan!" );
-        Tsor ans{ lhs.shape() };
-        for_each( lhs.begin(), lhs.end(), rhs.begin(), ans.begin(), []( auto x, auto y, auto& z )
-                  {
-                    z = x*y;
-                    //better_assert( !std::isnan( z ), "Got nan product with x=", x, " and y=", y  );
-                  }
-                );
-        better_assert( !has_nan(ans), "result for elementwise product has nan. The shape is ", *(lhs.shape().begin()), " x ", *(lhs.shape().rbegin()) );
-        return ans;
-#endif
-#if 1
         unsigned long const l_size = lhs.size();
         unsigned long const r_size = rhs.size();
         if ( l_size < r_size ) return elementwise_product(rhs, lhs);
@@ -772,7 +756,6 @@ namespace ceras
             }
 
         return ans;
-#endif
     }
 
     template< Tensor Tsor >
@@ -843,13 +826,6 @@ namespace ceras
             ans.reshape( {1,} );
             return ans;
         }
-
-        /*
-        std::vector<unsigned long> new_shape;
-        std::copy_if( ans.shape_.begin(), ans.shape_.end(), std::back_inserter( new_shape ), []( unsigned long n ) { return n != 1UL; } );
-        ans.shape_.swap( new_shape );
-        return  ans;
-        */
 
         std::vector<unsigned long> new_shape;
         for ( auto s : tsor.shape() )

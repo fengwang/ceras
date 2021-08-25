@@ -34,7 +34,6 @@ namespace ceras
         inline constexpr unsigned long debug_mode = 1;
     #endif
 
-    // TODO: impls blas based gemm backend
     #ifdef BLAS
         inline constexpr unsigned long blas_mode = 1;
     #else

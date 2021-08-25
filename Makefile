@@ -16,6 +16,7 @@ OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=nativ
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DBLAS
 
 CXX           = g++
 #CXX           = clang++
@@ -25,7 +26,7 @@ CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-lim
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 
 #CXX           = g++
