@@ -15,6 +15,24 @@
 namespace fmt
 {
 
+    ///
+    /// @brief Format args according to the format string fmt, and return the result as a string.
+    /// @param format_string May consist of '{}' or '{d+}' that will be replaced by the formatted arguments.
+    /// @param args Argumentes to be formatted. Supports containers that has 'begin'/'end' methods, aggragrate initialized structures, types/classes that has "<<" operator or can be passed to a string ctor or has std::to_string( arg ) defined.
+    /// @return A string object holding the formatted result.
+    ///
+    /// \code{.cpp}
+    /// std::cout << fmt::format( "The answer is {}.", 42 ) << std::endl;
+    /// std::cout << fmt::format( "{1}, {0}.", "world", "Hello" ) << std::endl;
+    /// struct s{ int a; double d; float c; bool b; char ch; ... };
+    /// s s0, s1; // ...
+    /// std::cout << fmt::format( "{1}, {0}.", s1, s0 ) << std::endl;
+    /// \endcode
+    ///
+    template< typename ... Args >
+    inline std::string format( std::string const& format_string, Args const& ... args );
+
+
     namespace
     {
 
@@ -1036,17 +1054,6 @@ namespace fmt
 
     }// anonymous namespace
 
-    ///
-    /// @brief Format args according to the format string fmt, and return the result as a string.
-    /// @param format_string May consist of '{}' or '{d+}' that will be replaced by the formatted arguments.
-    /// @param args Argumentes to be formatted. Supports containers that has 'begin'/'end' methods, aggragrate initialized structures, types/classes that has "<<" operator or can be passed to a string ctor or  has std::to_string() enabled.
-    /// @return A string object holding the formatted result.
-    ///
-    /// \code{.cpp}
-    /// std::cout << fmt::format( "The answer is {}.", 42 ) << std::endl;
-    /// std::cout << fmt::format( "{1}, {0}.", "world", "Hello" ) << std::endl;
-    /// \endcode
-    ///
     template< typename ... Args >
     inline std::string format( std::string const& format_string, Args const& ... args )
     {

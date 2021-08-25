@@ -24,7 +24,8 @@ namespace lzw
         {
 
             /// Dictionary Maximum Size (when reached, the dictionary will be reset)
-            const CodeType dms {512 * 1024};
+            //const CodeType dms {512 * 1024};
+            const CodeType dms {1024 * 1024};
 
         } // namespace globals
 

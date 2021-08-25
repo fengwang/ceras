@@ -8,6 +8,7 @@
 #include "./utils/singleton.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/lzw.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
@@ -78,7 +79,8 @@ namespace ceras
         void save( std::string const& file_path ) const
         {
             // find a tmp file
-            char* tmp_file_path = std::tmpnam( nullptr );
+            //char* tmp_file_path = std::tmpnam( nullptr );
+            std::string const& tmp_file_path =  file_path + std::string{".tmp"};
 
             // save original to tmp file
             save_original( tmp_file_path );
@@ -91,13 +93,15 @@ namespace ceras
             }
 
             // remove original
-            std::remove( tmp_file_path );
+            //std::remove( tmp_file_path );
+            std::remove( tmp_file_path.c_str() );
         }
 
         void restore( std::string const& file_path )
         {
             // find a tmp file
-            char* tmp_file_path = std::tmpnam( nullptr );
+            //char* tmp_file_path = std::tmpnam( nullptr );
+            std::string const& tmp_file_path =  file_path + std::string{".tmp"};
 
             // uncompress tmp file
             {
@@ -110,7 +114,8 @@ namespace ceras
             restore_original( tmp_file_path );
 
             // remove tmp file
-            std::remove( tmp_file_path );
+            //std::remove( tmp_file_path );
+            std::remove( tmp_file_path.c_str() );
         }
 
         void save_original( std::string const& file_path ) const
