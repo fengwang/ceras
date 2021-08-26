@@ -45,13 +45,13 @@ namespace ceras
                         std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
                         std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
                         float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-           )
+           ) noexcept
     {
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
         better_assert( input_shape.size() ==3, "Expecting input_shape has 3 elements." );
         better_assert( strides.size() > 0, "Expecting strides at least has 1 elements." );
-        return [=]<Expression Ex>( Ex const& ex )
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
         {
             unsigned long const kernel_size_x = kernel_size[0];
             unsigned long const kernel_size_y = kernel_size.size() == 2 ? kernel_size[1] : kernel_size[0];

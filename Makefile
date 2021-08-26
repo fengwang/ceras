@@ -478,6 +478,10 @@ layer_gaussian: test/layer_gaussian.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_gaussian.o test/layer_gaussian.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_gaussian $(OBJECTS_DIR)/test_layer_gaussian.o $(LFLAGS)
 
+layer_cropping2d: test/layer_cropping2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_cropping2d.o test/layer_cropping2d.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_cropping2d $(OBJECTS_DIR)/test_layer_cropping2d.o $(LFLAGS)
+
 mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
