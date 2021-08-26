@@ -3524,40 +3524,6 @@ namespace ceras
 
 
 
-    ///
-    /// @brief Computes Erf of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = erf( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr erf( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erf(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        // d erf(z) = e^{-z^2} \frac{2}{\sqrt{\pi}}
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto z, auto g, auto& v ) noexcept { v = g * std::exp(-z*z) * 1.12837916709551257389; } );
-                                        return ans;
-                                    },
-                                    "Erf"
-                )( ex );
-    };
-
-
 
 
 

@@ -470,6 +470,14 @@ layer_assign: test/layer_assign.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_assign.o test/layer_assign.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_assign $(OBJECTS_DIR)/test_layer_assign.o $(LFLAGS)
 
+layer_erf: test/layer_erf.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_erf.o test/layer_erf.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_erf $(OBJECTS_DIR)/test_layer_erf.o $(LFLAGS)
+
+layer_gaussian: test/layer_gaussian.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_gaussian.o test/layer_gaussian.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_gaussian $(OBJECTS_DIR)/test_layer_gaussian.o $(LFLAGS)
+
 mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
