@@ -122,7 +122,7 @@ namespace ceras
     struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
 
     ///
-    /// If T is an instance of a unary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    /// If T is an instance of a unary_operator, the constant value equals to `true`. `false` otherwise.
     ///
     template< class T >
     inline constexpr bool is_unary_operator_v = is_unary_operator<T>::value;
@@ -3822,27 +3822,26 @@ namespace ceras
     };
 
 
-#if 0
 
     ///
-    /// @breif Updating the first expression's value by assining the secnod to it. The first expression should be a 'value'.
+    /// @breif Updating the second expression's value by assining the first one to it. The second expression should be a 'variable'.
     /// @param lhs_ex A mutable value.
     /// @param rhs_ex An expression to be assigned to lhs_ex.
     /// TODO: Fixme, this implementation is wrong
     ///
     /// \code{.cpp}
-    /// auto v = variable{ ... };
     /// auto x = constant{ ... } * constant{ ... };
-    /// assgin( v, x );
+    /// auto v = variable{ ... };
+    /// assgin( x, v );
     /// \endcode
     ///
-    template< Variable Lhs_Expression, Expression Rhs_Expression >
+    template< Expression Lhs_Expression, Variable Rhs_Expression >
     auto constexpr assign( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor& lhs_tensor, Tsor const& rhs_tensor ) noexcept // well, lhs_tensor can be 'Tensor&'
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor& rhs_tensor ) noexcept
                                      {
-                                        lhs_tensor.reshape( rhs_tensor.shape() );
-                                        std::copy( rhs_tensor.begin(), rhs_tensor.end(), lhs_tensor.begin() );
+                                        rhs_tensor.reshape( lhs_tensor.shape() );
+                                        std::copy( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin() );
                                         return lhs_tensor;
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& ) noexcept
@@ -3853,7 +3852,6 @@ namespace ceras
                 )( lhs_ex, rhs_ex );
     };
 
-#endif
 
 
 
