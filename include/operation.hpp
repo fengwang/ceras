@@ -360,30 +360,6 @@ namespace ceras
         }
     }
 
-#if 0
-    template <Expression Ex>
-    auto constexpr log( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        better_assert( !has_nan( input ), "forward propagation for operator log: input contains Nan!" );
-                                        auto ans = input.deep_copy();
-                                        ans.map( [](auto & x){ better_assert( x+eps > 0, "log forward propagation, found an invalid value ", x ); x = std::log(x+eps); } );
-                                        better_assert( !has_nan( ans ), "forward propagation for operator log: output contains Nan!" );
-                                        better_assert( !has_inf( ans ), "forward propagation for operator log: output contains Inf!" );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator log contains NaN!" );
-                                        auto ans = elementwise_divide(grad, input); // TODO: error here
-                                        better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
-                                        return ans;
-                                    },
-                                    "Log"
-                )( ex );
-    };
-#endif
 
     template <Expression Ex>
     auto constexpr negative( Ex const& ex ) noexcept
@@ -581,38 +557,6 @@ namespace ceras
                 )( ex );
     }
 
-#if 0
-    ///
-    /// @brief Returns the square root of the input.
-    ///
-    /// @param ex The input operator.
-    /// @return An instance of a unary_operator that evaluate the square root of the input operator.
-    ///
-    /// Example code:
-    /// @code{.cpp}
-    /// auto e = variable<tensor<float>>{ /*...*/ };
-    /// auto sqr = sqrt(e);
-    /// @endcode
-    ///
-    template <Expression Ex>
-    auto constexpr sqrt( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        Tsor ans = tsor.deep_copy(); // TODO: optimize out
-                                        std::for_each( ans.data(), ans.end(), []( auto & v ){ v = std::sqrt(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor ans = ones_like( input ); // TODO: optimize out
-                                        for_each( ans.begin(), ans.end(), grad.begin(), []( auto& v, auto g ){ v = 0.5 * g / (std::sqrt(v)+eps); } );
-                                        return ans;
-                                    },
-                                    "SquareRoot"
-                )( ex );
-    }
-#endif
 
     ///
     /// @brief  Computes the square root of the sum of the squares of x and y.
@@ -637,66 +581,6 @@ namespace ceras
 
 
 
-
-#if 0
-    ///
-    /// @brief Returns the absolute value of the input.
-    ///
-    /// @param ex The input operator.
-    /// @return An instance of a unary_operator that evaluate the absolute value of the input operator.
-    ///
-    /// Example code:
-    /// @code{.cpp}
-    /// auto e = variable<tensor<float>>{ /*...*/ };
-    /// auto sqr = abs(e);
-    /// @endcode
-    ///
-    template <Expression Ex>
-    auto constexpr abs( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        better_assert( !has_nan( tsor ), "forward propagation for operator abs: tensor contains Nan!" );
-                                        Tsor ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( typename Tsor::value_type & v ){ v = std::abs(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator abs contains NaN!" );
-                                        Tsor ans = grad;
-                                        for ( auto idx : range( ans.size() ) )
-                                            ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
-                                        return ans;
-                                    },
-                                    "Abs"
-                )( ex );
-    }//;
-#endif
-
-#if 0
-    template <Expression Ex>
-    [[deprecated("GCC might die here. Use exponential instead.")]]
-    auto constexpr exp( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        better_assert( !has_nan( tsor ), "forward propagation for operator exp: tensor contains Nan!" );
-                                        Tsor ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( auto & v ){ v = std::exp(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator exp contains NaN!" );
-                                        Tsor ans = grad;
-                                        grad *= output;
-                                        return ans;
-                                    },
-                                    "Exp"
-                )( ex );
-    }
-#endif
 
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
@@ -3076,77 +2960,6 @@ namespace ceras
 
 
 
-#if 0
-
-    ///
-    /// @brief Computes Ilogb of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = ilogb( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr ilogb( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ilogb(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "Ilogb"
-                )( ex );
-    };
-
-#endif
-
-
-
-#if 0
-    ///
-    /// @brief Computes lgamma of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = lgamma( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr lgamma( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lgamma(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "lgamma"
-                )( ex );
-    };
-#endif
 
 
 
@@ -3360,47 +3173,6 @@ namespace ceras
                                     "Log2"
                 )( ex );
     };
-
-
-
-
-
-
-#if 0
-    ///
-    /// @brief Computes Logb of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = logb( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr logb( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::logb(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "Logb"
-                )( ex );
-    };
-#endif
-
-
 
 
 
@@ -3752,21 +3524,17 @@ namespace ceras
 
 
 
-
-
-#if 0
-
     ///
-    /// @brief Computes Tgamma of the given expression.
+    /// @brief Computes Erf of the given expression.
     ///
     /// Example code:
     /// \code{.cpp}
     /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = tgamma( a );
+    /// auto b = erf( a );
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr tgamma( Ex const& ex ) noexcept
+    auto constexpr erf( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3774,20 +3542,24 @@ namespace ceras
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tgamma(x); } );
+                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::erf(x); } );
                                         return ans;
                                     },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
+                                        // d erf(z) = e^{-z^2} \frac{2}{\sqrt{\pi}}
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto z, auto g, auto& v ) noexcept { v = g * std::exp(-z*z) * 1.12837916709551257389; } );
                                         return ans;
                                     },
-                                    "Tgamma"
+                                    "Erf"
                 )( ex );
     };
-#endif
+
+
+
+
 
 
 

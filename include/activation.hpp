@@ -10,6 +10,39 @@
 
 namespace ceras
 {
+    template< std::floating_point Float >
+    auto constexpr heaviside_step( Float f ) noexcept // f should not be zero
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return sigmoid( value( f+f ) * ex );
+        };
+    }
+
+
+    template <Expression Ex>
+    auto constexpr sign( Ex const& ex ) noexcept // soft-sign
+    {
+        return heaviside_step( 20.0 )( ex );
+    }
+
+
+    template <Expression Ex>
+    auto constexpr unit_step( Ex const& ex ) noexcept
+    {
+        return sign( ex );
+    }
+
+    template <Expression Ex>
+    auto constexpr binary_step( Ex const& ex ) noexcept
+    {
+        return sign( ex );
+    }
+
+
+
+
+
 
     ///
     /// @brief Softmax activation function, an unary operator.
