@@ -14,20 +14,20 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftem
 #OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCBLAS
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
 #CXX           = clang++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
-#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -489,6 +489,10 @@ layer_sliding2d: test/layer_sliding2d.cc
 mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
+
+mnist_conv2d_sliding: test/mnist_conv2d_sliding.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o test/mnist_conv2d_sliding.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_sliding $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

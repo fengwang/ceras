@@ -1604,7 +1604,6 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    //debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
                     return randn_like( tsor, mean, stddev );
                 },
                 []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
@@ -1992,20 +1991,14 @@ namespace ceras
                         auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
                         view_4d vi{tsor.data(), batch_size, row, col, channel};
 
-                        debug_log( fmt::format( "Got input tensor of shape {}x{}x{}x{}", batch_size, row, col, channel ) );
-
                         tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
-                        //std::vector<std::tuple<long, long>> shifts = context_cast<std::vector<std::tuple<long, long>>>( shift_cache );
                         shifts.resize( {channel, 2} );
                         {   //generating random shifts
                             std::uniform_int_distribution<long> distribution( -pixels, pixels );
                             for ( auto& v : shifts )
                                 v = distribution(random_generator);
-                                //v = std::make_tuple( distribution(random_generator), distribution(random_generator) );
                         }
                         view_2d _shifts{shifts.data(), channel, 2};
-
-                        debug_log( fmt::format( "Generated random shifts {}", shifts ) );
 
                         Tsor& ans = context_cast<Tsor>( forward_cache );
                         ans.resize( tsor.shape() );
@@ -2038,12 +2031,8 @@ namespace ceras
                         std::vector<unsigned long> const& shape = grad.shape();
                         auto const[batch_size, row, col, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
                         view_4d vi{grad.data(), batch_size, row, col, channel};
-                        //std::vector<std::tuple<long, long>> shifts = context_cast<std::vector<std::tuple<long, long>>>( shift_cache );
                         tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
-                        //shifts.resize( channel );
                         view_2d _shifts{shifts.data(), channel, 2};
-
-                        debug_log( fmt::format("Fetching shfit from cache: {}", shifts) );
 
                         Tsor& ans = context_cast<Tsor>( backward_cache );
                         ans.resize( grad.shape() );
