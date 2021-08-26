@@ -1972,9 +1972,122 @@ namespace ceras
     }
 
 
+    namespace
+    {
 
+        inline auto detailed_sliding_2d( unsigned long const pixels, std::shared_ptr<std::any> shift_cache,
+                                         std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> backward_cache) noexcept
+        {
+            return [=]<Expression Ex>( Ex const& ex ) noexcept // <- the output has been zero-padded by n pixels
+            {
+                return make_unary_operator
+                (
+                    [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                    {
+                        if (learning_phase != 1)
+                            return tsor;
 
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = tsor.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        view_4d vi{tsor.data(), batch_size, row, col, channel};
 
+                        debug_log( fmt::format( "Got input tensor of shape {}x{}x{}x{}", batch_size, row, col, channel ) );
+
+                        tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
+                        //std::vector<std::tuple<long, long>> shifts = context_cast<std::vector<std::tuple<long, long>>>( shift_cache );
+                        shifts.resize( {channel, 2} );
+                        {   //generating random shifts
+                            std::uniform_int_distribution<long> distribution( -pixels, pixels );
+                            for ( auto& v : shifts )
+                                v = distribution(random_generator);
+                                //v = std::make_tuple( distribution(random_generator), distribution(random_generator) );
+                        }
+                        view_2d _shifts{shifts.data(), channel, 2};
+
+                        debug_log( fmt::format( "Generated random shifts {}", shifts ) );
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( tsor.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+                        view_4d vo{ans.data(), batch_size, row, col, channel};
+
+                        for ( auto bs : range(batch_size ) )
+                        {
+                            for ( auto ch : range( channel ) )
+                            {
+                                auto [row_shift, col_shift] = std::make_tuple( _shifts[ch][0], _shifts[ch][1]);
+                                for ( auto r : range( row ) )
+                                {
+                                    if (r-row_shift>=0 && r-row_shift<row)
+                                    {
+                                        for ( auto c : range( col ) )
+                                        {
+                                            if (c-col_shift>=0 && c-col_shift<col )
+                                                vo[bs][r][c][ch] = vi[bs][r-row_shift][c-col_shift][ch];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return ans;
+                    },
+                    [=]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = grad.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+                        view_4d vi{grad.data(), batch_size, row, col, channel};
+                        //std::vector<std::tuple<long, long>> shifts = context_cast<std::vector<std::tuple<long, long>>>( shift_cache );
+                        tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
+                        //shifts.resize( channel );
+                        view_2d _shifts{shifts.data(), channel, 2};
+
+                        debug_log( fmt::format("Fetching shfit from cache: {}", shifts) );
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( grad.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+                        view_4d vo{ans.data(), batch_size, row, col, channel};
+
+                        for ( auto bs : range(batch_size ) )
+                        {
+                            for ( auto ch : range( channel ) )
+                            {
+                                auto [row_shift, col_shift] = std::make_tuple( _shifts[ch][0], _shifts[ch][1] );
+                                for ( auto r : range( row ) )
+                                {
+                                    if (r+row_shift>=0 && r+row_shift<row)
+                                    {
+                                        for ( auto c : range( col ) )
+                                        {
+                                            if (c+col_shift>=0 && c+col_shift<col )
+                                                vo[bs][r][c][ch] = vi[bs][r+row_shift][c+col_shift][ch];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return ans;
+                    },
+                    "Sliding2D"
+                )( ex );
+            };
+        }
+
+    } // anonymous namespace
+
+    inline auto sliding_2d( unsigned long pixels ) noexcept
+    {
+        std::shared_ptr<std::any> shift_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return cropping_2d( {pixels,} )( detailed_sliding_2d(pixels, shift_cache, forward_cache, backward_cache)( zero_padding_2d( {pixels,} )( ex ) )  );
+        };
+    }
 
     namespace
     {
