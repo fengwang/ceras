@@ -25,8 +25,8 @@ CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-lim
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
-#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -472,6 +472,10 @@ layer_assign: test/layer_assign.cc
 mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
+
+mnist_duplicated: test/mnist_duplicated.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_duplicated.o test/mnist_duplicated.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_duplicated $(OBJECTS_DIR)/test_mnist_duplicated.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
