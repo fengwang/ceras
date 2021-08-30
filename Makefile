@@ -492,15 +492,13 @@ mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
 
-<<<<<<< HEAD
 mnist_duplicated: test/mnist_duplicated.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_duplicated.o test/mnist_duplicated.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_duplicated $(OBJECTS_DIR)/test_mnist_duplicated.o $(LFLAGS)
-=======
+
 mnist_conv2d_sliding: test/mnist_conv2d_sliding.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o test/mnist_conv2d_sliding.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_sliding $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o $(LFLAGS)
->>>>>>> d66a7cff3b2dc90b77e209a01ffd9fc76bc14511
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
