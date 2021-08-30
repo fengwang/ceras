@@ -2,12 +2,15 @@
 
 ----
 
+<div align="center">
+
 ![What I cannot create, I do not understand.](./assets/Feynman.png)
 
 What I cannot create, I do not understand. -- Richard Feynman
 
+</div>
 
-__ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
+__Ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
 ----
 
@@ -30,14 +33,15 @@ __ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20
 
 A `model` is a way to organize layers. Here is an example to build a sequential model.
 
-First, we include the header and use the namespace of this library:
+First, we include the header and use the namespace of `ceras`:
 
 ```cpp
 #include "./include/ceras.hpp"
 using namespace ceras;
 ```
 
-Then we compose layers using a functional interface to build up a computation graph:
+
+Then we compose layers using a functional interface. This builds up a computation graph:
 
 ```cpp
 auto input = Input(); // shape( 28, 28 )
@@ -47,25 +51,26 @@ auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
 auto output = Dense( 10, 256 )( l2 );
 ```
 
-We build up a model by collecting the input layer and the output layer of the computation graph:
+We generate a model by collecting the input layer and the output layer of this computation graph:
 
 ```cpp
 auto m = model{ input, output };
 ```
 
-We can dump the structure of this computation graph to double check the architecture:
+We can dump the structure to double check the architecture visually:
 
 ```cpp
 m.summary( "./mnist_minimal.dot" );
 ```
 
 After generating a dot file [`'mnist_minimal.dot'`](./assets/mnist_minimal.dot),
-we convert it to a '.png' file by executing command `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`, where `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
+we convert it to a '.png' file by running `dot -Tpng ./mnist_minimal.dot -o ./mnist_minimal.png`.
+Here `dot` is an external command from package [ImageMagick](https://www.imagemagick.org/).
 
 ![mnist minimal model computation graph](./assets/mnist_minimal.png)
 
 
-Before feeding a training set to this model, we configure the training hyper-parameters
+Before feeding a training set to this model, we neet to configure the training hyper-parameters
 
 ```cpp
 unsigned long batch_size = 10;
@@ -94,7 +99,7 @@ We can evaluate the performance this way:
 auto error = cm.evaluate( test_data_of_784, test_data_of_10, batch_size );
 ```
 
-We can also calssify new samples:
+We can also make predictions from the new samples:
 
 ```cpp
 auto prediction = cm.predict( new_data_of_784 );
@@ -118,7 +123,7 @@ using namespace ceras;
 auto input = place_holder<tensor<float>>{}; // 1-D, 28x28 pixels
 ```
 
-Then we define the first layer with relu activation
+Then we define the first layer with a relu activation
 
 ```cpp
 // 1st layer
@@ -127,7 +132,7 @@ auto b1 = variable{ zeros<float>( { 1, 256 } ) };
 auto l1 = relu( input * w1 + b1 );
 ```
 
-The second layer with relu/sigmoid activation
+The second layer with a relu or a sigmoid activation
 
 ```cpp
 // 2nd layer
@@ -226,12 +231,23 @@ g++ -c -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -fu
 g++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
 ```
 
-CUDA could be optionally enabled by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 10.2.0, note the compile/link options)
+[CBLAS](https://www.netlib.org/lapack) can be optionally enabled by define macro `CBLAS` (tested with cblas 3.10.0, g++ 11.1.0):
+
+```bash
+g++ -c -std=c++20 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCBLAS -o ./obj/test_mnist.o test/mnist.cc
+g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_mnist ./obj/test_mnist.o -L/opt/cuda/lib64 -pthread  -lcblas
+```
+
+
+[CUDA/CUBLAS](https://developer.nvidia.com/cuda-zone) could be optionally enabled by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 11.1.0, note the compile/link options)
 
 ```bash
 g++ -c -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
 g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_mnist ./obj/test_mnist.o -L/opt/cuda/lib64 -pthread  -lcudart -lcublas
 ```
+However, this will override CBLAS.
+
+
 
 Note: As [Non-Type Template Parameters](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0732r2.pdf) is not yet implemented in clang, only gcc works with this library.
 
@@ -713,18 +729,62 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `conv2d`;
     - `drop_out`;
     - `max_pooling_2d`;
+    - `zero_padding_2d`;
+    - `repeat`;
     - `average_pooling_2d`;
     - `up_sampling_2d`;
     - `batch_normalization`;
     - `instance_normalization`;
     - `concatenate`, or `concat`;
     - `maximum`;
+    - `minimum`;
     - `random_normal_like`.
     - `sqrt`.
     - `hypot`.
     - `ones_like`.
     - `zeros_like`.
     - `atan2`.
+    - `equal`.
+    - `sign`.
+    - `reduce_min`.
+    - `reduce_max`.
+    - `reduce_sum`.
+    - `abs`.
+    - `acos`.
+    - `acosh`.
+    - `asin`.
+    - `asinh`.
+    - `atan`.
+    - `atanh`.
+    - `cbrt`.
+    - `ceil`.
+    - `cos`.
+    - `cosh`.
+    - `erf`.
+    - `erfc`.
+    - `exp`.
+    - `exp2`.
+    - `expm1`.
+    - `fabs`.
+    - `floor`.
+    - `llrint`.
+    - `llround`.
+    - `log`.
+    - `log10`.
+    - `log1p`.
+    - `log2`.
+    - `lrint`.
+    - `lround`.
+    - `nearbyint`.
+    - `rint`.
+    - `round`.
+    - `sin`.
+    - `sinh`.
+    - `sqrt`.
+    - `tan`.
+    - `tanh`.
+    - `trunc`.
+
 + [Complex](./include/complex_operator.hpp)
     - `+`
     - `-`
@@ -732,6 +792,9 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `real`
     - `imag`
     - `abs`
+    - `norm`
+    - `conj`
+    - `polar`
     - `arg`
 + [Activations](./include/activation.hpp):
     - [`softmax`](#softmax);
@@ -746,10 +809,17 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `exponential`;
     - `hard_sigmoid`;
     - `gelu`.
+    - `swish`.
+    - `silu`.
+    - `crelu`.
+    - `tank_shrink`.
+    - `mish`.
+    - `lisht`.
 + [Losses](./include/loss.hpp):
     - [`mae`](#mae);
     - `mse`;
     - `cross_entropy`;
+    - `binary_entropy`;
     - [`hinge_loss`](#hingeloss).
 + [Optimizers](./include/optimizer.hpp):
     - `sgd`;
@@ -964,9 +1034,8 @@ The full code is [here](./test/optimize.cc).
 + recurrent operations
 + provide a single-header file
 
-## [Documentation](http://fengwang.github.io/ceras/html/index.html)
+## [Documentation](https://fengwang.github.io/ceras/files.html)
 
-Under construction.
 
 
 ## License

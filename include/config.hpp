@@ -3,9 +3,8 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20210418UL;
+    inline constexpr unsigned long version = 20210826UL;
     inline constexpr unsigned long __version__ = version;
-
 
     ///
     /// @param is_windows_platform A constexpr helping ceras to select different behaviours. 1 for windows platform and 0 for non-windows platform.
@@ -34,11 +33,10 @@ namespace ceras
         inline constexpr unsigned long debug_mode = 1;
     #endif
 
-    // TODO: impls blas based gemm backend
-    #ifdef BLAS
-        inline constexpr unsigned long blas_mode = 1;
+    #ifdef CBLAS
+        inline constexpr unsigned long cblas_mode = 1;
     #else
-        inline constexpr unsigned long blas_mode = 0;
+        inline constexpr unsigned long cblas_mode = 0;
     #endif
 
     #ifndef NOPARALLEL

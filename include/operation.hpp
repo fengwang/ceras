@@ -13,9 +13,14 @@
 #include "./utils/for_each.hpp"
 #include "./utils/id.hpp"
 #include "./utils/enable_shared.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
+
+    ///
+    /// @brief A unary operator is composed of a.) an input expression, b.) a forward action and c.) a backward action.
+    ///
     template< typename Operator, typename Forward_Action, typename Backward_Action >
     struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
     {
@@ -56,6 +61,9 @@ namespace ceras
         };
     };
 
+    ///
+    /// @brief A binary operator is composed of a.) a left-side input expression, b.) a right-side input expression, c.)  a forward action and d.) a backward action.
+    ///
     template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
     struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">
     {
@@ -122,7 +130,7 @@ namespace ceras
     struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
 
     ///
-    /// If T is an instance of a unary_operator, the constant value equals to `true`. Otherwise this value is `false`.
+    /// If T is an instance of a unary_operator, the constant value equals to `true`. `false` otherwise.
     ///
     template< class T >
     inline constexpr bool is_unary_operator_v = is_unary_operator<T>::value;
@@ -243,9 +251,6 @@ namespace ceras
 
     namespace
     {
-        // `plus_context` was nested in the `plus` function.
-        // But gcc compiler (11.1.0) has a lot of problems in deducing the context types (gcc may consume infnite memory and then get killed).
-        // Moving forward/backward algorithms here to make gcc happy, at a price of an extra indirection layer with redundant code.
         struct plus_context
         {
             auto make_forward() const noexcept
@@ -360,30 +365,6 @@ namespace ceras
         }
     }
 
-#if 0
-    template <Expression Ex>
-    auto constexpr log( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        better_assert( !has_nan( input ), "forward propagation for operator log: input contains Nan!" );
-                                        auto ans = input.deep_copy();
-                                        ans.map( [](auto & x){ better_assert( x+eps > 0, "log forward propagation, found an invalid value ", x ); x = std::log(x+eps); } );
-                                        better_assert( !has_nan( ans ), "forward propagation for operator log: output contains Nan!" );
-                                        better_assert( !has_inf( ans ), "forward propagation for operator log: output contains Inf!" );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator log contains NaN!" );
-                                        auto ans = elementwise_divide(grad, input); // TODO: error here
-                                        better_assert( !has_nan( ans ), "backprop: result for operator log contains NaN!" );
-                                        return ans;
-                                    },
-                                    "Log"
-                )( ex );
-    };
-#endif
 
     template <Expression Ex>
     auto constexpr negative( Ex const& ex ) noexcept
@@ -581,38 +562,6 @@ namespace ceras
                 )( ex );
     }
 
-#if 0
-    ///
-    /// @brief Returns the square root of the input.
-    ///
-    /// @param ex The input operator.
-    /// @return An instance of a unary_operator that evaluate the square root of the input operator.
-    ///
-    /// Example code:
-    /// @code{.cpp}
-    /// auto e = variable<tensor<float>>{ /*...*/ };
-    /// auto sqr = sqrt(e);
-    /// @endcode
-    ///
-    template <Expression Ex>
-    auto constexpr sqrt( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        Tsor ans = tsor.deep_copy(); // TODO: optimize out
-                                        std::for_each( ans.data(), ans.end(), []( auto & v ){ v = std::sqrt(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor ans = ones_like( input ); // TODO: optimize out
-                                        for_each( ans.begin(), ans.end(), grad.begin(), []( auto& v, auto g ){ v = 0.5 * g / (std::sqrt(v)+eps); } );
-                                        return ans;
-                                    },
-                                    "SquareRoot"
-                )( ex );
-    }
-#endif
 
     ///
     /// @brief  Computes the square root of the sum of the squares of x and y.
@@ -637,66 +586,6 @@ namespace ceras
 
 
 
-
-#if 0
-    ///
-    /// @brief Returns the absolute value of the input.
-    ///
-    /// @param ex The input operator.
-    /// @return An instance of a unary_operator that evaluate the absolute value of the input operator.
-    ///
-    /// Example code:
-    /// @code{.cpp}
-    /// auto e = variable<tensor<float>>{ /*...*/ };
-    /// auto sqr = abs(e);
-    /// @endcode
-    ///
-    template <Expression Ex>
-    auto constexpr abs( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        better_assert( !has_nan( tsor ), "forward propagation for operator abs: tensor contains Nan!" );
-                                        Tsor ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( typename Tsor::value_type & v ){ v = std::abs(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator abs contains NaN!" );
-                                        Tsor ans = grad;
-                                        for ( auto idx : range( ans.size() ) )
-                                            ans[idx] = (input[idx]>typename Tsor::value_type{0}) ? ans[idx] : -ans[idx];
-                                        return ans;
-                                    },
-                                    "Abs"
-                )( ex );
-    }//;
-#endif
-
-#if 0
-    template <Expression Ex>
-    [[deprecated("GCC might die here. Use exponential instead.")]]
-    auto constexpr exp( Ex const& ex ) noexcept
-    {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& tsor ) noexcept
-                                    {
-                                        better_assert( !has_nan( tsor ), "forward propagation for operator exp: tensor contains Nan!" );
-                                        Tsor ans = tsor.deep_copy();
-                                        std::for_each( ans.data(), ans.data() + ans.size(), []( auto & v ){ v = std::exp(v); } );
-                                        return ans;
-                                    },
-                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
-                                    {
-                                        better_assert( !has_nan( grad ), "input gradient for operator exp contains NaN!" );
-                                        Tsor ans = grad;
-                                        grad *= output;
-                                        return ans;
-                                    },
-                                    "Exp"
-                )( ex );
-    }
-#endif
 
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
@@ -1719,7 +1608,6 @@ namespace ceras
             (
                 [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
                 {
-                    //debug_log( "Trying to generate random variables from a normal distribution of mean ", mean, " and stddev ", stddev );
                     return randn_like( tsor, mean, stddev );
                 },
                 []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
@@ -1964,6 +1852,233 @@ namespace ceras
                 zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
                 "ZeroPadding2D"
             )( ex );
+        };
+    }
+
+
+
+    namespace
+    {
+        struct cropping_2d_context
+        {
+            auto make_forward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> forward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        better_assert( input.ndim() == 4, "Expecting a 4D tensor, but got ", input.ndim() );
+                        // check shape, not too large
+
+                        // 4D view of input tensor
+                        std::vector<unsigned long> shape = input.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        Tsor input_ = input;
+                        view_4d<value_type> ts{ input_.data(), batch_size, row, col, channel };
+
+                        better_assert( row-top-bottom > 0, fmt::format("Cropping2D: expecting a smaller cropping dimension in row: row:{}, top:{}, bottop:{}", row, top, bottom ) );
+                        better_assert( col-left-right > 0, fmt::format("Cropping2D: expecting a smaller cropping dimension in col: col:{}, left:{}, right:{}", col, left, right ) );
+
+                        // 4D view of output tensor
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( {batch_size, row-top-bottom, col-left-right, channel} );
+                        view_4d<value_type> ta{ ans.data(), batch_size, row-top-bottom, col-left-right, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row-top-bottom ) )
+                                for ( auto c : range( col-left-right ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][r][c][ch] = ts[bs][top+r][left+c][ch];
+
+                        return ans;
+                    };
+                };
+            }
+
+            auto make_backward() const noexcept
+            {
+                return []( unsigned long top, unsigned long bottom, unsigned long left, unsigned long right, std::shared_ptr<std::any> backward_cache ) noexcept
+                {
+                    return [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = grad.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( input.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+
+                        view_4d<value_type> ta{ ans.data(), batch_size, row+top+bottom, col+left+right, channel };
+
+                        Tsor grad_ = grad;
+                        view_4d<value_type> tg{ grad_.data(), batch_size, row, col, channel };
+
+                        for ( auto bs : range( batch_size ) )
+                            for ( auto r : range( row ) )
+                                for ( auto c : range( col ) )
+                                    for ( auto ch : range( channel ) )
+                                        ta[bs][r+top][c+left][ch] = tg[bs][r][c][ch];
+                        return ans;
+                    };
+                };
+            }
+        }; // cropping_2d_context
+    }//anonymouse namespace
+
+    ///
+    /// @brief Cropping layer for 2D input. The input should have 4-dimensions: `(batch_size, row, col, channel)`. The output has 4-dimensions: `(batch_size, new_row, new_col, channel)`.
+    /// @param padding If a single integer, then apply symmetric cropping to height and width. If two integers, then first is for height and the second is for width. If four integers, then is intepreted as`(top_crop, bottom_crop, left_crop, right_crop)`.
+    ///
+    /// Example code:
+    ///
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {32, 32, 3} ) };
+    /// auto b = cropping_2d( {8,} )( a ); // shape for b is (32-8-8, 32-8-8, 3)
+    /// auto c = cropping_2d( {8, 4} )( a ); // shape for c is (32-8-8, 32-4-4, 3)
+    /// auto d = cropping_2d( {8, 4, 2, 1} )( a ); // shape for d is (32-8-4, 32-2-1, 3)
+    /// \endcode
+    ///
+    inline auto cropping_2d( std::vector<unsigned long> const& padding ) noexcept
+    {
+        // extracting paddings
+        unsigned long top, bottom, left, right;
+        if ( padding.size() == 1 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[0], padding[0] );
+        else if (padding.size() == 2 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[0], padding[1], padding[1] );
+        else if (padding.size() == 4 )
+            std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[1], padding[2], padding[3] );
+        else
+            better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
+
+        // checking extracted paddings
+        better_assert( top >= 1, "Expecting cropping_2d top padding no less than 1, but got ", top );
+        better_assert( bottom >= 1, "Expecting cropping_2d bottom padding no less than 1, but got ", bottom );
+        better_assert( left >= 1, "Expecting cropping_2d left padding no less than 1, but got ", left );
+        better_assert( right >= 1, "Expecting cropping_2d right padding no less than 1, but got ", right );
+
+        // to avoid re-allocating memory for tensors
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                cropping_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
+                cropping_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
+                "ZeroPadding2D"
+            )( ex );
+        };
+    }
+
+
+    namespace
+    {
+
+        inline auto detailed_sliding_2d( unsigned long const pixels, std::shared_ptr<std::any> shift_cache,
+                                         std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> backward_cache) noexcept
+        {
+            return [=]<Expression Ex>( Ex const& ex ) noexcept // <- the output has been zero-padded by n pixels
+            {
+                return make_unary_operator
+                (
+                    [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                    {
+                        if (learning_phase != 1)
+                            return tsor;
+
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = tsor.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple(shape[0], shape[1], shape[2], shape[3]);
+                        view_4d vi{tsor.data(), batch_size, row, col, channel};
+
+                        tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
+                        shifts.resize( {channel, 2} );
+                        {   //generating random shifts
+                            std::uniform_int_distribution<long> distribution( -pixels, pixels );
+                            for ( auto& v : shifts )
+                                v = distribution(random_generator);
+                        }
+                        view_2d _shifts{shifts.data(), channel, 2};
+
+                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                        ans.resize( tsor.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+                        view_4d vo{ans.data(), batch_size, row, col, channel};
+
+                        for ( auto bs : range(batch_size ) )
+                        {
+                            for ( auto ch : range( channel ) )
+                            {
+                                auto [row_shift, col_shift] = std::make_tuple( _shifts[ch][0], _shifts[ch][1]);
+                                for ( auto r : range( row ) )
+                                {
+                                    if (r-row_shift>=0 && r-row_shift<row)
+                                    {
+                                        for ( auto c : range( col ) )
+                                        {
+                                            if (c-col_shift>=0 && c-col_shift<col )
+                                                vo[bs][r][c][ch] = vi[bs][r-row_shift][c-col_shift][ch];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return ans;
+                    },
+                    [=]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                    {
+                        typedef typename Tsor::value_type value_type;
+                        std::vector<unsigned long> const& shape = grad.shape();
+                        auto const[batch_size, row, col, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+                        view_4d vi{grad.data(), batch_size, row, col, channel};
+                        tensor<long> shifts = context_cast<tensor<long>>( shift_cache );
+                        view_2d _shifts{shifts.data(), channel, 2};
+
+                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                        ans.resize( grad.shape() );
+                        std::fill( ans.begin(), ans.end(), value_type{0} );
+                        view_4d vo{ans.data(), batch_size, row, col, channel};
+
+                        for ( auto bs : range(batch_size ) )
+                        {
+                            for ( auto ch : range( channel ) )
+                            {
+                                auto [row_shift, col_shift] = std::make_tuple( _shifts[ch][0], _shifts[ch][1] );
+                                for ( auto r : range( row ) )
+                                {
+                                    if (r+row_shift>=0 && r+row_shift<row)
+                                    {
+                                        for ( auto c : range( col ) )
+                                        {
+                                            if (c+col_shift>=0 && c+col_shift<col )
+                                                vo[bs][r][c][ch] = vi[bs][r+row_shift][c+col_shift][ch];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return ans;
+                    },
+                    "Sliding2D"
+                )( ex );
+            };
+        }
+
+    } // anonymous namespace
+
+    inline auto sliding_2d( unsigned long pixels ) noexcept
+    {
+        std::shared_ptr<std::any> shift_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return cropping_2d( {pixels,} )( detailed_sliding_2d(pixels, shift_cache, forward_cache, backward_cache)( zero_padding_2d( {pixels,} )( ex ) )  );
         };
     }
 
@@ -3076,77 +3191,6 @@ namespace ceras
 
 
 
-#if 0
-
-    ///
-    /// @brief Computes Ilogb of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = ilogb( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr ilogb( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::ilogb(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "Ilogb"
-                )( ex );
-    };
-
-#endif
-
-
-
-#if 0
-    ///
-    /// @brief Computes lgamma of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = lgamma( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr lgamma( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::lgamma(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "lgamma"
-                )( ex );
-    };
-#endif
 
 
 
@@ -3360,47 +3404,6 @@ namespace ceras
                                     "Log2"
                 )( ex );
     };
-
-
-
-
-
-
-#if 0
-    ///
-    /// @brief Computes Logb of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = logb( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr logb( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::logb(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "Logb"
-                )( ex );
-    };
-#endif
-
-
 
 
 
@@ -3754,40 +3757,6 @@ namespace ceras
 
 
 
-#if 0
-
-    ///
-    /// @brief Computes Tgamma of the given expression.
-    ///
-    /// Example code:
-    /// \code{.cpp}
-    /// auto a = variable{ random<float>( {2, 3, 5} ) };
-    /// auto b = tgamma( a );
-    /// \endcode
-    ///
-    template <Expression Ex>
-    auto constexpr tgamma( Ex const& ex ) noexcept
-    {
-        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( forward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ) noexcept { v = std::tgamma(x); } );
-                                        return ans;
-                                    },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
-                                    {
-                                        Tsor& ans = context_cast<Tsor>( backward_cache );
-                                        ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::FIXME(x); } );
-                                        return ans;
-                                    },
-                                    "Tgamma"
-                )( ex );
-    };
-#endif
 
 
 
@@ -3822,27 +3791,26 @@ namespace ceras
     };
 
 
-#if 0
 
     ///
-    /// @breif Updating the first expression's value by assining the secnod to it. The first expression should be a 'value'.
+    /// @breif Updating the second expression's value by assining the first one to it. The second expression should be a 'variable'.
     /// @param lhs_ex A mutable value.
     /// @param rhs_ex An expression to be assigned to lhs_ex.
     /// TODO: Fixme, this implementation is wrong
     ///
     /// \code{.cpp}
-    /// auto v = variable{ ... };
     /// auto x = constant{ ... } * constant{ ... };
-    /// assgin( v, x );
+    /// auto v = variable{ ... };
+    /// assgin( x, v );
     /// \endcode
     ///
-    template< Variable Lhs_Expression, Expression Rhs_Expression >
+    template< Expression Lhs_Expression, Variable Rhs_Expression >
     auto constexpr assign( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( []<Tensor Tsor>( Tsor& lhs_tensor, Tsor const& rhs_tensor ) noexcept // well, lhs_tensor can be 'Tensor&'
+        return make_binary_operator( []<Tensor Tsor>( Tsor const& lhs_tensor, Tsor& rhs_tensor ) noexcept
                                      {
-                                        lhs_tensor.reshape( rhs_tensor.shape() );
-                                        std::copy( rhs_tensor.begin(), rhs_tensor.end(), lhs_tensor.begin() );
+                                        rhs_tensor.reshape( lhs_tensor.shape() );
+                                        std::copy( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin() );
                                         return lhs_tensor;
                                      },
                                      []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& ) noexcept
@@ -3853,7 +3821,6 @@ namespace ceras
                 )( lhs_ex, rhs_ex );
     };
 
-#endif
 
 
 

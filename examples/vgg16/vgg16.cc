@@ -41,6 +41,7 @@ int main()
 
     auto m = model{ input, output }; // define a model
     m.summary( "./examples/vgg16/vgg16.dot" );
+    //m.save_weights( "./examples/vgg16/vgg16.weights" ); // <- slow lzw compression, need optimizing
 
 
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 1000

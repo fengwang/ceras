@@ -14,19 +14,22 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftem
 #OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCBLAS
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
 #CXX           = clang++
 CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -469,13 +472,35 @@ layer_assign: test/layer_assign.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_assign.o test/layer_assign.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_assign $(OBJECTS_DIR)/test_layer_assign.o $(LFLAGS)
 
+layer_erf: test/layer_erf.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_erf.o test/layer_erf.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_erf $(OBJECTS_DIR)/test_layer_erf.o $(LFLAGS)
+
+layer_gaussian: test/layer_gaussian.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_gaussian.o test/layer_gaussian.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_gaussian $(OBJECTS_DIR)/test_layer_gaussian.o $(LFLAGS)
+
+layer_cropping2d: test/layer_cropping2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_cropping2d.o test/layer_cropping2d.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_cropping2d $(OBJECTS_DIR)/test_layer_cropping2d.o $(LFLAGS)
+
+layer_sliding2d: test/layer_sliding2d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_sliding2d.o test/layer_sliding2d.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_sliding2d $(OBJECTS_DIR)/test_layer_sliding2d.o $(LFLAGS)
+
 mnist_save_restore: test/mnist_save_restore.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_save_restore.o test/mnist_save_restore.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_save_restore $(OBJECTS_DIR)/test_mnist_save_restore.o $(LFLAGS)
 
+<<<<<<< HEAD
 mnist_duplicated: test/mnist_duplicated.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_duplicated.o test/mnist_duplicated.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_duplicated $(OBJECTS_DIR)/test_mnist_duplicated.o $(LFLAGS)
+=======
+mnist_conv2d_sliding: test/mnist_conv2d_sliding.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o test/mnist_conv2d_sliding.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_sliding $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o $(LFLAGS)
+>>>>>>> d66a7cff3b2dc90b77e209a01ffd9fc76bc14511
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

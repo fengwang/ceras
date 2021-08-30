@@ -12,6 +12,68 @@ namespace ceras
 {
 
     ///
+    /// @brief Step activation function, an unary operator.
+    ///
+    /// @param ex An input operator
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = heaviside_step( y );
+    /// \endcode
+    ///
+    template< std::floating_point Float >
+    auto constexpr heaviside_step( Float f ) noexcept // f should not be zero
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return sigmoid( value( f+f ) * ex );
+        };
+    }
+
+
+    template <Expression Ex>
+    auto constexpr soft_sign( Ex const& ex ) noexcept // soft-sign
+    {
+        return heaviside_step( 20.0 )( ex );
+    }
+
+
+    template <Expression Ex>
+    auto constexpr unit_step( Ex const& ex ) noexcept
+    {
+        return soft_sign( ex );
+    }
+
+    template <Expression Ex>
+    auto constexpr binary_step( Ex const& ex ) noexcept
+    {
+        return soft_sign( ex );
+    }
+
+
+    ///
+    /// @brief Gaussian activation function, an unary operator.
+    ///
+    /// @param ex An input operator
+    ///
+    /// \code{.cpp}
+    /// auto x = Input();
+    /// auto y = Dense( 10, 28*28 )( x );
+    /// auto output = gaussian( y );
+    /// \endcode
+    ///
+    template <Expression Ex>
+    auto constexpr gaussian( Ex const& ex ) noexcept
+    {
+        return exp( negative( square(ex) ) );
+    }
+
+
+
+
+
+    ///
     /// @brief Softmax activation function, an unary operator.
     ///
     /// @param ex An input operator
@@ -352,6 +414,15 @@ namespace ceras
                                         "LeakyRelu"
                     )( ex );
         };
+    }
+
+    ///
+    /// @PReLU is an alias name of Leaky_ReLU
+    ///
+    template< typename T > requires std::floating_point<T>
+    auto prelu( T const factor ) noexcept
+    {
+        return leaky_relu( factor );
     }
 
     template <Expression Ex>

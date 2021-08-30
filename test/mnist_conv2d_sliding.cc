@@ -41,10 +41,13 @@ int main()
     auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
 
     auto l0 = reshape( {28, 28, 1} )( input );
+    auto l0_ = sliding_2d( 3 )( l0 ); // new
 
     auto k1 = variable{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
-    auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
+    //auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
+    auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0_, k1 ) ); // 26, 26, 32
 
+    auto l1_ = sliding_2d( 3 )( l1 ); // new
     auto l2 = max_pooling_2d( 2 ) ( l1 ); // 13, 13, 32
 
     auto k2 = variable{ randn<float>( {64, 3, 3, 32}, 0.0, 10.0/std::sqrt(64.0*3*3*1) ) };
