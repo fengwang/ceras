@@ -20,7 +20,7 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftem
 
 CXX           = g++
 #CXX           = clang++
-CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
+CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=3 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
@@ -499,6 +499,10 @@ mnist_duplicated: test/mnist_duplicated.cc
 mnist_conv2d_sliding: test/mnist_conv2d_sliding.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o test/mnist_conv2d_sliding.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2d_sliding $(OBJECTS_DIR)/test_mnist_conv2d_sliding.o $(LFLAGS)
+
+mnist_ls: test/mnist_ls.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_ls.o test/mnist_ls.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_ls $(OBJECTS_DIR)/test_mnist_ls.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
