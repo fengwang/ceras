@@ -222,20 +222,20 @@ namespace ceras
     };
 
     // note: do not apply softmax activation to the last layer of the model, this loss has packaged it
-    inline static constexpr auto CategoricalCrossentropy = []()
+    inline static constexpr auto CategoricalCrossentropy = []<std::floating_point F=float>( F label_smoothing_factor = 0.0)
     {
-        return []<Expression Ex >( Ex const& output )
+        return [=]<Expression Ex >( Ex const& output )
         {
             return [=]<Place_Holder Ph>( Ph const& ground_truth )
             {
-                return cross_entropy_loss( ground_truth, output );
+                return cross_entropy_loss( ground_truth, output, label_smoothing_factor );
             };
         };
     };
 
-    inline static constexpr auto CategoricalCrossEntropy = []()
+    inline static constexpr auto CategoricalCrossEntropy = []<std::floating_point F=float>(F label_smoothing_factor = 0.0)
     {
-        return CategoricalCrossentropy();
+        return CategoricalCrossentropy(label_smoothing_factor);
     };
 
     inline static constexpr auto BinaryCrossentropy = []()
