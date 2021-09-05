@@ -11,7 +11,7 @@ namespace ceras
     template < Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr mean_squared_logarithmic_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return sum_reduce( square( minus(lhs_ex, rhs_ex)) );
+        return sum_reduce( square( minus(log( value{1.0} + clip(eps)(lhs_ex) ), log( value{1.0} + clip(eps)(rhs_ex) ))) );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
