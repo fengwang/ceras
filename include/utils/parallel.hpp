@@ -72,8 +72,9 @@ namespace ceras
 #else
     //
     // Using std::execution::par or std::execution::par_unseq is deprecated.
-    // On my laptop, [archlinux 5.10.63-1-lts, Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz (8 cores) and g++11.1.0]
+    // On my laptop, [archlinux 5.10.63-1-lts, Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz (8 cores) and g++11.1.0],
     // to process a vector containing 200000000 elements
+    //
     // std::execution::par consumes 0.70s
     // std::execution::par_unseq consumes 0.68s
     // parallel consumes 0.37s
