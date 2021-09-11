@@ -29,7 +29,7 @@ LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -ltbb ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
