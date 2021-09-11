@@ -504,6 +504,10 @@ mnist_ls: test/mnist_ls.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_ls.o test/mnist_ls.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_ls $(OBJECTS_DIR)/test_mnist_ls.o $(LFLAGS)
 
+for_each: test/for_each.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_for_each.o test/for_each.cc
+	$(LINK) -o $(BIN_DIR)/test_for_each $(OBJECTS_DIR)/test_for_each.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

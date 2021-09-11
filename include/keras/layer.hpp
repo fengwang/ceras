@@ -19,6 +19,32 @@ namespace ceras::keras
 
     static constexpr unsigned long None = static_cast<unsigned long>(-1);
 
+
+
+    namespace
+    {
+
+        template< typename Layer >
+        struct feature_name
+        {
+            std::string name_;
+
+            Layer name( std::string custom_name ) const noexcept
+            {
+                Layer other{ static_cast<Layer const&>( *this ) };
+                other.name_ = custom_name;
+                return other;
+            }
+        };
+
+
+
+    }// anonymous namespace for layer features
+
+
+
+
+
     ///
     /// @brief Extract the current layer (the leading layer).
     ///
