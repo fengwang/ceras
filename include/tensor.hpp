@@ -821,7 +821,9 @@ namespace ceras
     {
         std::normal_distribution<T> distribution( mean, stddev );
         tensor<T,A> ans{ shape };
-        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
+        for_each( ans.begin(), ans.end(), [&distribution](T& v) noexcept{ v = distribution(random_generator);  } );
+        //std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
+        //std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
         return ans;
     }
 
