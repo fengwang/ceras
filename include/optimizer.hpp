@@ -347,6 +347,7 @@ namespace ceras
                     auto& gradient = v.gradient();
                     better_assert( !has_nan(gradient), "gradient_descent error, tensor with id ", id, " has a nan value." );
                     v.data() -= learning_rate_ * gradient;
+                    if (0)
                     {
                         std::ofstream ofs{ fmt::format("./debug/weight_{}.txt", id) };
                         ofs << v.gradient() << std::endl;
