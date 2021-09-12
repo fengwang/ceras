@@ -18,7 +18,7 @@
 #include <cstdio>
 #include <ctime>
 #include <exception>
-#include <execution>
+//#include <execution> // deprecated as `std::execution::par` is too slow
 #include <filesystem>
 #include <fstream>
 #include <functional>

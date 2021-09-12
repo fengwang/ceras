@@ -508,6 +508,10 @@ for_each: test/for_each.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_for_each.o test/for_each.cc
 	$(LINK) -o $(BIN_DIR)/test_for_each $(OBJECTS_DIR)/test_for_each.o $(LFLAGS)
 
+xtensor: test/xtensor.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_xtensor.o test/xtensor.cc
+	$(LINK) -o $(BIN_DIR)/test_xtensor $(OBJECTS_DIR)/test_xtensor.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

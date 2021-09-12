@@ -13,6 +13,8 @@
 #include "./backend/cuda.hpp"
 #include "./backend/cblas.hpp"
 
+#include "./utils/3rd_party/xtensor.hpp"// introducing xt::xarray as default container
+
 namespace ceras
 {
     // random_seed for random numbers
@@ -26,63 +28,120 @@ namespace ceras
     //
 
     // Beware: shallow copy
-    // TODO: impl tensor_view, enabling stride dataset
     template< typename T, typename Allocator = default_allocator<T> >
     struct tensor : enable_id<tensor<T, Allocator>, "Tensor">
     {
         typedef T value_type;
         typedef Allocator allocator;
-        typedef std::vector<T, Allocator> vector_type;
+        typedef xt::xarray<T> vector_type;
         typedef std::shared_ptr<vector_type> shared_vector;
         typedef tensor self_type;
 
         std::vector<unsigned long> shape_;
-        unsigned long memory_offset_;
         shared_vector vector_; //shared across different instances
+
+        tensor(): shape_{std::vector<unsigned long>{}}, vector_{std::make_shared<vector_type>()} { }
+
+        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init ) : shape_{ shape }, vector_{ std::make_shared<vector_type>() }
+        {
+            (*vector_).resize( shape );
+            std::copy( init.begin(), init.end(), begin() );
+        }
+
+        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
+        {
+            (*vector_).resize( shape );
+        }
+
+        constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
+        {
+            (*vector_).resize( shape );
+            std::fill( begin(), end(), init );
+        }
+
+        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+        }
+
+        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+        }
+
+        constexpr self_type& operator = ( self_type const& other ) noexcept
+        {
+            shape_ = other.shape_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            return *this;
+        }
+        constexpr self_type& operator = ( self_type && other ) noexcept
+        {
+            shape_ = other.shape_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            return *this;
+        }
+
+        vector_type const& as_xarray() const noexcept { return *vector_; }
+        vector_type const& as_xarray() noexcept { return *vector_; }
+
+        self_type& synchronize()
+        {
+            if ( vector_ )
+            {
+                auto const& v_shape = vector_.shape();
+                shape_.resize( v_shape.size() );
+                for_each( shape_.begin(), shape_.end(), v_shape.begin(), []( auto& x, auto const& y ) noexcept { x = y; } );
+            }
+            else
+                shape_.clear();
+
+            return *this;
+        }
 
         constexpr auto begin() noexcept
         {
-            return data();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).begin();
         }
 
         constexpr auto begin() const noexcept
         {
-            return data();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).begin();
         }
 
         constexpr auto cbegin() const noexcept
         {
-            return begin();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).cbegin();
         }
 
         constexpr auto end() noexcept
         {
-            return begin() + size();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).end();
         }
 
         constexpr auto end() const noexcept
         {
-            return begin() + size();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).end();
         }
 
         constexpr auto cend() const noexcept
         {
-            return  end();
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).cend();
         }
 
-        ///
-        /// Resetting all elements in the tensor to a fixed value (default to 0), without change the shape.
-        ///
-        /// Example code:
-        /// \code{.cpp}
-        /// tensor<float> ts;
-        /// //...
-        /// ts.reset();
-        /// \endcode
-        ///
         constexpr self_type& reset( T val = T{0} )
         {
-            std::fill_n( data(), size(), val );
+            for_each( begin(), end(), [=](auto& x) noexcept { x = val; } );
             return *this;
         }
 
@@ -94,14 +153,14 @@ namespace ceras
         constexpr self_type& deep_copy( self_type const& other )
         {
             (*this).resize( other.shape() );
-            std::copy_n( other.data(), size(), (*this).data() );
+            for_each( other.begin(), other.end(), begin(), []( auto const& x, auto& y ) noexcept { y = x; } );
             return *this;
         }
 
         constexpr self_type const deep_copy() const
         {
             self_type ans{ shape_ };
-            std::copy_n( data(), size(), ans.data() );
+            for_each( begin(), end(), ans.begin(), []( auto const& x, auto& y ) noexcept { y = x; } );
             return ans;
         }
 
@@ -122,104 +181,29 @@ namespace ceras
             return *(data()+idx);
         }
 
-        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()}
-        {
-        }
-
-        //
-        // tensor<double> A{ {2,2}, { 1.0, 1.0, 1.0, 1.0} };
-        //
-        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{ shape }, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
-        {
-            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
-        }
-
-        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
-        {
-        }
-
-        constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
-        {
-            std::fill( begin(), end(), init );
-        }
-
-        constexpr tensor( tensor const& other, unsigned long memory_offset ) : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
-
-        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
-        {
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-        }
-
-        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
-        {
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-        }
-
-        constexpr self_type& operator = ( self_type const& other ) noexcept
-        {
-            shape_ = other.shape_;
-            memory_offset_ = other.memory_offset_;
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-            return *this;
-        }
-        constexpr self_type& operator = ( self_type && other ) noexcept
-        {
-            shape_ = other.shape_;
-            memory_offset_ = other.memory_offset_;
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-            return *this;
-        }
-
         constexpr std::vector< unsigned long > const& shape() const noexcept { return shape_; }
 
         constexpr unsigned long size() const noexcept
         {
-            if ( !vector_ )
-                return 0;
-            return (*vector_).size() - memory_offset_;
+            return vector_ ? (*vector_).size() : 0;
         }
 
         constexpr self_type& resize( std::vector< unsigned long > const& new_shape )
         {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if( (*this).size() != new_size )
-            {
-                (*vector_).resize(new_size);
-                memory_offset_ = 0UL;
-            }
-            (*this).shape_ = new_shape;
+            (*vector_).resize( new_shape );
+            shape_ = new_shape;
             return *this;
         }
 
-        //reshape is resize
         constexpr self_type& reshape( std::vector< unsigned long > const& new_shape )
         {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if ( (*this).size() != new_size ) return resize( new_shape );
-
-            better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            (*this).shape_ = new_shape;
-            return *this;
+            return resize( new_shape );
         }
 
         //mapping a smaller tensor on a larger one
         constexpr self_type& shrink_to( std::vector< unsigned long > const& new_shape )
         {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            better_assert( (*this).size() >= new_size, "reshape: expecting smaller size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            (*this).shape_ = new_shape;
-            return *this;
-        }
-
-        //adjust the memory offset
-        constexpr self_type& creep_to( unsigned long new_memory_offset )
-        {
-            (*this).memory_offset_ = new_memory_offset;
-            return *this;
+            return reshape( new_shape );
         }
 
         [[nodiscard]] constexpr bool empty() const noexcept
@@ -229,12 +213,14 @@ namespace ceras
 
         constexpr value_type* data() noexcept
         {
-            return (*vector_).data() + memory_offset_;
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).data();
         }
 
         constexpr const value_type* data() const noexcept
         {
-            return (*vector_).data() + memory_offset_;
+            better_assert( !empty(), "Error: empty vector!" );
+            return (*vector_).data();
         }
 
         // element-wise operation
@@ -251,8 +237,6 @@ namespace ceras
 
         constexpr self_type& operator += ( self_type const& other )
         {
-            //better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch! -- current shape is ", shape(), " and other tensor shape is ", other.shape() );
-            better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;
         }
@@ -331,11 +315,8 @@ namespace ceras
             unsigned long first_dim = shape_[0];
             better_assert( n <= first_dim, "this tensor only has ", first_dim, " at the first dimension, too small for n = ", n );
 
-            unsigned long rest_dims = std::accumulate( shape_.begin()+1, shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } );
-
             tensor ans = *this;
             ans.shape_[0] = n - m;
-            ans.memory_offset_ = rest_dims * m + memory_offset_;
             return ans;
         }
 
