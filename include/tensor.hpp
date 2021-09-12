@@ -48,15 +48,18 @@ namespace ceras
             std::copy( init.begin(), init.end(), begin() );
         }
 
-        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
+        /*
+        constexpr tensor( std::vector<unsigned long> const& shape ) noexcept : shape_{shape}, vector_{ std::make_shared<vector_type>() }
         {
             (*vector_).resize( shape );
+            for_each( begin(), end(), []( auto& v ) noexcept { v = value_type{}; } );
         }
+        */
 
-        constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
+        constexpr tensor( std::vector<unsigned long> const& shape, value_type const& init = value_type{} ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
         {
             (*vector_).resize( shape );
-            std::fill( begin(), end(), init );
+            for_each( begin(), end(), [init]( auto& v ) noexcept { v = init; } );
         }
 
         constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }
@@ -188,10 +191,18 @@ namespace ceras
             return vector_ ? (*vector_).size() : 0;
         }
 
-        constexpr self_type& resize( std::vector< unsigned long > const& new_shape )
+        constexpr self_type& resize( std::vector< unsigned long > const& new_shape ) noexcept
         {
-            (*vector_).resize( new_shape );
+            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ) noexcept { return x*y; } );
+            if (new_size != size() )
+            {
+                (*vector_).resize( new_shape );
+                shape_ = new_shape;
+                return *this;
+            }
+
             shape_ = new_shape;
+            (*vector_).reshape( new_shape );
             return *this;
         }
 

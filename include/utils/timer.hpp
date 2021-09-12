@@ -19,18 +19,18 @@ namespace ceras
         timer( [[maybe_unused]]const T& val )
         {
             t = std::clock();
-            debug_log( fmt::format( "Timer begins with information \'{}\' at {}", val, t ) );
+            //debug_log( fmt::format( "Timer begins with information \'{}\' at {}", val, t ) );
         }
 
         timer()
         {
             t = std::clock();
-            debug_log( fmt::format( "Timer begins at {}", t ) );
+            //debug_log( fmt::format( "Timer begins at {}", t ) );
         }
 
         ~timer()
         {
-            debug_log( fmt::format( "Timer ends. Duration: {} seconds", static_cast<long double>(*this) ) );
+            //debug_log( fmt::format( "Timer ends. Duration: {} seconds", static_cast<long double>(*this) ) );
         }
 
         operator clock_type () const
