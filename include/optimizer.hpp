@@ -10,6 +10,7 @@
 #include "./utils/debug.hpp"
 #include "./utils/id.hpp"
 #include "./utils/enable_shared.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
@@ -346,6 +347,12 @@ namespace ceras
                     auto& gradient = v.gradient();
                     better_assert( !has_nan(gradient), "gradient_descent error, tensor with id ", id, " has a nan value." );
                     v.data() -= learning_rate_ * gradient;
+                    {
+                        std::ofstream ofs{ fmt::format("./debug/weight_{}.txt", id) };
+                        ofs << v.gradient() << std::endl;
+                        ofs.close();
+                        better_assert( false, "stop here!" );
+                    }
 
                     gradient.reset(); // clear variable gradient
                 }
