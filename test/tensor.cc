@@ -4,7 +4,7 @@
 
 int main()
 {
-    ceras::random_seed = 123;
+    ceras::random_generator.seed( 123 );
 
     ceras::tensor<double> A{ {2, 2}, {1.0, 2.0, 3.0, 1.0} };
     std::cout << "A = \n" << A << std::endl;
