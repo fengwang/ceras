@@ -24,7 +24,6 @@ namespace ceras
 
     template< typename T >
     using default_allocator = std::allocator<T>;
-    //
 
     // Beware: shallow copy -- maybe fly_weight pattern?
     template< typename T, typename Allocator = default_allocator<T> >
@@ -81,7 +80,10 @@ namespace ceras
         }
 
         vector_type const& as_xarray() const noexcept { return *vector_; }
+
         vector_type& as_xarray() noexcept { return *vector_; }
+
+        operator vector_type() const noexcept { return *vector_; }
 
         self_type& backend_synchronize()
         {
@@ -91,8 +93,6 @@ namespace ceras
                 shape_.resize( v_shape.size() );
                 for_each( shape_.begin(), shape_.end(), v_shape.begin(), []( auto& x, auto const& y ) noexcept { x = y; } );
             }
-            else
-                shape_.clear();
 
             return *this;
         }
@@ -228,13 +228,17 @@ namespace ceras
 
         constexpr self_type& operator -= ( self_type const& other )
         {
-            std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x-y; } );
+            auto& vec = (*this).as_xarray();
+            vec -= other.as_xarray();
+            backend_synchronize();
+
+            //std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x-y; } );
             return *this;
         }
 
         constexpr self_type& operator -= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v -= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v -= x; } );
             return *this;
         }
 
@@ -246,7 +250,7 @@ namespace ceras
 
         constexpr self_type& operator *= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v *= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v *= x; } );
             return *this;
         }
 
@@ -259,14 +263,14 @@ namespace ceras
 
         constexpr self_type& operator /= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v /= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v /= x; } );
             return *this;
         }
 
         constexpr self_type const operator - () const
         {
             self_type ans = (*this).deep_copy();
-            std::for_each( ans.data(), ans.data()+size(), []( auto& v ){ v = -v; } );
+            for_each( ans.data(), ans.data()+size(), []( auto& v ){ v = -v; } );
             return  ans;
         }
 
@@ -283,20 +287,6 @@ namespace ceras
             std::copy( (*this).begin(), (*this).end(), ans.begin() );
             return ans;
         }
-
-        tensor slice( unsigned long m, unsigned long n ) const noexcept
-        {
-            better_assert( m < n, "starting dimension larger than then ending dimension." );
-            better_assert( !shape_.empty(), "Cannot slice an empty tensor." );
-
-            unsigned long first_dim = shape_[0];
-            better_assert( n <= first_dim, "this tensor only has ", first_dim, " at the first dimension, too small for n = ", n );
-
-            tensor ans = *this;
-            ans.shape_[0] = n - m;
-            return ans;
-        }
-
     };
 
     template <typename T, typename A=default_allocator<T> >
@@ -546,34 +536,18 @@ namespace ceras
         gemm( x.data(), x.transposed_, y.data(), y.transposed_, x_row, x_col, y_col, ans.data() );
     }
 
-    // always prefer channel-last data format
-    // Example:
-    //
-    // ( 3x2 )  + ( 1x2 )  --> ( 3x2 )
-    //
-    // [ 1, 2 ]                [ 0, 3 ]
-    // [ 3, 4 ] + [  -1, 1 ] = [ 2, 5 ]
-    // [ 5, 6 ]                [ 4, 7 ]
-    //
-    //template< typename T, typename A >
-    //tensor<T, A> add( tensor<T, A> const& lhs, tensor<T, A> const& rhs ) noexcept
-    //TODO: fix cases like [31, 1, 31, 31, 1] + [31, 1, 1, 31]
     template< Tensor Tsor >
     Tsor add( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
-        unsigned long const l_size = lhs.size();
-        unsigned long const r_size = rhs.size();
-        if ( l_size < r_size ) return rhs + lhs;
-
-        unsigned long const repeats = l_size / r_size;
-        better_assert( (r_size * repeats) == l_size, "Dimension does not match!" );
-
         Tsor ans = lhs.deep_copy();
-        for ( auto idx : range( repeats ) )
-            for ( auto jdx : range( r_size ) )
-                ans[idx*r_size+jdx] = lhs[idx*r_size+jdx] + rhs[jdx];
-
+        ans += rhs;
         return ans;
+        /*
+        auto& tsor = ans.as_xarray();
+        tsor += rhs.as_xarray();
+        ans.backend_synchronize();
+        return ans;
+        */
     }
 
     template< Tensor Tsor >
@@ -611,9 +585,15 @@ namespace ceras
     template< Tensor Tsor >
     Tsor operator - ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
     {
-        auto ans = rhs.deep_copy();
-        ans.map( [lhs]( auto& v ){ v = lhs - v; } );
+        Tsor ans = lhs.deep_copy();
+        ans -= rhs;
         return ans;
+        /*
+        auto& tsor = ans.as_xarray();
+        tsor -= rhs.as_xarray();
+        ans.backend_synchronize();
+        return ans;
+        */
     }
 
     template< Tensor Tsor >
@@ -649,7 +629,7 @@ namespace ceras
     template< Tensor Tsor >
     Tsor reshape( Tsor const& ts, std::vector<unsigned long> const& new_shape )
     {
-        Tsor ans = ts;
+        Tsor ans = ts.deep_copy();
         return ans.reshape( new_shape );
     }
 
