@@ -356,6 +356,17 @@ int main()
     }
 
 
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {2, 2} );
+        auto y = ceras::random<double>( {1, 2} );
+        std::cout << "x:\n" << x << std::endl;
+        std::cout << "y:\n" << y << std::endl;
+
+        x += y;
+        std::cout << "x+=y:\n" << x << std::endl;
+    }
+
     return 0;
 }
 

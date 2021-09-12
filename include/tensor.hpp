@@ -23,40 +23,31 @@ namespace ceras
     static std::mt19937 random_generator{random_seed};
 
     template< typename T >
-    //using default_allocator = buffered_allocator<T, 256>;
     using default_allocator = std::allocator<T>;
     //
 
-    // Beware: shallow copy
+    // Beware: shallow copy -- maybe fly_weight pattern?
     template< typename T, typename Allocator = default_allocator<T> >
     struct tensor : enable_id<tensor<T, Allocator>, "Tensor">
     {
         typedef T value_type;
         typedef Allocator allocator;
-        typedef xt::xarray<T> vector_type;
+        typedef xt::xarray_container<xt::uvector<T, Allocator >, xt::layout_type::row_major, xt::svector<long unsigned int, 4, std::allocator<long unsigned int>, true>, xt::xtensor_expression_tag> vector_type;
         typedef std::shared_ptr<vector_type> shared_vector;
         typedef tensor self_type;
 
         std::vector<unsigned long> shape_;
         shared_vector vector_; //shared across different instances
 
-        tensor(): shape_{std::vector<unsigned long>{}}, vector_{std::make_shared<vector_type>()} { }
+        tensor() noexcept: shape_{std::vector<unsigned long>{}}, vector_{std::make_shared<vector_type>()} { }
 
-        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init ) : shape_{ shape }, vector_{ std::make_shared<vector_type>() }
+        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init ) noexcept : shape_{ shape }, vector_{ std::make_shared<vector_type>() }
         {
             (*vector_).resize( shape );
             std::copy( init.begin(), init.end(), begin() );
         }
 
-        /*
-        constexpr tensor( std::vector<unsigned long> const& shape ) noexcept : shape_{shape}, vector_{ std::make_shared<vector_type>() }
-        {
-            (*vector_).resize( shape );
-            for_each( begin(), end(), []( auto& v ) noexcept { v = value_type{}; } );
-        }
-        */
-
-        constexpr tensor( std::vector<unsigned long> const& shape, value_type const& init = value_type{} ):shape_{shape}, vector_{ std::make_shared<vector_type>() }
+        constexpr tensor( std::vector<unsigned long> const& shape, value_type const& init = value_type{} ) noexcept :shape_{shape}, vector_{ std::make_shared<vector_type>() }
         {
             (*vector_).resize( shape );
             for_each( begin(), end(), [init]( auto& v ) noexcept { v = init; } );
@@ -90,13 +81,13 @@ namespace ceras
         }
 
         vector_type const& as_xarray() const noexcept { return *vector_; }
-        vector_type const& as_xarray() noexcept { return *vector_; }
+        vector_type& as_xarray() noexcept { return *vector_; }
 
-        self_type& synchronize()
+        self_type& backend_synchronize()
         {
             if ( vector_ )
             {
-                auto const& v_shape = vector_.shape();
+                auto const& v_shape = (*vector_).shape();
                 shape_.resize( v_shape.size() );
                 for_each( shape_.begin(), shape_.end(), v_shape.begin(), []( auto& x, auto const& y ) noexcept { x = y; } );
             }
@@ -106,41 +97,17 @@ namespace ceras
             return *this;
         }
 
-        constexpr auto begin() noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).begin();
-        }
+        constexpr auto begin() noexcept { return (*vector_).begin(); }
 
-        constexpr auto begin() const noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).begin();
-        }
+        constexpr auto begin() const noexcept { return (*vector_).begin(); }
 
-        constexpr auto cbegin() const noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).cbegin();
-        }
+        constexpr auto cbegin() const noexcept { return (*vector_).cbegin(); }
 
-        constexpr auto end() noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).end();
-        }
+        constexpr auto end() noexcept { return (*vector_).end(); }
 
-        constexpr auto end() const noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).end();
-        }
+        constexpr auto end() const noexcept { return (*vector_).end(); }
 
-        constexpr auto cend() const noexcept
-        {
-            better_assert( !empty(), "Error: empty vector!" );
-            return (*vector_).cend();
-        }
+        constexpr auto cend() const noexcept { return (*vector_).cend(); }
 
         constexpr self_type& reset( T val = T{0} )
         {
@@ -224,13 +191,11 @@ namespace ceras
 
         constexpr value_type* data() noexcept
         {
-            better_assert( !empty(), "Error: empty vector!" );
             return (*vector_).data();
         }
 
         constexpr const value_type* data() const noexcept
         {
-            better_assert( !empty(), "Error: empty vector!" );
             return (*vector_).data();
         }
 
@@ -248,7 +213,10 @@ namespace ceras
 
         constexpr self_type& operator += ( self_type const& other )
         {
-            std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
+            auto& vec = (*this).as_xarray();
+            vec += other.as_xarray();
+            backend_synchronize();
+            //std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;
         }
 
@@ -260,7 +228,6 @@ namespace ceras
 
         constexpr self_type& operator -= ( self_type const& other )
         {
-            better_assert( shape() == other.shape(), "Error with tensor::operator -=: Shape not match!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x-y; } );
             return *this;
         }
@@ -273,7 +240,6 @@ namespace ceras
 
         constexpr self_type& operator *= ( self_type const& other )
         {
-            better_assert( shape() == other.shape(), "Shape not match!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x*y; } );
             return *this;
         }
