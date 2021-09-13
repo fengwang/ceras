@@ -12,6 +12,7 @@
 #include "./utils/list.hpp"
 #include "./backend/cuda.hpp"
 #include "./backend/cblas.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
@@ -23,10 +24,8 @@ namespace ceras
     template< typename T >
     //using default_allocator = buffered_allocator<T, 256>;
     using default_allocator = std::allocator<T>;
-    //
 
     // Beware: shallow copy
-    // TODO: impl tensor_view, enabling stride dataset
     template< typename T, typename Allocator = default_allocator<T> >
     struct tensor : enable_id<tensor<T, Allocator>, "Tensor">
     {
@@ -122,21 +121,14 @@ namespace ceras
             return *(data()+idx);
         }
 
-        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()}
-        {
-        }
+        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()} { }
 
-        //
-        // tensor<double> A{ {2,2}, { 1.0, 1.0, 1.0, 1.0} };
-        //
         constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{ shape }, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
         {
             better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
         }
 
-        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
-        {
-        }
+        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) } { }
 
         constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
         {
@@ -252,14 +244,14 @@ namespace ceras
         constexpr self_type& operator += ( self_type const& other )
         {
             //better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch! -- current shape is ", shape(), " and other tensor shape is ", other.shape() );
-            better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch!" );
+            better_assert( shape() == other.shape(), fmt::format("Error with tensor::operator += : Shape mismatch! This shape is {}, while other shape is {}.", shape(), other.shape() ) );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;
         }
 
         constexpr self_type& operator += ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( value_type& v ){ v += x; } );
+            for_each( data(), data()+size(), [x]( value_type& v ){ v += x; } );
             return *this;
         }
 
@@ -272,7 +264,7 @@ namespace ceras
 
         constexpr self_type& operator -= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v -= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v -= x; } );
             return *this;
         }
 
@@ -285,7 +277,7 @@ namespace ceras
 
         constexpr self_type& operator *= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v *= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v *= x; } );
             return *this;
         }
 
@@ -298,14 +290,14 @@ namespace ceras
 
         constexpr self_type& operator /= ( value_type x )
         {
-            std::for_each( data(), data()+size(), [x]( auto& v ){ v /= x; } );
+            for_each( data(), data()+size(), [x]( auto& v ){ v /= x; } );
             return *this;
         }
 
         constexpr self_type const operator - () const
         {
             self_type ans = (*this).deep_copy();
-            std::for_each( ans.data(), ans.data()+size(), []( auto& v ){ v = -v; } );
+            for_each( ans.data(), ans.data()+size(), []( auto& v ){ v = -v; } );
             return  ans;
         }
 
@@ -341,6 +333,10 @@ namespace ceras
 
     };
 
+
+
+
+
     template <typename T, typename A=default_allocator<T> >
     constexpr tensor<T, A> as_tensor( T val ) noexcept
     {
@@ -360,6 +356,7 @@ namespace ceras
 
     template< typename T >
     concept Tensor = is_tensor_v<T>;
+
 
     template< Tensor Tsor, typename CharT, typename Traits >
     std::basic_ostream<CharT, Traits>& operator << ( std::basic_ostream<CharT, Traits>& os_, Tsor const& tsor )
@@ -476,6 +473,289 @@ namespace ceras
 
     template< typename T >
     using matrix = view_2d<T>;
+
+    template< typename T >
+    struct view_3d
+    {
+        T* data_;
+        unsigned long row_;
+        unsigned long col_;
+        unsigned long channel_;
+
+        constexpr view_3d( T* data, unsigned long row, unsigned long col, unsigned long channel ) noexcept : data_{data}, row_{row}, col_{col}, channel_{channel} {}
+
+        constexpr auto operator[]( unsigned long index ) noexcept
+        {
+            return view_2d{ data_+index*col_*channel_, col_, channel_ };
+        }
+
+        constexpr auto operator[]( unsigned long index ) const noexcept
+        {
+            return view_2d{ data_+index*col_*channel_, col_, channel_ };
+        }
+    };
+
+    template< typename T >
+    using cube = view_3d<T>;
+
+    ///
+    /// A class viewing a 1-D array as a 4-D tensor. This class is useful when treating an array as a typical 4-D tensor in a neural network, with a shape of [batch_size, row, column, channel].
+    ///
+    template< typename T >
+    struct view_4d
+    {
+        T* data_; ///< The pointer to the start position of the 1-D array.
+        unsigned long batch_size_; ///< The batch size of the 4-D tensor, also the first dimension of the tensor.
+        unsigned long row_; ///< The row of the 4-D tensor, also the second dimension of the tensor.
+        unsigned long col_; ///< The column of the 4-D tensor, also the third dimension of the tensor.
+        unsigned long channel_; ///< The channel of the 4-D tensor, also the last dimension of the tensor.
+
+        ///
+        /// Constructor of view_4d
+        /// @param data The raw pointer to the start position of the 1-D array.
+        /// @param batch_size The first dimension of the 4-D tensor, also for the batch size in the CNN layers.
+        /// @param row The second dimension of the 4-D tensor, also for the row in the CNN layers.
+        /// @param col The third dimension of the 4-D tensor, also for the column in the CNN layers.
+        /// @param channel The last dimension of the 4-D tensor, also for the channel in the CNN layers.
+        ///
+        constexpr view_4d( T* data=nullptr, unsigned long batch_size=0, unsigned long row=0, unsigned long col=0, unsigned long channel=0 ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
+
+        ///
+        /// Giving a view_3d interface for operator [].
+        /// @param index The first dimension of the 4-D tensor.
+        ///
+        /// Example usage:
+        ///
+        /// @code
+        ///     std::vector<float> array;
+        ///     array.resize( 16*8*8*3 );
+        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
+        ///     t[0][1][2][3] = 1.0;
+        /// @endcode
+        ///
+        constexpr auto operator[]( unsigned long index ) noexcept
+        {
+            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
+        }
+
+
+        ///
+        /// Giving a view_3d interface for operator [].
+        /// @param index The first dimension of the 4-D tensor.
+        ///
+        /// Example usage:
+        ///
+        /// @code
+        ///     std::vector<float> array;
+        ///     array.resize( 16*8*8*3 );
+        ///     // operations on `array`
+        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
+        ///     float v0123 = t[0][1][2][3];
+        /// @endcode
+        ///
+        constexpr auto operator[]( unsigned long index ) const noexcept
+        {
+            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
+        }
+    }; // struct view_4d
+
+    template<typename T >
+    using tesseract = view_4d<T>;
+
+
+    template<typename T, unsigned long N>
+    struct view;
+
+    template<typename T>
+    struct view<T, 1> : view_1d<T>
+    {
+        using view_1d<T>::view_1d;
+    };
+
+    template<typename T>
+    struct view<T, 2> : view_2d<T>
+    {
+        using view_2d<T>::view_2d;
+    };
+
+    template<typename T>
+    struct view<T, 3> : view_3d<T>
+    {
+        using view_3d<T>::view_3d;
+    };
+
+    template<typename T>
+    struct view<T, 4> : view_4d<T>
+    {
+        using view_4d<T>::view_4d;
+
+        view( T* data, std::array<unsigned long, 4> const& shape ) noexcept : view_4d<T>{ data, shape[0], shape[1], shape[2], shape[3] } {}
+    };
+
+    ///
+    /// @brief N-Dimentional view of 1D memory.
+    ///
+    /// \code{.cpp}
+    /// auto t = random<float>( {1, 2, 3, 4, 5, 6, 7} );
+    /// auto v = view<float, 7>{ t.data(), {1, 1, 6, 4, 5, 6, 7} }; // view as different shape tensor
+    /// std::cout << v[0][0][5][3][4][5][6];
+    /// \endcode
+    ///
+    template< typename T, unsigned long N >
+    struct view
+    {
+        T* data_;
+        std::array<unsigned long, N> shape_;
+
+        constexpr view( T* data, std::array<unsigned long, N> const& shape ) noexcept :  data_{ data }, shape_{ shape } {}
+
+        view<T, N-1> operator []( unsigned long index ) noexcept
+        {
+            unsigned long first_dim = shape_[0];
+            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
+            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
+
+            std::array<unsigned long, N-1> new_shape;
+            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
+            return view<T, N-1>{ data_+offsets, new_shape };
+        }
+
+        view<T, N-1> operator []( unsigned long index ) const noexcept
+        {
+            unsigned long first_dim = shape_[0];
+            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
+            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
+
+            std::array<unsigned long, N-1> new_shape;
+            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
+            return view<T, N-1>{ data_+offsets, new_shape };
+        }
+
+    }; // struct view
+
+    template <Tensor Tsor>
+    Tsor broadcast_tensor( Tsor const& tsor, std::vector<unsigned long> const& new_shape ) noexcept
+    {
+        // case of same shapes
+        if ( tsor.shape() == new_shape )
+            return tsor;
+
+        auto _ans = tsor;
+        std::vector<unsigned long> updated_shape = _ans.shape();
+        if (updated_shape.size() < new_shape.size())
+        {
+            for ([[maybe_unused]]auto _ : range(new_shape.size()-updated_shape.size()))
+                updated_shape.insert( updated_shape.begin(), 1 );
+            _ans.reshape( updated_shape );
+        }
+
+        // case of same shapes after 1-padding
+        if ( updated_shape == new_shape )
+            return _ans;
+
+
+        // finding the expanding dimension
+        long int dim_to_expand = updated_shape.size()-1;
+        while( dim_to_expand >= 0 )
+        {
+            if ( new_shape[dim_to_expand] != updated_shape[dim_to_expand] )
+                break;
+            --dim_to_expand;
+        }
+
+        better_assert( updated_shape[dim_to_expand] == 1, fmt::format("expecting the expanding dimension to be 1, but got {}", updated_shape[dim_to_expand]) );
+
+        // [headings..][1][tailings...] <- updated_shape
+        // [headings..][x][tailings...] <- new_shape
+        unsigned long const headings = std::accumulate( updated_shape.begin(), updated_shape.begin()+dim_to_expand, 1UL, []( auto x, auto y ) noexcept { return x*y; } );
+        unsigned long const repeats = new_shape[dim_to_expand];
+        unsigned long const tailings = std::accumulate( updated_shape.begin()+dim_to_expand, updated_shape.end(), 1UL, []( auto x, auto y ) noexcept { return x*y; } );
+
+        std::vector<unsigned long> expanded_shape = updated_shape;
+        expanded_shape[dim_to_expand] = new_shape[dim_to_expand];
+        Tsor ans{ expanded_shape };
+        view_3d v3{ ans.data(), headings, repeats, tailings }; // 3D view of ans
+        view_2d v2{ _ans.data(), headings, tailings }; // 2D view of _ans
+
+        for ( auto r : range( headings ) )
+            for ( auto c : range( repeats ) )
+                for ( auto ch : range( tailings ) )
+                    v3[r][c][ch] = v2[r][ch];
+
+        ans.reshape( expanded_shape );
+        return broadcast_tensor( ans, new_shape ); // not necessarily done in a single loop
+    }
+
+    ///
+    /// @brief Calculate the broadcasting shape for two tensors.
+    /// Examples taken from numpy:
+    ///
+    ///  A      (2d array):  5 x 4
+    ///  B      (1d array):      1
+    ///  Result (2d array):  5 x 4
+    ///
+    ///  A      (2d array):  5 x 4
+    ///  B      (1d array):      4
+    ///  Result (2d array):  5 x 4
+    ///
+    ///  A      (3d array):  15 x 3 x 5
+    ///  B      (3d array):  15 x 1 x 5
+    ///  Result (3d array):  15 x 3 x 5
+    ///
+    ///  A      (3d array):  15 x 3 x 5
+    ///  B      (2d array):       3 x 5
+    ///  Result (3d array):  15 x 3 x 5
+    ///
+    ///  A      (3d array):  15 x 3 x 5
+    ///  B      (2d array):       3 x 1
+    ///  Result (3d array):  15 x 3 x 5
+    ///
+    /// @param shape_a Tensor shape.
+    /// @param shape_b Tensor shape.
+    ///
+    /// @return Broadcasted shape of \ref shape_a and \ref shape_b.
+    ///
+    ///
+    inline std::vector<unsigned long> broadcast_shape( std::vector<unsigned long> const& shape_a, std::vector<unsigned long> const& shape_b ) noexcept
+    {
+        if (shape_a == shape_b)
+            return shape_a;
+
+        std::vector<unsigned long> ans;
+        long int const size_a = shape_a.size();
+        long int const size_b = shape_b.size();
+
+        for ( long int idx = 0; true; ++idx )
+        {
+            long int const a_index = size_a - 1 - idx;
+            long int const b_index = size_b - 1 - idx;
+
+            if (a_index < 0 && b_index < 0)
+                break;
+
+            unsigned long const dim_a = (a_index < 0) ? 1 : shape_a[a_index];
+            unsigned long const dim_b = (b_index < 0) ? 1 : shape_b[b_index];
+
+            if (dim_a == 1)
+            {
+                ans.push_back( dim_b );
+                continue;
+            }
+
+            if (dim_b == 1)
+            {
+                ans.push_back( dim_a );
+                continue;
+            }
+
+            better_assert( dim_a == dim_b, fmt::format("broadcasting: expecting same dimension, but got dim_a = {}, dim_b = {}", dim_a, dim_b) );
+            ans.push_back( dim_a );
+        }
+
+        std::reverse( ans.begin(), ans.end() );
+        return ans;
+    }
+
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
@@ -597,12 +877,18 @@ namespace ceras
     // [ 3, 4 ] + [  -1, 1 ] = [ 2, 5 ]
     // [ 5, 6 ]                [ 4, 7 ]
     //
-    //template< typename T, typename A >
-    //tensor<T, A> add( tensor<T, A> const& lhs, tensor<T, A> const& rhs ) noexcept
-    //TODO: fix cases like [31, 1, 31, 31, 1] + [31, 1, 1, 31]
     template< Tensor Tsor >
     Tsor add( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
+        auto const& broadcasted_shape = broadcast_shape( lhs.shape(), rhs.shape() );
+        auto llhs = broadcast_tensor( lhs, broadcasted_shape );
+        auto const& rrhs = broadcast_tensor( rhs, broadcasted_shape );
+
+        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) noexcept { x += y; } );
+        return llhs;
+
+
+        #if 0
         unsigned long const l_size = lhs.size();
         unsigned long const r_size = rhs.size();
         if ( l_size < r_size ) return rhs + lhs;
@@ -616,6 +902,7 @@ namespace ceras
                 ans[idx*r_size+jdx] = lhs[idx*r_size+jdx] + rhs[jdx];
 
         return ans;
+        #endif
     }
 
     template< Tensor Tsor >
@@ -809,7 +1096,7 @@ namespace ceras
     template< Tensor Tsor >
     Tsor clip( Tsor& tsor, typename Tsor::value_type lower = 0, typename Tsor::value_type upper = 1 )
     {
-        std::for_each( tsor.data(), tsor.data()+tsor.size(), [lower, upper]( typename Tsor::value_type& v ){ v = std::min( upper, v ); v = std::max( lower, v ); }  );
+        for_each( tsor.data(), tsor.data()+tsor.size(), [lower, upper]( typename Tsor::value_type& v ){ v = std::min( upper, v ); v = std::max( lower, v ); }  );
         return tsor;
     }
 
@@ -1299,166 +1586,6 @@ namespace ceras
         write_tensor( ofs, tsor );
         ofs.close();
     }
-
-    template< typename T >
-    struct view_3d
-    {
-        T* data_;
-        unsigned long row_;
-        unsigned long col_;
-        unsigned long channel_;
-
-        constexpr view_3d( T* data, unsigned long row, unsigned long col, unsigned long channel ) noexcept : data_{data}, row_{row}, col_{col}, channel_{channel} {}
-
-        constexpr auto operator[]( unsigned long index ) noexcept
-        {
-            return view_2d{ data_+index*col_*channel_, col_, channel_ };
-        }
-
-        constexpr auto operator[]( unsigned long index ) const noexcept
-        {
-            return view_2d{ data_+index*col_*channel_, col_, channel_ };
-        }
-    };
-
-    template< typename T >
-    using cube = view_3d<T>;
-
-    ///
-    /// A class viewing a 1-D array as a 4-D tensor. This class is useful when treating an array as a typical 4-D tensor in a neural network, with a shape of [batch_size, row, column, channel].
-    ///
-    template< typename T >
-    struct view_4d
-    {
-        T* data_; ///< The pointer to the start position of the 1-D array.
-        unsigned long batch_size_; ///< The batch size of the 4-D tensor, also the first dimension of the tensor.
-        unsigned long row_; ///< The row of the 4-D tensor, also the second dimension of the tensor.
-        unsigned long col_; ///< The column of the 4-D tensor, also the third dimension of the tensor.
-        unsigned long channel_; ///< The channel of the 4-D tensor, also the last dimension of the tensor.
-
-        ///
-        /// Constructor of view_4d
-        /// @param data The raw pointer to the start position of the 1-D array.
-        /// @param batch_size The first dimension of the 4-D tensor, also for the batch size in the CNN layers.
-        /// @param row The second dimension of the 4-D tensor, also for the row in the CNN layers.
-        /// @param col The third dimension of the 4-D tensor, also for the column in the CNN layers.
-        /// @param channel The last dimension of the 4-D tensor, also for the channel in the CNN layers.
-        ///
-        constexpr view_4d( T* data=nullptr, unsigned long batch_size=0, unsigned long row=0, unsigned long col=0, unsigned long channel=0 ) noexcept : data_{data}, batch_size_{batch_size}, row_{row}, col_{col}, channel_{channel} {}
-
-        ///
-        /// Giving a view_3d interface for operator [].
-        /// @param index The first dimension of the 4-D tensor.
-        ///
-        /// Example usage:
-        ///
-        /// @code
-        ///     std::vector<float> array;
-        ///     array.resize( 16*8*8*3 );
-        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
-        ///     t[0][1][2][3] = 1.0;
-        /// @endcode
-        ///
-        constexpr auto operator[]( unsigned long index ) noexcept
-        {
-            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
-        }
-
-
-        ///
-        /// Giving a view_3d interface for operator [].
-        /// @param index The first dimension of the 4-D tensor.
-        ///
-        /// Example usage:
-        ///
-        /// @code
-        ///     std::vector<float> array;
-        ///     array.resize( 16*8*8*3 );
-        ///     // operations on `array`
-        ///     auto t = view_4d{ array.data(), 16, 8, 8, 3 };
-        ///     float v0123 = t[0][1][2][3];
-        /// @endcode
-        ///
-        constexpr auto operator[]( unsigned long index ) const noexcept
-        {
-            return view_3d{ data_+index*row_*col_*channel_, row_, col_, channel_ };
-        }
-    }; // struct view_4d
-
-    template<typename T >
-    using tesseract = view_4d<T>;
-
-
-    template<typename T, unsigned long N>
-    struct view;
-
-    template<typename T>
-    struct view<T, 1> : view_1d<T>
-    {
-        using view_1d<T>::view_1d;
-    };
-
-    template<typename T>
-    struct view<T, 2> : view_2d<T>
-    {
-        using view_2d<T>::view_2d;
-    };
-
-    template<typename T>
-    struct view<T, 3> : view_3d<T>
-    {
-        using view_3d<T>::view_3d;
-    };
-
-    template<typename T>
-    struct view<T, 4> : view_4d<T>
-    {
-        using view_4d<T>::view_4d;
-
-        view( T* data, std::array<unsigned long, 4> const& shape ) noexcept : view_4d<T>{ data, shape[0], shape[1], shape[2], shape[3] } {}
-    };
-
-    ///
-    /// @brief N-Dimentional view of 1D memory.
-    ///
-    /// \code{.cpp}
-    /// auto t = random<float>( {1, 2, 3, 4, 5, 6, 7} );
-    /// auto v = view<float, 7>{ t.data(), {1, 1, 6, 4, 5, 6, 7} }; // view as different shape tensor
-    /// std::cout << v[0][0][5][3][4][5][6];
-    /// \endcode
-    ///
-    template< typename T, unsigned long N >
-    struct view
-    {
-        T* data_;
-        std::array<unsigned long, N> shape_;
-
-        constexpr view( T* data, std::array<unsigned long, N> const& shape ) noexcept :  data_{ data }, shape_{ shape } {}
-
-        view<T, N-1> operator []( unsigned long index ) noexcept
-        {
-            unsigned long first_dim = shape_[0];
-            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
-            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
-
-            std::array<unsigned long, N-1> new_shape;
-            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
-            return view<T, N-1>{ data_+offsets, new_shape };
-        }
-
-        view<T, N-1> operator []( unsigned long index ) const noexcept
-        {
-            unsigned long first_dim = shape_[0];
-            better_assert( index < first_dim, "Expecting a dimension smaller than ", first_dim, " but got ", index );
-            unsigned long offsets = index * std::accumulate( shape_.begin()+1, shape_.end(), 1UL, [](unsigned long a, unsigned long b){ return a*b; } );
-
-            std::array<unsigned long, N-1> new_shape;
-            std::copy( shape_.begin()+1, shape_.end(), new_shape.begin() );
-            return view<T, N-1>{ data_+offsets, new_shape };
-        }
-
-    }; // struct view
-
 
 }//namespace ceras
 

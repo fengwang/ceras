@@ -356,6 +356,7 @@ int main()
     }
 
 
+    if (0)
     {
         std::cout << fmt::format("test case: {}\n", i++) << std::endl;
         auto x = ceras::random<double>( {2, 2} );
@@ -367,6 +368,7 @@ int main()
         std::cout << "x+=y:\n" << x << std::endl;
     }
 
+    if (0)
     {
         std::cout << fmt::format("test case: {}\n", i++) << std::endl;
         auto x = ceras::random<double>( {2, 2} );
@@ -380,13 +382,37 @@ int main()
 
     {
         std::cout << fmt::format("test case: {}\n", i++) << std::endl;
-        auto x = ceras::random<double>( {2, 2} );
-        std::cout << "x:\n" << x << std::endl;
-        auto y = ceras::repeat( x, 3, 0 );
-        std::cout << "repeat(x, 3, 0):\n" << y << std::endl;
-        auto z = ceras::repeat( x, 4, 1 );
-        std::cout << "repeat(x, 4, 1):\n" << z << std::endl;
+        std::vector<unsigned long> sa{8, 1, 6, 1};
+        std::vector<unsigned long> sb{7, 1, 5};
+        auto sab = ceras::broadcast_shape( sa, sb );
+        std::cout << fmt::format( "broadcasting shape {} and {}, got result {}.", sa, sb, sab ) << std::endl;
     }
+
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        std::vector<unsigned long> sa{256, 256, 3};
+        std::vector<unsigned long> sb{3,};
+        auto sab = ceras::broadcast_shape( sa, sb );
+        std::cout << fmt::format( "broadcasting shape {} and {}, got result {}.", sa, sb, sab ) << std::endl;
+    }
+
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {7,} );
+        auto y = ceras::broadcast_tensor( x, std::vector<unsigned long>{ {9, 7} } );
+        std::cout << "x:\n" << x << std::endl;
+        std::cout << "broadcasted(x, {9, 7}):\n" << y << std::endl;
+    }
+
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {7,1} );
+        auto y = ceras::broadcast_tensor( x, std::vector<unsigned long>{ {7, 9} } );
+        std::cout << "x:\n" << x << std::endl;
+        std::cout << "broadcasted(x, {7, 9}):\n" << y << std::endl;
+    }
+
+
 
     return 0;
 }

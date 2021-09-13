@@ -829,7 +829,7 @@ namespace fmt
 
 
         #ifndef MAXFORMAT // maximum elements to format, in case of a container
-        constexpr unsigned long max_element_to_format = 3;
+        constexpr unsigned long max_element_to_format = 7;
         #else
         constexpr unsigned long max_element_to_format = MAXFORMAT;
         #endif
