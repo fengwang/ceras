@@ -321,11 +321,11 @@ int main()
         auto x = ceras::random<float>( {8, 5} );
         std::cout << "x:\n" << x << std::endl;
 
-        auto x12 = x.slice( 1, 2 );
-        std::cout << "x(1,2):\n" << x12 << std::endl;
+        //auto x12 = x.slice( 1, 2 );
+        //std::cout << "x(1,2):\n" << x12 << std::endl;
 
-        auto x68 = x.slice( 6, 8 );
-        std::cout << "x(6,8):\n" << x68 << std::endl;
+        //auto x68 = x.slice( 6, 8 );
+        //std::cout << "x(6,8):\n" << x68 << std::endl;
     }
 
     {
@@ -376,6 +376,16 @@ int main()
 
         x -= y;
         std::cout << "x-=y:\n" << x << std::endl;
+    }
+
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {2, 2} );
+        std::cout << "x:\n" << x << std::endl;
+        auto y = ceras::repeat( x, 3, 0 );
+        std::cout << "repeat(x, 3, 0):\n" << y << std::endl;
+        auto z = ceras::repeat( x, 4, 1 );
+        std::cout << "repeat(x, 4, 1):\n" << z << std::endl;
     }
 
     return 0;

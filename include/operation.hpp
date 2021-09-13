@@ -2547,8 +2547,6 @@ namespace ceras
 
 
 
-
-
     ///
     /// @brief Computes Abs of the given expression.
     ///

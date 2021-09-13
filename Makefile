@@ -516,6 +516,10 @@ mnist_debug: test/mnist_debug.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_debug.o test/mnist_debug.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_debug $(OBJECTS_DIR)/test_mnist_debug.o $(LFLAGS)
 
+layer_sum: test/layer_sum.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_sum.o test/layer_sum.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_sum $(OBJECTS_DIR)/test_layer_sum.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
