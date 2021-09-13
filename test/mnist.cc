@@ -71,7 +71,7 @@ int main()
     tensor_type output_labels{ {batch_size, 10} };
 
     //std::size_t const epoch = 100;
-    std::size_t const epoch = 2;
+    std::size_t const epoch = 1;
     std::size_t const iteration_per_epoch = 60000/batch_size;
 
     // creating session

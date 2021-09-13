@@ -29,7 +29,7 @@ LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -ltbb ${LOP}
+LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 
 #CXX           = g++
 #OP            = -O0  -pg -DDEBUG
@@ -507,6 +507,10 @@ mnist_ls: test/mnist_ls.cc
 for_each: test/for_each.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_for_each.o test/for_each.cc
 	$(LINK) -o $(BIN_DIR)/test_for_each $(OBJECTS_DIR)/test_for_each.o $(LFLAGS)
+
+xtensor: test/xtensor.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_xtensor.o test/xtensor.cc
+	$(LINK) -o $(BIN_DIR)/test_xtensor $(OBJECTS_DIR)/test_xtensor.o $(LFLAGS)
 
 mnist_debug: test/mnist_debug.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_debug.o test/mnist_debug.cc
