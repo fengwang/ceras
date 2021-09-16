@@ -886,23 +886,6 @@ namespace ceras
 
         for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) noexcept { x += y; } );
         return llhs;
-
-
-        #if 0
-        unsigned long const l_size = lhs.size();
-        unsigned long const r_size = rhs.size();
-        if ( l_size < r_size ) return rhs + lhs;
-
-        unsigned long const repeats = l_size / r_size;
-        better_assert( (r_size * repeats) == l_size, "Dimension does not match!" );
-
-        Tsor ans = lhs.deep_copy();
-        for ( auto idx : range( repeats ) )
-            for ( auto jdx : range( r_size ) )
-                ans[idx*r_size+jdx] = lhs[idx*r_size+jdx] + rhs[jdx];
-
-        return ans;
-        #endif
     }
 
     template< Tensor Tsor >
@@ -928,7 +911,13 @@ namespace ceras
     template< Tensor Tsor >
     Tsor minus( Tsor const& lhs, Tsor const& rhs ) noexcept
     {
-        return add( lhs, -rhs );
+        auto const& broadcasted_shape = broadcast_shape( lhs.shape(), rhs.shape() );
+        auto llhs = broadcast_tensor( lhs, broadcasted_shape );
+        auto const& rrhs = broadcast_tensor( rhs, broadcasted_shape );
+
+        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) noexcept { x -= y; } );
+        return llhs;
+        //return add( lhs, -rhs );
     }
 
     template< Tensor Tsor >
