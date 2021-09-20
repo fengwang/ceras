@@ -71,50 +71,18 @@ namespace ceras::keras
     // a layer configuration is composed of [ 1). a layer tage, 2). ... a lot of fields, 3). an
 
 
-    /*
-    struct InputLayer : enabling_keras_layer_tag<InputLayer>,
-                        enabling_name<InputLayer, "Input">,
-                        enabling_shape<InputLayer, None>,
-                        enabling_batch_size<InputLayer, None>
-    {
-        place_holder<tensor<float>> expression_;
-
-        InputLayer() { expression_.shape( (*this).shape() ); }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept { return (*this).shape(); }
-
-        auto operator()() const noexcept
-        {
-            return expression_;
-        }
-    };
-
-
-    ///
-    /// @brief Construct an input layer.
-    ///
-    /// \code{.cpp}
-    /// auto input_1 = Input().shape( {127,} );
-    /// auto input_2 = Input().shape( {127,1} );
-    /// auto input_3 = Input().shape( {ceras::keras::None, 127,1} );
-    /// \endcode
-    ///
-    //inline auto Input( std::vector<unsigned long> const& shape, std::string const& name = "Input" ) noexcept
-    inline auto Input() noexcept
-    {
-        return std::make_tuple( std::make_shared<InputLayer>( shape, name ) );
-    }
-
-    */
-
-
     struct InputLayer;
 
 
-    struct InputConfig : enabling_keras_layer_tag<InputConfig>,
-                         enabling_name<InputConfig, "Input">,
-                         enabling_shape<InputConfig, None>,
-                         enabling_batch_size<InputConfig, None>
+    struct InputConfig :
+         enabling_batch_size<InputConfig, None>,
+         enabling_input_shape<InputConfig, None>,
+         enabling_name<InputConfig, "Input">,
+         enabling_output_shape<InputConfig, None>,
+         enabling_shape<InputConfig, None>,
+         enabling_uses_learning_phase<InputConfig, false>,
+         enabling_trainable<InputConfig, false>,
+         enabling_keras_layer_tag<InputConfig>
     {
         auto operator()() const noexcept
         {
@@ -131,11 +99,14 @@ namespace ceras::keras
 
         place_holder<tensor<float>> expression_;
 
-        InputLayer( InputConfig const& config ) noexcept : config_{config}, expression_{ config.shape() }
-        {
-        }
+        InputLayer( InputConfig const& config ) noexcept : config_{config}, expression_{ config.shape() } { }
 
-        std::vector<unsigned long> compute_output_shape() const noexcept { return config_.shape(); }
+        std::vector<unsigned long> compute_output_shape() const noexcept
+        {
+            config_.input_shape( config_.shape() );
+            config_.output_shape( config_.shape() );
+            return config_.shape();
+        }
 
         auto operator()() const noexcept
         {
@@ -145,22 +116,25 @@ namespace ceras::keras
 
 
 
-
-
     struct DenseLayer;
 
-    struct DenseConfig :    enabling_keras_layer_tag<DenseConfig>,
-                            enabling_name<DenseConfig, "Dense">,
-                            enabling_units<DenseConfig, None>,
-                            enabling_use_bias<DenseConfig, true>,
-                            enabling_kernel_initializer<DenseConfig, "glorot_uniform">,
-                            enabling_bias_initializer<DenseConfig, "zeros">,
-                            enabling_kernel_regularizer_l1<DenseConfig, "0.0">,
-                            enabling_bias_regularizer_l1<DenseConfig, "0.0">,
-                            enabling_kernel_regularizer_l2<DenseConfig, "0.0">,
-                            enabling_bias_regularizer_l2<DenseConfig, "0.0">,
-                            enabling_kernel_constraint<DenseConfig, "None">,
-                            enabling_bias_constraint<DenseConfig, "None">
+    struct DenseConfig :
+        enabling_bias_constraint<DenseConfig, "None">,
+        enabling_bias_initializer<DenseConfig, "zeros">,
+        enabling_bias_regularizer_l1<DenseConfig, "0.0">,
+        enabling_bias_regularizer_l2<DenseConfig, "0.0">,
+        enabling_input_shape<DenseConfig, None>,
+        enabling_kernel_constraint<DenseConfig, "None">,
+        enabling_kernel_initializer<DenseConfig, "glorot_uniform">,
+        enabling_kernel_regularizer_l1<DenseConfig, "0.0">,
+        enabling_kernel_regularizer_l2<DenseConfig, "0.0">,
+        enabling_name<DenseConfig, "Dense">,
+        enabling_output_shape<DenseConfig, None>,
+        enabling_trainable<DenseConfig, true>,
+        enabling_units<DenseConfig, None>,
+        enabling_use_bias<DenseConfig, true>,
+        enabling_uses_learning_phase<DenseConfig, false>,
+        enabling_keras_layer_tag<DenseConfig>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -209,7 +183,6 @@ namespace ceras::keras
     }; // struct DenseLayer
 
 
-#if 0
 
 
 
@@ -222,13 +195,21 @@ namespace ceras::keras
 
     struct ReluLayer;
 
-    struct ReluConfig
+    struct ReluConfig :
+        enabling_name<ReluConfig, "ReLU">,
+        enabling_input_shape<ReluConfig, None>,
+        enabling_output_shape<ReluConfig, None>,
+        enabling_keras_layer_tag<ReluConfig>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<ReluLayer>(*this, (*prev_layer).compute_output_shape()), lt );
+            //return std::make_tuple( std::make_shared<ReluLayer>(*this, (*prev_layer).compute_output_shape()), lt );
+
+            auto const& shape =  (*prev_layer).compute_output_shape();
+            auto updated_config = ReluConfig{*this}.input_shape( shape ).output_shape( shape );
+            return std::make_tuple( std::make_shared<ReluLayer>(updated_config), lt );
         }
 
     };
@@ -245,10 +226,7 @@ namespace ceras::keras
 
     struct ReluLayer
     {
-
-
         ReluConfig config_;
-        std::vector<unsigned long> input_shape_;
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
@@ -256,9 +234,10 @@ namespace ceras::keras
             return relu( ex );
         }
 
-        std::vector<unsigned long> compute_output_shape() const noexcept { return input_shape_; }
+        std::vector<unsigned long> compute_output_shape() const noexcept { return config_.output_shape(); }
     };
 
+#if 0
 
     struct LeakyReLULayer;
 

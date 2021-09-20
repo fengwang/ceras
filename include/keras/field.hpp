@@ -1814,6 +1814,58 @@ Example:
         }
     };
 
+    ///
+    /// @brief Adding trainable to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_trainable<X, trainable_val> {};
+    /// auto x = X().trainable( new_trainable_val ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, bool default_values >
+    struct enabling_trainable
+    {
+        underlying_default_value<bool, bool, default_values> trainable_;
+
+        Concrete trainable( bool new_trainable ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.trainable_.val_ = new_trainable;
+            return ans;
+        }
+
+        bool trainable() const noexcept
+        {
+            return trainable_.val_;
+        }
+    };
+
+    ///
+    /// @brief Adding uses_learning_phase to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_uses_learning_phase<X, uses_learning_phase_val> {};
+    /// auto x = X().uses_learning_phase( new_uses_learning_phase_val ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, bool default_values >
+    struct enabling_uses_learning_phase
+    {
+        underlying_default_value<bool, bool, default_values> uses_learning_phase_;
+
+        Concrete uses_learning_phase( bool new_uses_learning_phase ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.uses_learning_phase_.val_ = new_uses_learning_phase;
+            return ans;
+        }
+
+        bool uses_learning_phase() const noexcept
+        {
+            return uses_learning_phase_.val_;
+        }
+    };
+
 
 
 

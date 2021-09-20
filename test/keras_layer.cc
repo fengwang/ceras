@@ -2,14 +2,28 @@
 
 int main()
 {
-    if (1)
+    if (0)
     {
         using namespace ceras::keras;
         auto inp = Input().name("inp").shape( {32,} )();
         auto l1 = Dense().units( 128 ).name("dense1")( inp );
         auto l2 = Dense().units( 128 ).name("dense2")( l1 );
 
-        auto output = l1;
+        auto output = l2;
+        auto e = ceras::keras::construct_computation_graph( output );
+        auto g = ceras::computation_graph( e );
+        std::cout << g << std::endl;
+    }
+
+    if (1)
+    {
+        using namespace ceras::keras;
+        auto inp = Input().name("inp").shape( {32,} )();
+        auto l1 = Dense().units( 128 ).name("dense1").use_bias(false)( inp );
+        auto l11 = Relu().name( "relu_layer" )( l1 );
+        auto l2 = Dense().units( 128 ).name("dense2")( l11 );
+
+        auto output = l2;
         auto e = ceras::keras::construct_computation_graph( output );
         auto g = ceras::computation_graph( e );
         std::cout << g << std::endl;
