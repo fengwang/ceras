@@ -139,7 +139,13 @@ namespace ceras::keras
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            return std::make_tuple( std::make_shared<DenseLayer>( lt, *this ), lt );
+            auto const& prev_layer = std::get<0>( lt );
+            unsigned long input_dim = *((*prev_layer).compute_output_shape().rbegin());
+            better_assert( input_dim != None, "DenseLayer: expecting an exact input dimension." );
+            auto updated_config = DenseConfig{*this}.input_shape( {input_dim,} ).output_shape( {(*this).units(),} );
+            return std::make_tuple( std::make_shared<DenseLayer>( updated_config ), lt );
+
+            //return std::make_tuple( std::make_shared<DenseLayer>( lt, *this ), lt );
         }
     }; // struct DenseConfig
 
@@ -161,15 +167,9 @@ namespace ceras::keras
         variable<tensor<float>> w_;
         variable<tensor<float>> b_;
 
-        template< typename... Layers >
-        DenseLayer( std::tuple<Layers...> const& lt, DenseConfig const& config ) noexcept : config_{ config }
+        DenseLayer( DenseConfig const& config ) noexcept : config_{ config }
         {
-            auto const& prev_layer = std::get<0>( lt );
-            unsigned long input_dim_ = *((*prev_layer).compute_output_shape().rbegin());
-            better_assert( input_dim_ != None, "DenseLayer: expecting an exact input dimension." );
-
-            // TODO: initializers, constraint
-            w_ = variable<tensor<float>>( glorot_uniform<float>({input_dim_, config.units()}), config.kernel_regularizer_l1(), config.kernel_regularizer_l2() );
+            w_ = variable<tensor<float>>( glorot_uniform<float>({(config.input_shape())[0], config.units()}), config.kernel_regularizer_l1(), config.kernel_regularizer_l2() );
             b_ = variable<tensor<float>>( zeros<float>({1, config.units()}), config.bias_regularizer_l1(), config.bias_regularizer_l2(), config.use_bias()/*trainable*/ );
         }
 
@@ -205,8 +205,6 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            //return std::make_tuple( std::make_shared<ReluLayer>(*this, (*prev_layer).compute_output_shape()), lt );
-
             auto const& shape =  (*prev_layer).compute_output_shape();
             auto updated_config = ReluConfig{*this}.input_shape( shape ).output_shape( shape );
             return std::make_tuple( std::make_shared<ReluLayer>(updated_config), lt );
