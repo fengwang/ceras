@@ -4,7 +4,11 @@ using namespace ceras::keras;
 
 
 struct a : enabling_shape<a, 1, 1>, enabling_input_shape<a, 2, 2>, enabling_name<a, "...." >, enabling_alpha<a, "1.0" >
-{};
+{
+    int something_;
+
+    a() : something_{-1} {}
+};
 
 #include <iostream>
 int main()

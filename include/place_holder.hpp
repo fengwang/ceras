@@ -53,9 +53,20 @@ namespace ceras
             return (*((*this).state_)).data_;
         }
 
-        void reset() { }
+        void reset() noexcept { }
 
         void backward( auto ) const noexcept { }
+
+        void shape( std::vector< unsigned long> const& shape_hint ) noexcept
+        {
+            (*((*this).state_)).shape_hint_ = shape_hint;
+        }
+
+        std::vector<unsigned long> shape() const noexcept
+        {
+            return (*((*this).state_)).shape_hint_;
+        }
+
     };
 
     template< typename T >

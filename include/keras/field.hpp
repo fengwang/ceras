@@ -8,6 +8,17 @@
 namespace ceras::keras
 {
 
+#if 0
+
+Decouple class fields into field-classes.
+
+Example:
+
+    struct my_layer : enabling_shape<a, 1, 1>, enabling_input_shape<a, 2, 2>, enabling_name<a, "...." >, enabling_alpha<a, "1.0" > {};
+    auto x = my_layer().shape( {1, 2, 3, 4} ).input_shape( { 4, 5, 6} ).name( "nameofx" ).alpha( 3.14159265f );
+
+#endif
+
     template< typename T, typename U,  U... default_values >
     struct underlying_default_value
     {
@@ -15,6 +26,20 @@ namespace ceras::keras
 
         underlying_default_value() noexcept : val_{default_values...} {}
     };
+
+
+    template< typename Container >
+    struct enabling_keras_layer_tag
+    {
+        typedef int keras_layer_tag; // for dispatching, just in case
+    };
+
+
+    //----------------------------------------------------------------------------------------------------------------------------
+    //
+    // The code below is generated using jinja2 template, located at './misc/render.py'
+    //
+    //----------------------------------------------------------------------------------------------------------------------------
 
 
     ///
@@ -1682,6 +1707,115 @@ namespace ceras::keras
             return units_.val_;
         }
     };
+
+
+    ///
+    /// @brief Adding kernel_regularizer_l1 to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_kernel_regularizer_l1<X, "0.0"> {};
+    /// auto x = X().kernel_regularizer_l1( 1.0e-3f ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, float32 default_values >
+    struct enabling_kernel_regularizer_l1
+    {
+        underlying_default_value<float, decltype(default_values), default_values> kernel_regularizer_l1_;
+
+        Concrete kernel_regularizer_l1( float new_kernel_regularizer_l1 ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.kernel_regularizer_l1_.val_ = new_kernel_regularizer_l1;
+            return ans;
+        }
+
+        float kernel_regularizer_l1() const noexcept
+        {
+            return kernel_regularizer_l1_.val_;
+        }
+    };
+
+    ///
+    /// @brief Adding kernel_regularizer_l2 to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_kernel_regularizer_l2<X, "1.1"> {};
+    /// auto x = X().kernel_regularizer_l2( 0.1 ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, float32 default_values >
+    struct enabling_kernel_regularizer_l2
+    {
+        underlying_default_value<float, decltype(default_values), default_values> kernel_regularizer_l2_;
+
+        Concrete kernel_regularizer_l2( float new_kernel_regularizer_l2 ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.kernel_regularizer_l2_.val_ = new_kernel_regularizer_l2;
+            return ans;
+        }
+
+        float kernel_regularizer_l2() const noexcept
+        {
+            return kernel_regularizer_l2_.val_;
+        }
+    };
+
+
+    ///
+    /// @brief Adding bias_regularizer_l1 to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_bias_regularizer_l1<X, "0.0"> {};
+    /// auto x = X().bias_regularizer_l1( 1.0e-3f ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, float32 default_values >
+    struct enabling_bias_regularizer_l1
+    {
+        underlying_default_value<float, decltype(default_values), default_values> bias_regularizer_l1_;
+
+        Concrete bias_regularizer_l1( float new_bias_regularizer_l1 ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.bias_regularizer_l1_.val_ = new_bias_regularizer_l1;
+            return ans;
+        }
+
+        float bias_regularizer_l1() const noexcept
+        {
+            return bias_regularizer_l1_.val_;
+        }
+    };
+
+    ///
+    /// @brief Adding bias_regularizer_l2 to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_bias_regularizer_l2<X, "1.1"> {};
+    /// auto x = X().bias_regularizer_l2( 0.1 ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, float32 default_values >
+    struct enabling_bias_regularizer_l2
+    {
+        underlying_default_value<float, decltype(default_values), default_values> bias_regularizer_l2_;
+
+        Concrete bias_regularizer_l2( float new_bias_regularizer_l2 ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.bias_regularizer_l2_.val_ = new_bias_regularizer_l2;
+            return ans;
+        }
+
+        float bias_regularizer_l2() const noexcept
+        {
+            return bias_regularizer_l2_.val_;
+        }
+    };
+
+
+
 
 
 

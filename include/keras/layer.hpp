@@ -14,80 +14,13 @@
 #include "../utils/debug.hpp"
 #include "../utils/fmt.hpp"
 
-#if 0
-tf.keras.layers.Dense(
-    units,
-    activation=None,
-    use_bias=True,
-    kernel_initializer="glorot_uniform",
-    bias_initializer="zeros",
-    kernel_regularizer=None,
-    bias_regularizer=None,
-    activity_regularizer=None,
-    kernel_constraint=None,
-    bias_constraint=None,
-    **kwargs
-)
-
-tf.keras.layers.Conv2D(
-    filters,
-    kernel_size,
-    strides=(1, 1),
-    padding="valid",
-    data_format=None,
-    dilation_rate=(1, 1),
-    groups=1,
-    activation=None,
-    use_bias=True,
-    kernel_initializer="glorot_uniform",
-    bias_initializer="zeros",
-    kernel_regularizer=None,
-    bias_regularizer=None,
-    activity_regularizer=None,
-    kernel_constraint=None,
-    bias_constraint=None,
-    **kwargs
-)
-
-tf.keras.layers.Layer(
-    trainable=True, name=None, dtype=None, dynamic=False, **kwargs
-)
-
-
-
-#endif
-
+#include "./field.hpp"
 
 
 namespace ceras::keras
 {
 
     static constexpr unsigned long None = static_cast<unsigned long>(-1);
-
-
-
-    namespace
-    {
-
-        template< typename Layer >
-        struct feature_name
-        {
-            std::string name_;
-
-            Layer name( std::string custom_name ) const noexcept
-            {
-                Layer other{ static_cast<Layer const&>( *this ) };
-                other.name_ = custom_name;
-                return other;
-            }
-        };
-
-
-
-    }// anonymous namespace for layer features
-
-
-
 
 
     ///
@@ -116,7 +49,7 @@ namespace ceras::keras
 
         auto const& leading_layer = *(std::get<0>(lt));
 
-        if constexpr( dim == 1 )
+        if constexpr( dim == 1 ) // input layer
         {
             return leading_layer();
         }
@@ -135,40 +68,20 @@ namespace ceras::keras
     }
 
 
+    // a layer configuration is composed of [ 1). a layer tage, 2). ... a lot of fields, 3). an
 
 
-
-    struct LayerTag{};
-
-    template< typename T, typename U=void >
-    struct is_layer : std::false_type {};
-
-    template< typename L >
-    struct is_layer<L, std::void_t<typename L::category>> : std::true_type {};
-
-    template< typename L >
-    inline constexpr bool is_layer_v = is_layer<L>::value && std::is_same_v<typename L::category, LayerTag>;
-
-    template< typename L >
-    concept Layer = is_layer_v<L>;
-
-
-    struct InputLayer
+    /*
+    struct InputLayer : enabling_keras_layer_tag<InputLayer>,
+                        enabling_name<InputLayer, "Input">,
+                        enabling_shape<InputLayer, None>,
+                        enabling_batch_size<InputLayer, None>
     {
-        using category = LayerTag;
-
-        std::vector<unsigned long> shape_;
         place_holder<tensor<float>> expression_;
-        std::string name_;
 
-        InputLayer( std::vector<unsigned long> const& shape = std::vector<unsigned long>{{None,}},
-                    std::string const& name = std::string{"Input"} ) noexcept: shape_{}, expression_{shape}, name_{name}
-        {
-            shape_.push_back( None );
-            shape_.insert( shape_.end(), shape.begin(), shape.end() ); // <- if input is (None, None, 1), then the actual shape is (None, None, None, None, 1)
-        }
+        InputLayer() { expression_.shape( (*this).shape() ); }
 
-        std::vector<unsigned long> compute_output_shape() const noexcept { return shape_; }
+        std::vector<unsigned long> compute_output_shape() const noexcept { return (*this).shape(); }
 
         auto operator()() const noexcept
         {
@@ -181,30 +94,74 @@ namespace ceras::keras
     /// @brief Construct an input layer.
     ///
     /// \code{.cpp}
-    /// auto input_1 = Input( {127,} );
-    /// auto input_2 = Input( {127,1} );
-    /// auto input_3 = Input( {ceras::keras::None, 127,1} );
+    /// auto input_1 = Input().shape( {127,} );
+    /// auto input_2 = Input().shape( {127,1} );
+    /// auto input_3 = Input().shape( {ceras::keras::None, 127,1} );
     /// \endcode
     ///
-    inline auto Input( std::vector<unsigned long> const& shape, std::string const& name = "Input" ) noexcept
+    //inline auto Input( std::vector<unsigned long> const& shape, std::string const& name = "Input" ) noexcept
+    inline auto Input() noexcept
     {
         return std::make_tuple( std::make_shared<InputLayer>( shape, name ) );
     }
+
+    */
+
+
+    struct InputLayer;
+
+
+    struct InputConfig : enabling_keras_layer_tag<InputConfig>,
+                         enabling_name<InputConfig, "Input">,
+                         enabling_shape<InputConfig, None>,
+                         enabling_batch_size<InputConfig, None>
+    {
+        auto operator()() const noexcept
+        {
+            return std::make_tuple( std::make_shared<InputLayer>(*this) );
+        }
+    };
+
+    using Input = InputConfig;
+
+
+    struct InputLayer
+    {
+        InputConfig config_;
+
+        place_holder<tensor<float>> expression_;
+
+        InputLayer( InputConfig const& config ) noexcept : config_{config}, expression_{ config.shape() }
+        {
+        }
+
+        std::vector<unsigned long> compute_output_shape() const noexcept { return config_.shape(); }
+
+        auto operator()() const noexcept
+        {
+            return expression_;
+        }
+    };
+
 
 
 
 
     struct DenseLayer;
 
-    struct DenseConfig
+    struct DenseConfig :    enabling_keras_layer_tag<DenseConfig>,
+                            enabling_name<DenseConfig, "Dense">,
+                            enabling_units<DenseConfig, None>,
+                            enabling_use_bias<DenseConfig, true>,
+                            enabling_kernel_initializer<DenseConfig, "glorot_uniform">,
+                            enabling_bias_initializer<DenseConfig, "zeros">,
+                            enabling_kernel_regularizer_l1<DenseConfig, "0.0">,
+                            enabling_bias_regularizer_l1<DenseConfig, "0.0">,
+                            enabling_kernel_regularizer_l2<DenseConfig, "0.0">,
+                            enabling_bias_regularizer_l2<DenseConfig, "0.0">,
+                            enabling_kernel_constraint<DenseConfig, "None">,
+                            enabling_bias_constraint<DenseConfig, "None">
     {
-        unsigned long output_dim_;
-        bool use_bias_ = true;
-        float kernel_regularizer_l1_ = 0.0f;
-        float kernel_regularizer_l2_ = 0.0f;
-        float bias_regularizer_l1_ = 0.0f;
-        float bias_regularizer_l2_ = 0.0f;
-
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
@@ -217,16 +174,14 @@ namespace ceras::keras
     ///
     /// \code{.cpp}
     /// auto input = Input( {12} );
-    /// auto l1 = Dense( 127 )( input );
-    /// auto l2 = Dense( 129 )( l1 );
+    //  auto l1 = Dense().name("first_layer").units( 127 )( input );
+    /// auto l2 = Dense().units( 129 ).name("second_layer").( l1 );
     /// \endcode
     ///
     using Dense = DenseConfig;
 
     struct DenseLayer
     {
-        using category = LayerTag;
-
         DenseConfig config_;
 
         variable<tensor<float>> w_;
@@ -239,8 +194,9 @@ namespace ceras::keras
             unsigned long input_dim_ = *((*prev_layer).compute_output_shape().rbegin());
             better_assert( input_dim_ != None, "DenseLayer: expecting an exact input dimension." );
 
-            w_ = variable<tensor<float>>( glorot_uniform<float>({input_dim_, config.output_dim_}), config.kernel_regularizer_l1_, config.kernel_regularizer_l2_ );
-            b_ = variable<tensor<float>>( zeros<float>({1, config.output_dim_}), config.bias_regularizer_l1_, config.bias_regularizer_l2_, config.use_bias_/*trainable*/ );
+            // TODO: initializers, constraint
+            w_ = variable<tensor<float>>( glorot_uniform<float>({input_dim_, config.units()}), config.kernel_regularizer_l1(), config.kernel_regularizer_l2() );
+            b_ = variable<tensor<float>>( zeros<float>({1, config.units()}), config.bias_regularizer_l1(), config.bias_regularizer_l2(), config.use_bias()/*trainable*/ );
         }
 
         template< Expression Ex>
@@ -249,8 +205,11 @@ namespace ceras::keras
             return ex * w_ + b_;
         }
 
-        std::vector<unsigned long> compute_output_shape() const noexcept { return std::vector<unsigned long>{{None, config_.output_dim_}}; }
+        std::vector<unsigned long> compute_output_shape() const noexcept { return std::vector<unsigned long>{{None, config_.units()}}; }
     }; // struct DenseLayer
+
+
+#if 0
 
 
 
@@ -286,7 +245,7 @@ namespace ceras::keras
 
     struct ReluLayer
     {
-        using category = LayerTag;
+
 
         ReluConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -329,7 +288,7 @@ namespace ceras::keras
 
     struct LeakyReLULayer
     {
-        using category = LayerTag;
+
 
         LeakyReLUConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -372,7 +331,7 @@ namespace ceras::keras
 
     struct DropoutLayer
     {
-        using category = LayerTag;
+
 
         DropoutConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -419,7 +378,7 @@ namespace ceras::keras
 
     struct ReshapeLayer
     {
-        using category = LayerTag;
+
 
         ReshapeConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -466,7 +425,7 @@ namespace ceras::keras
 
     struct MaxPooling2DLayer
     {
-        using category = LayerTag;
+
 
         MaxPooling2DConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -513,7 +472,7 @@ namespace ceras::keras
 
     struct AveragePooling2DLayer
     {
-        using category = LayerTag;
+
 
         AveragePooling2DConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -562,7 +521,7 @@ namespace ceras::keras
 
     struct UpSampling2DLayer
     {
-        using category = LayerTag;
+
 
         UpSampling2DConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -612,7 +571,7 @@ namespace ceras::keras
 
     struct NegativeLayer
     {
-        using category = LayerTag;
+
 
         NegativeConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -652,7 +611,7 @@ namespace ceras::keras
 
     struct SumReduceLayer
     {
-        using category = LayerTag;
+
 
         SumReduceConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -692,7 +651,7 @@ namespace ceras::keras
 
     struct ReduceSumLayer
     {
-        using category = LayerTag;
+
 
         ReduceSumConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -732,7 +691,7 @@ namespace ceras::keras
 
     struct MeanReduceLayer
     {
-        using category = LayerTag;
+
 
         MeanReduceConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -772,7 +731,7 @@ namespace ceras::keras
 
     struct ReduceMeanLayer
     {
-        using category = LayerTag;
+
 
         ReduceMeanConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -812,7 +771,7 @@ namespace ceras::keras
 
     struct MeanLayer
     {
-        using category = LayerTag;
+
 
         MeanConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -852,7 +811,7 @@ namespace ceras::keras
 
     struct SquareLayer
     {
-        using category = LayerTag;
+
 
         SquareConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -892,7 +851,7 @@ namespace ceras::keras
 
     struct FlattenLayer
     {
-        using category = LayerTag;
+
 
         FlattenConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -936,7 +895,7 @@ namespace ceras::keras
 
     struct IdentityLayer
     {
-        using category = LayerTag;
+
 
         IdentityConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -976,7 +935,7 @@ namespace ceras::keras
 
     struct TransposeLayer
     {
-        using category = LayerTag;
+
 
         TransposeConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1017,7 +976,7 @@ namespace ceras::keras
 
     struct OnesLikeLayer
     {
-        using category = LayerTag;
+
 
         OnesLikeConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1057,7 +1016,7 @@ namespace ceras::keras
 
     struct ZerosLikeLayer
     {
-        using category = LayerTag;
+
 
         ZerosLikeConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1097,7 +1056,7 @@ namespace ceras::keras
 
     struct SignLayer
     {
-        using category = LayerTag;
+
 
         SignConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1137,7 +1096,7 @@ namespace ceras::keras
 
     struct AbsLayer
     {
-        using category = LayerTag;
+
 
         AbsConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1177,7 +1136,7 @@ namespace ceras::keras
 
     struct AcosLayer
     {
-        using category = LayerTag;
+
 
         AcosConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1217,7 +1176,7 @@ namespace ceras::keras
 
     struct AcoshLayer
     {
-        using category = LayerTag;
+
 
         AcoshConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1257,7 +1216,7 @@ namespace ceras::keras
 
     struct AsinLayer
     {
-        using category = LayerTag;
+
 
         AsinConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1297,7 +1256,7 @@ namespace ceras::keras
 
     struct AsinhLayer
     {
-        using category = LayerTag;
+
 
         AsinhConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1337,7 +1296,7 @@ namespace ceras::keras
 
     struct AtanLayer
     {
-        using category = LayerTag;
+
 
         AtanConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1377,7 +1336,7 @@ namespace ceras::keras
 
     struct AtanhLayer
     {
-        using category = LayerTag;
+
 
         AtanhConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1417,7 +1376,7 @@ namespace ceras::keras
 
     struct CbrtLayer
     {
-        using category = LayerTag;
+
 
         CbrtConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1457,7 +1416,7 @@ namespace ceras::keras
 
     struct CeilLayer
     {
-        using category = LayerTag;
+
 
         CeilConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1497,7 +1456,7 @@ namespace ceras::keras
 
     struct CosLayer
     {
-        using category = LayerTag;
+
 
         CosConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1537,7 +1496,7 @@ namespace ceras::keras
 
     struct CoshLayer
     {
-        using category = LayerTag;
+
 
         CoshConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1577,7 +1536,7 @@ namespace ceras::keras
 
     struct ErfLayer
     {
-        using category = LayerTag;
+
 
         ErfConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1617,7 +1576,7 @@ namespace ceras::keras
 
     struct ErfcLayer
     {
-        using category = LayerTag;
+
 
         ErfcConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1657,7 +1616,7 @@ namespace ceras::keras
 
     struct ExpLayer
     {
-        using category = LayerTag;
+
 
         ExpConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1697,7 +1656,7 @@ namespace ceras::keras
 
     struct Exp2Layer
     {
-        using category = LayerTag;
+
 
         Exp2Config config_;
         std::vector<unsigned long> input_shape_;
@@ -1737,7 +1696,7 @@ namespace ceras::keras
 
     struct Expm1Layer
     {
-        using category = LayerTag;
+
 
         Expm1Config config_;
         std::vector<unsigned long> input_shape_;
@@ -1777,7 +1736,7 @@ namespace ceras::keras
 
     struct FabsLayer
     {
-        using category = LayerTag;
+
 
         FabsConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1817,7 +1776,7 @@ namespace ceras::keras
 
     struct FloorLayer
     {
-        using category = LayerTag;
+
 
         FloorConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1857,7 +1816,7 @@ namespace ceras::keras
 
     struct LLrintLayer
     {
-        using category = LayerTag;
+
 
         LLrintConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1897,7 +1856,7 @@ namespace ceras::keras
 
     struct LLroundLayer
     {
-        using category = LayerTag;
+
 
         LLroundConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1937,7 +1896,7 @@ namespace ceras::keras
 
     struct LogLayer
     {
-        using category = LayerTag;
+
 
         LogConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -1977,7 +1936,7 @@ namespace ceras::keras
 
     struct Log10Layer
     {
-        using category = LayerTag;
+
 
         Log10Config config_;
         std::vector<unsigned long> input_shape_;
@@ -2017,7 +1976,7 @@ namespace ceras::keras
 
     struct Log1pLayer
     {
-        using category = LayerTag;
+
 
         Log1pConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2057,7 +2016,7 @@ namespace ceras::keras
 
     struct Log2Layer
     {
-        using category = LayerTag;
+
 
         Log2Config config_;
         std::vector<unsigned long> input_shape_;
@@ -2097,7 +2056,7 @@ namespace ceras::keras
 
     struct LrintLayer
     {
-        using category = LayerTag;
+
 
         LrintConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2137,7 +2096,7 @@ namespace ceras::keras
 
     struct LroundLayer
     {
-        using category = LayerTag;
+
 
         LroundConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2177,7 +2136,7 @@ namespace ceras::keras
 
     struct NearbyintLayer
     {
-        using category = LayerTag;
+
 
         NearbyintConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2217,7 +2176,7 @@ namespace ceras::keras
 
     struct RintLayer
     {
-        using category = LayerTag;
+
 
         RintConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2257,7 +2216,7 @@ namespace ceras::keras
 
     struct RoundLayer
     {
-        using category = LayerTag;
+
 
         RoundConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2297,7 +2256,7 @@ namespace ceras::keras
 
     struct SinLayer
     {
-        using category = LayerTag;
+
 
         SinConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2337,7 +2296,7 @@ namespace ceras::keras
 
     struct SinhLayer
     {
-        using category = LayerTag;
+
 
         SinhConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2377,7 +2336,7 @@ namespace ceras::keras
 
     struct SqrtLayer
     {
-        using category = LayerTag;
+
 
         SqrtConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2417,7 +2376,7 @@ namespace ceras::keras
 
     struct TanLayer
     {
-        using category = LayerTag;
+
 
         TanConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2457,7 +2416,7 @@ namespace ceras::keras
 
     struct TanhLayer
     {
-        using category = LayerTag;
+
 
         TanhConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2497,7 +2456,7 @@ namespace ceras::keras
 
     struct TruncLayer
     {
-        using category = LayerTag;
+
 
         TruncConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2537,7 +2496,7 @@ namespace ceras::keras
 
     struct SoftSignLayer
     {
-        using category = LayerTag;
+
 
         SoftSignConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2577,7 +2536,7 @@ namespace ceras::keras
 
     struct UnitStepLayer
     {
-        using category = LayerTag;
+
 
         UnitStepConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2617,7 +2576,7 @@ namespace ceras::keras
 
     struct BinaryStepLayer
     {
-        using category = LayerTag;
+
 
         BinaryStepConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2657,7 +2616,7 @@ namespace ceras::keras
 
     struct GaussianLayer
     {
-        using category = LayerTag;
+
 
         GaussianConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2697,7 +2656,7 @@ namespace ceras::keras
 
     struct SoftmaxLayer
     {
-        using category = LayerTag;
+
 
         SoftmaxConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2737,7 +2696,7 @@ namespace ceras::keras
 
     struct SeluLayer
     {
-        using category = LayerTag;
+
 
         SeluConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2777,7 +2736,7 @@ namespace ceras::keras
 
     struct SoftplusLayer
     {
-        using category = LayerTag;
+
 
         SoftplusConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2817,7 +2776,7 @@ namespace ceras::keras
 
     struct SigmoidLayer
     {
-        using category = LayerTag;
+
 
         SigmoidConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2857,7 +2816,7 @@ namespace ceras::keras
 
     struct Relu6Layer
     {
-        using category = LayerTag;
+
 
         Relu6Config config_;
         std::vector<unsigned long> input_shape_;
@@ -2897,7 +2856,7 @@ namespace ceras::keras
 
     struct ExponentialLayer
     {
-        using category = LayerTag;
+
 
         ExponentialConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2937,7 +2896,7 @@ namespace ceras::keras
 
     struct HardSigmoidLayer
     {
-        using category = LayerTag;
+
 
         HardSigmoidConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -2977,7 +2936,7 @@ namespace ceras::keras
 
     struct GeluLayer
     {
-        using category = LayerTag;
+
 
         GeluConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3017,7 +2976,7 @@ namespace ceras::keras
 
     struct SwishLayer
     {
-        using category = LayerTag;
+
 
         SwishConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3057,7 +3016,7 @@ namespace ceras::keras
 
     struct SiLULayer
     {
-        using category = LayerTag;
+
 
         SiLUConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3097,7 +3056,7 @@ namespace ceras::keras
 
     struct CreLULayer
     {
-        using category = LayerTag;
+
 
         CreLUConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3137,7 +3096,7 @@ namespace ceras::keras
 
     struct TankShrinkLayer
     {
-        using category = LayerTag;
+
 
         TankShrinkConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3177,7 +3136,7 @@ namespace ceras::keras
 
     struct MishLayer
     {
-        using category = LayerTag;
+
 
         MishConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3217,7 +3176,7 @@ namespace ceras::keras
 
     struct LishtLayer
     {
-        using category = LayerTag;
+
 
         LishtConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3261,7 +3220,7 @@ namespace ceras::keras
 
     struct Conv2DLayer
     {
-        using category = LayerTag;
+
 
         Conv2DConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3363,7 +3322,7 @@ namespace ceras::keras
 
     struct BatchNormalizationLayer
     {
-        using category = LayerTag;
+
 
         BatchNormalizationConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3417,7 +3376,7 @@ namespace ceras::keras
 
     struct ConcatenateLayer
     {
-        using category = LayerTag;
+
 
         ConcatenateConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3473,7 +3432,7 @@ namespace ceras::keras
 
     struct AddLayer
     {
-        using category = LayerTag;
+
 
         AddConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3537,7 +3496,7 @@ namespace ceras::keras
 
     struct SubtractLayer
     {
-        using category = LayerTag;
+
 
         SubtractConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3601,7 +3560,7 @@ namespace ceras::keras
 
     struct MultiplyLayer
     {
-        using category = LayerTag;
+
 
         MultiplyConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3651,7 +3610,7 @@ namespace ceras::keras
 
     struct DotLayer
     {
-        using category = LayerTag;
+
 
         DotConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3701,7 +3660,7 @@ namespace ceras::keras
 
     struct MaximumLayer
     {
-        using category = LayerTag;
+
 
         MaximumConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3753,7 +3712,7 @@ namespace ceras::keras
 
     struct MinimumLayer
     {
-        using category = LayerTag;
+
 
         MinimumConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3806,7 +3765,7 @@ namespace ceras::keras
 
     struct Atan2Layer
     {
-        using category = LayerTag;
+
 
         Atan2Config config_;
         std::vector<unsigned long> lhs_input_shape_;
@@ -3858,7 +3817,7 @@ namespace ceras::keras
 
     struct ClipLayer
     {
-        using category = LayerTag;
+
 
         ClipConfig config_;
         std::vector<unsigned long> input_shape_;
@@ -3902,8 +3861,6 @@ namespace ceras::keras
 
     struct EqualLayer
     {
-        using category = LayerTag;
-
         EqualConfig config_;
         std::vector<unsigned long> lhs_input_shape_;
         std::vector<unsigned long> rhs_input_shape_;
@@ -3932,7 +3889,7 @@ namespace ceras::keras
 
 
 
-
+#endif
 
 
 
