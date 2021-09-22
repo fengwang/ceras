@@ -20,38 +20,7 @@
 namespace ceras::keras
 {
 
-    namespace // anonymous
-    {
-        template< typename... Layers >
-        auto car( std::tuple<Layers...> const& lt ) noexcept
-        {
-            return std::get<0>( lt );
-        }
-
-        template< typename... Layers >
-        auto cbr( std::tuple<Layers...> const& lt ) noexcept
-        {
-            return std::get<0>( lt );
-        }
-
-        template< typename... Layers >
-        auto ccr( std::tuple<Layers...> const& lt ) noexcept
-        {
-            return std::get<0>( lt );
-        }
-
-        template< typename T, typename... Layers >
-        auto cons( T const& val, std::tuple<Layers...> const& lt ) noexcept
-        {
-            return std::make_tuple( val, lt );
-        }
-
-    } // anonymous namespace
-
-
-
     static constexpr unsigned long None = std::numeric_limits<unsigned long>::max();
-
 
     ///
     /// @brief Extract the current layer (the leading layer).
@@ -375,11 +344,9 @@ namespace ceras::keras
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            auto const& prev_layer = *(std::get<0>( lt ));
-            auto const& config = ReshapeConfig{ *this }.input_shape( prev_layer.output_shape() ).output_shape( (*this).target_shape() );
+            auto const& config = ReshapeConfig{ *this }.input_shape( (*(std::get<0>(lt))).output_shape() ).output_shape( (*this).target_shape() );
             return std::make_tuple( std::make_shared<ReshapeLayer>(config), lt );
         }
-
     };
 
     ///
@@ -392,7 +359,7 @@ namespace ceras::keras
     ///
     using Reshape = ReshapeConfig;
 
-    struct ReshapeLayer
+    struct ReshapeLayer : Layer<ReshapeLayer>
     {
         ReshapeConfig config_;
         ReshapeLayer( ReshapeConfig const& config ) noexcept : config_{config} {}
