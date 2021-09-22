@@ -1866,6 +1866,31 @@ Example:
         }
     };
 
+    ///
+    /// @brief Adding pool_size to the Concrete class.
+    ///
+    /// \code{.cpp}
+    /// struct X : enabling_pool_size<X, pool_size_vals...> {};
+    /// auto x = X().pool_size( new_pool_size_val ). ... . (... );
+    /// \endcode
+    ///
+    template< typename Concrete, unsigned long... default_values >
+    struct enabling_pool_size
+    {
+        underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> pool_size_;
+
+        Concrete pool_size( std::vector<unsigned long> new_pool_size ) const noexcept
+        {
+            Concrete ans{ static_cast<Concrete const&>(*this) };
+            ans.pool_size_.val_ = new_pool_size;
+            return ans;
+        }
+
+        std::vector<unsigned long> pool_size() const noexcept
+        {
+            return pool_size_.val_;
+        }
+    };
 
 
 

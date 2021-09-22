@@ -25,8 +25,9 @@ int main()
         auto l3 = LeakyReLU().name("leaky_reul").alpha(0.1f)( l2 );
         auto l4 = Dropout().rate(0.5f)( l3 );
         auto l5 = Reshape().target_shape({8, 8, 2})( l4 );
+        auto l6 = MaxPooling2D().pool_size({2,})( l5 );
 
-        auto output = l5;
+        auto output = l6;
         auto e = ceras::keras::construct_computation_graph( output );
         auto g = ceras::computation_graph( e );
         std::cout << g << std::endl;

@@ -372,70 +372,56 @@ namespace ceras::keras
     };
 
 
-#if 0
+    struct MaxPooling2DLayer;
 
-
-    struct ReshapeLayer;
-
-    struct ReshapeConfig
+    struct MaxPooling2DConfig:
+        enabling_name<MaxPooling2DConfig, "MaxPooling2D">,
+        enabling_input_shape<MaxPooling2DConfig, None>,
+        enabling_output_shape<MaxPooling2DConfig, None>,
+        enabling_pool_size<MaxPooling2DConfig, None>,
+        enabling_strides<MaxPooling2DConfig, None>,
+        enabling_padding<MaxPooling2DConfig, "None">
     {
-        std::vector<unsigned long> new_shape_;
-
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<ReshapeLayer>(*this, (*prev_layer).compute_output_shape()), lt );
+            auto const& prev_layer = *(std::get<0>(lt));
+            unsigned long const stride = *((*this).pool_size().begin());
+            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
+            o_shape[0] /= stride;
+            o_shape[1] /= stride;
+
+            auto const& config = MaxPooling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            return std::make_tuple( std::make_shared<MaxPooling2DLayer>( config ), lt );
         }
 
     };
 
     ///
-    /// @brief Reshape layer.
+    /// @brief MaxPooling2D layer.
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = Reshape({4, 9})( input );
+    /// auto input = Input()( {12, 12, 3} );
+    /// auto l1 = MaxPooling2D().pool_size({3,})( input );
     /// \endcode
     ///
-    using Reshape = ReshapeConfig;
+    using MaxPooling2D = MaxPooling2DConfig;
 
-    struct ReshapeLayer
+    struct MaxPooling2DLayer
     {
-
-
-        ReshapeConfig config_;
-        std::vector<unsigned long> input_shape_;
+        MaxPooling2DConfig config_;
+        MaxPooling2DLayer( MaxPooling2DConfig config ) noexcept : config_(config) {}
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
         {
-            return reshape(config_.new_shape_)( ex );
-        }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept
-        {
-            std::vector<unsigned long> ans = config_.new_shape_;
-            ans.insert( ans.begin(), None );
-            return ans;
+            return max_pooling_2d(*(config_.pool_size().begin()))( ex );
         }
     };
 
+#if 0
 
-    struct MaxPooling2DLayer;
-
-    struct MaxPooling2DConfig
-    {
-        unsigned long stride_ = 2;
-
-        template< typename... Layers >
-        auto operator()( std::tuple<Layers...> const& lt ) const noexcept
-        {
-            auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<MaxPooling2DLayer>(*this, (*prev_layer).compute_output_shape()), lt );
-        }
-
-    };
 
     ///
     /// @brief MaxPooling2D layer.
