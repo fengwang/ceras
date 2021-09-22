@@ -20,10 +20,12 @@ int main()
         using namespace ceras::keras;
         auto inp = Input().name("inp").shape( {32,} )();
         auto l1 = Dense().units( 128 ).name("dense1").use_bias(false)( inp );
-        auto l11 = Relu().name( "relu_layer" )( l1 );
-        auto l2 = Dense().units( 128 ).name("dense2")( l11 );
+        auto l11 = ReLU().name( "relu_layer" )( l1 );
+        auto l2 = Dense().units( 128 )( l11 );
+        auto l3 = LeakyReLU().name("leaky_reul").alpha(0.1f)( l2 );
+        auto l4 = Dropout().rate(0.5f)( l3 );
 
-        auto output = l2;
+        auto output = l4;
         auto e = ceras::keras::construct_computation_graph( output );
         auto g = ceras::computation_graph( e );
         std::cout << g << std::endl;
@@ -37,7 +39,7 @@ int main()
         auto inp = ceras::keras::Input( {32,} );
         auto l1 = ceras::keras::Dense( 128 )( inp );
         auto l2 = ceras::keras::Dense( 128 )( l1 );
-        auto l3 = ceras::keras::Relu( )( l2 );
+        auto l3 = ceras::keras::ReLU( )( l2 );
         auto l4 = ceras::keras::Dense( 77 )( l3 );
         auto l5 = ceras::keras::Lisht( )( l4 );
 
@@ -56,7 +58,7 @@ int main()
         std::cout << fmt::format( "Got outptu shape {}", (*(std::get<0>(l1))).compute_output_shape() ) << std::endl;
         auto l2 = ceras::keras::Conv2D( 32, {3, 3}, "valid" )( l1 );
         std::cout << fmt::format( "Got outptu shape {}", (*(std::get<0>(l2))).compute_output_shape() ) << std::endl;
-        auto l3 = ceras::keras::Relu()( l2 );
+        auto l3 = ceras::keras::ReLU()( l2 );
         std::cout << fmt::format( "Got outptu shape {}", (*(std::get<0>(l3))).compute_output_shape() ) << std::endl;
         auto l4 = ceras::keras::BatchNormalization(0.9f)( l3 );
         std::cout << fmt::format( "Got outptu shape {}", (*(std::get<0>(l4))).compute_output_shape() ) << std::endl;

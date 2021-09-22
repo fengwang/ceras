@@ -20,7 +20,7 @@
 namespace ceras::keras
 {
 
-    static constexpr unsigned long None = static_cast<unsigned long>(-1);
+    static constexpr unsigned long None = std::numeric_limits<unsigned long>::max();
 
 
     ///
@@ -42,6 +42,7 @@ namespace ceras::keras
         return *(std::get<0>(lt));
     }
 
+    // construct a computation graph for the accumulated layers
     template< typename... Layers >
     auto construct_computation_graph( std::tuple<Layers...> const& lt ) noexcept
     {
@@ -67,12 +68,28 @@ namespace ceras::keras
         }
     }
 
+    // CRTP layer base, providing several interfaces such as input_shape, output_shape
+    template< typename Concrete_Layer >
+    struct Layer
+    {
+        std::string name() const noexcept
+        {
+            return static_cast<Concrete_Layer const&>(*this).config_.name();
+        }
 
-    // a layer configuration is composed of [ 1). a layer tage, 2). ... a lot of fields, 3). an
+        std::vector<unsigned long> input_shape() const noexcept
+        {
+            return static_cast<Concrete_Layer const&>(*this).config_.input_shape();
+        }
+
+        std::vector<unsigned long> output_shape() const noexcept
+        {
+            return static_cast<Concrete_Layer const&>(*this).config_.output_shape();
+        }
+    };
 
 
     struct InputLayer;
-
 
     struct InputConfig :
          enabling_batch_size<InputConfig, None>,
@@ -81,12 +98,12 @@ namespace ceras::keras
          enabling_output_shape<InputConfig, None>,
          enabling_shape<InputConfig, None>,
          enabling_uses_learning_phase<InputConfig, false>,
-         enabling_trainable<InputConfig, false>,
-         enabling_keras_layer_tag<InputConfig>
+         enabling_trainable<InputConfig, false>
     {
         auto operator()() const noexcept
         {
-            return std::make_tuple( std::make_shared<InputLayer>(*this) );
+            auto updated_config = InputConfig{*this}.input_shape(shape()).output_shape( shape() ); // update the shape information
+            return std::make_tuple( std::make_shared<InputLayer>(updated_config) );
         }
     };
 
@@ -102,20 +119,13 @@ namespace ceras::keras
     using Input = InputConfig;
 
 
-    struct InputLayer
+    struct InputLayer : Layer< InputLayer >
     {
         InputConfig config_;
 
         place_holder<tensor<float>> expression_;
 
         InputLayer( InputConfig const& config ) noexcept : config_{config}, expression_{ config.shape() } { }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept
-        {
-            config_.input_shape( config_.shape() );
-            config_.output_shape( config_.shape() );
-            return config_.shape();
-        }
 
         auto operator()() const noexcept
         {
@@ -142,14 +152,13 @@ namespace ceras::keras
         enabling_trainable<DenseConfig, true>,
         enabling_units<DenseConfig, None>,
         enabling_use_bias<DenseConfig, true>,
-        enabling_uses_learning_phase<DenseConfig, false>,
-        enabling_keras_layer_tag<DenseConfig>
+        enabling_uses_learning_phase<DenseConfig, false>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            unsigned long input_dim = *((*prev_layer).compute_output_shape().rbegin());
+            unsigned long input_dim = *((*prev_layer).output_shape().rbegin());
             better_assert( input_dim != None, "DenseLayer: expecting an exact input dimension." );
             auto updated_config = DenseConfig{*this}.input_shape( {input_dim,} ).output_shape( {(*this).units(),} );
             return std::make_tuple( std::make_shared<DenseLayer>( updated_config ), lt );
@@ -167,7 +176,7 @@ namespace ceras::keras
     ///
     using Dense = DenseConfig;
 
-    struct DenseLayer
+    struct DenseLayer : Layer< DenseLayer >
     {
         DenseConfig config_;
 
@@ -186,11 +195,7 @@ namespace ceras::keras
             return ex * w_ + b_;
         }
 
-        std::vector<unsigned long> compute_output_shape() const noexcept { return std::vector<unsigned long>{{None, config_.units()}}; }
     }; // struct DenseLayer
-
-
-
 
 
     //
@@ -200,92 +205,137 @@ namespace ceras::keras
     //
 
 
-    struct ReluLayer;
+    struct ReLULayer;
 
-    struct ReluConfig :
-        enabling_name<ReluConfig, "ReLU">,
-        enabling_input_shape<ReluConfig, None>,
-        enabling_output_shape<ReluConfig, None>,
-        enabling_keras_layer_tag<ReluConfig>
+    struct ReLUConfig :
+        enabling_name<ReLUConfig, "ReLU">,
+        enabling_input_shape<ReLUConfig, None>,
+        enabling_output_shape<ReLUConfig, None>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            auto const& shape =  (*prev_layer).compute_output_shape();
-            auto updated_config = ReluConfig{*this}.input_shape( shape ).output_shape( shape );
-            return std::make_tuple( std::make_shared<ReluLayer>(updated_config), lt );
+            auto const& shape =  (*prev_layer).output_shape();
+            auto const& updated_config = ReLUConfig{*this}.input_shape( shape ).output_shape( shape );
+
+            return std::make_tuple( std::make_shared<ReLULayer>( updated_config ), lt );
         }
 
     };
 
     ///
-    /// @brief Relu layer.
+    /// @brief ReLU layer.
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = Relu()( input );
+    /// auto input = Input().shape( {12, 34} )();
+    /// auto l1 = ReLU().name("relu").( input );
     /// \endcode
     ///
-    using Relu = ReluConfig;
+    using ReLU = ReLUConfig;
 
-    struct ReluLayer
+    struct ReLULayer : Layer< ReLULayer >
     {
-        ReluConfig config_;
+        ReLUConfig config_;
+        ReLULayer( ReLUConfig const& config ) noexcept : config_(config) { /*  */} // <- cannot ommit this ctor...
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
         {
             return relu( ex );
         }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept { return config_.output_shape(); }
     };
 
-#if 0
 
     struct LeakyReLULayer;
 
-    struct LeakyReLUConfig
+    struct LeakyReLUConfig :
+        enabling_input_shape<LeakyReLUConfig>,
+        enabling_output_shape<LeakyReLUConfig>,
+        enabling_name<LeakyReLUConfig, "LeakyReLU">,
+        enabling_alpha<LeakyReLUConfig, "0.3">
     {
-        float factor_ = 0.2f;
-
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<LeakyReLULayer>(*this, (*prev_layer).compute_output_shape()), lt );
-        }
+            auto const& shape =  (*prev_layer).output_shape();
+            auto const& updated_config = LeakyReLUConfig{*this}.input_shape( shape ).output_shape( shape );
 
+            return std::make_tuple( std::make_shared<LeakyReLULayer>( updated_config ), lt );
+        }
     };
 
     ///
     /// @brief LeakyReLU layer.
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = LeakyReLU(0.1f)( input );
+    /// auto input = Input().shape( {12, 3} )();
+    /// auto l1 = LeakyReLU().factor(0.1f).( input );
     /// \endcode
     ///
     using LeakyReLU = LeakyReLUConfig;
     using ELU = LeakyReLUConfig;
 
-    struct LeakyReLULayer
+    struct LeakyReLULayer : Layer<LeakyReLULayer>
     {
-
-
         LeakyReLUConfig config_;
-        std::vector<unsigned long> input_shape_;
+        LeakyReLULayer( LeakyReLUConfig const& config ) noexcept : config_{ config } {}
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
         {
-            return leaky_relu(config_.factor_)( ex );
+            return leaky_relu(config_.alpha())( ex );
         }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept { return input_shape_; }
     };
 
+
+
+    struct DropoutLayer;
+
+    struct DropoutConfig :
+        enabling_input_shape<DropoutConfig>,
+        enabling_output_shape<DropoutConfig>,
+        enabling_noise_shape<DropoutConfig, None>,
+        enabling_seed<DropoutConfig, None>,
+        enabling_name<DropoutConfig, "Dropout">,
+        enabling_rate<DropoutConfig, "0.3">
+    {
+        template< typename... Layers >
+        auto operator()( std::tuple<Layers...> const& lt ) const noexcept
+        {
+            auto const& prev_layer = std::get<0>( lt );
+            auto const& shape =  (*prev_layer).output_shape();
+            auto const& updated_config = DropoutConfig{*this}.input_shape( shape ).output_shape( shape );
+            return std::make_tuple( std::make_shared<DropoutLayer>( updated_config ), lt );
+        }
+    };
+
+    ///
+    /// @brief Dropout layer.
+    ///
+    /// \code{.cpp}
+    /// auto input = Input().shape( {12, 3} )();
+    /// auto l1 = Dropout().rate(0.1f).( input );
+    /// \endcode
+    ///
+    using Dropout = DropoutConfig;
+
+    struct DropoutLayer : Layer<DropoutLayer>
+    {
+        DropoutConfig config_;
+        DropoutLayer( DropoutConfig const& config ) noexcept : config_{ config } {}
+
+        template< Expression Ex>
+        auto operator()(const Ex& ex ) const noexcept
+        {
+            return drop_out(config_.rate())( ex );
+        }
+    };
+
+
+
+#if 0
 
 
     struct DropoutLayer;
@@ -2775,34 +2825,34 @@ namespace ceras::keras
     };
 
 
-    struct Relu6Layer;
+    struct ReLU6Layer;
 
-    struct Relu6Config
+    struct ReLU6Config
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<Relu6Layer>(*this, (*prev_layer).compute_output_shape()), lt );
+            return std::make_tuple( std::make_shared<ReLU6Layer>(*this, (*prev_layer).compute_output_shape()), lt );
         }
 
     };
 
     ///
-    /// @brief Relu6 layer.
+    /// @brief ReLU6 layer.
     ///
     /// \code{.cpp}
     /// auto input = Input( {12, 3} );
-    /// auto l1 = Relu6()( input );
+    /// auto l1 = ReLU6()( input );
     /// \endcode
     ///
-    using Relu6 = Relu6Config;
+    using ReLU6 = ReLU6Config;
 
-    struct Relu6Layer
+    struct ReLU6Layer
     {
 
 
-        Relu6Config config_;
+        ReLU6Config config_;
         std::vector<unsigned long> input_shape_;
 
         template< Expression Ex>

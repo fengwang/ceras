@@ -990,6 +990,15 @@ namespace ceras
         };
     }
 
+    ///
+    /// @brief dropout is an alias name of drop_out.
+    ///
+    template< typename T > requires std::floating_point<T>
+    inline auto dropout( T const factor ) noexcept
+    {
+        return drop_out( factor );
+    }
+
 
     namespace
     {
