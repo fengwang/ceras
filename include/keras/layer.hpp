@@ -27,10 +27,10 @@ namespace ceras::keras
     /// @brief Extract the current layer (the leading layer).
     ///
     /// \code{.cpp}
-    /// auto input = Input( {128, 128, 3} );
-    /// auto l1 = Conv2D( 16, {3, 3}, "valid" )( input );
+    /// auto input = Input().shape( {128, 128, 3} )();
+    /// auto l1 = Conv2D().filters(16).kernel_size({3, 3}).padding("valid")( input );
     /// auto conv2d_layer = layer( l1 );
-    /// auto const& input_shape = conv2d_layer.input_shape_; // access inner properities of a layer, the input shape
+    /// auto const& input_shape = conv2d_layer.input_shape(); // access inner properities of a layer, the input shape
     /// auto const& output_shape = conv2d_layer.compute_output_shape(); // calculate the output shape
     /// auto const& gamma = conv2d_layer.gamm_; // access the gamma weight
     /// auto const& beta = conv2d_layer.beta_; // access the beta weight
@@ -90,6 +90,15 @@ namespace ceras::keras
         }
     };
 
+    ///
+    /// @brief Input Layer
+    ///
+    /// \code{.cpp}
+    /// auto input_a = Input().shape( {12} ).name("input_a")();
+    /// auto input_b = Input().name("input_b").shape( {24, 34, 3} )();
+    /// auto input_c = Input().shape( { 134, 3} )();
+    /// \endcode
+    ///
     using Input = InputConfig;
 
 
@@ -144,8 +153,6 @@ namespace ceras::keras
             better_assert( input_dim != None, "DenseLayer: expecting an exact input dimension." );
             auto updated_config = DenseConfig{*this}.input_shape( {input_dim,} ).output_shape( {(*this).units(),} );
             return std::make_tuple( std::make_shared<DenseLayer>( updated_config ), lt );
-
-            //return std::make_tuple( std::make_shared<DenseLayer>( lt, *this ), lt );
         }
     }; // struct DenseConfig
 
@@ -153,9 +160,9 @@ namespace ceras::keras
     /// @brief A normal Dense Layer
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12} );
+    /// auto input = Input().shape( {12} )();
     //  auto l1 = Dense().name("first_layer").units( 127 )( input );
-    /// auto l2 = Dense().units( 129 ).name("second_layer").( l1 );
+    /// auto l2 = Dense().units( 129 ).name("second_layer")( l1 );
     /// \endcode
     ///
     using Dense = DenseConfig;
