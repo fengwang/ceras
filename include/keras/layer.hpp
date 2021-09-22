@@ -20,6 +20,36 @@
 namespace ceras::keras
 {
 
+    namespace // anonymous
+    {
+        template< typename... Layers >
+        auto car( std::tuple<Layers...> const& lt ) noexcept
+        {
+            return std::get<0>( lt );
+        }
+
+        template< typename... Layers >
+        auto cbr( std::tuple<Layers...> const& lt ) noexcept
+        {
+            return std::get<0>( lt );
+        }
+
+        template< typename... Layers >
+        auto ccr( std::tuple<Layers...> const& lt ) noexcept
+        {
+            return std::get<0>( lt );
+        }
+
+        template< typename T, typename... Layers >
+        auto cons( T const& val, std::tuple<Layers...> const& lt ) noexcept
+        {
+            return std::make_tuple( val, lt );
+        }
+
+    } // anonymous namespace
+
+
+
     static constexpr unsigned long None = std::numeric_limits<unsigned long>::max();
 
 
@@ -334,55 +364,48 @@ namespace ceras::keras
     };
 
 
+    struct ReshapeLayer;
 
-#if 0
-
-
-    struct DropoutLayer;
-
-    struct DropoutConfig
+    struct ReshapeConfig :
+        enabling_name<ReshapeConfig, "Reshape" >,
+        enabling_input_shape< ReshapeConfig, None >,
+        enabling_output_shape< ReshapeConfig, None >,
+        enabling_target_shape< ReshapeConfig, None >
     {
-        float factor_ = 0.2f;
-
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<DropoutLayer>(*this, (*prev_layer).compute_output_shape()), lt );
+            auto const& prev_layer = *(std::get<0>( lt ));
+            auto const& config = ReshapeConfig{ *this }.input_shape( prev_layer.output_shape() ).output_shape( (*this).target_shape() );
+            return std::make_tuple( std::make_shared<ReshapeLayer>(config), lt );
         }
 
     };
 
     ///
-    /// @brief Dropout layer.
+    /// @brief Reshape layer.
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = Dropout(0.8f)( input );
+    /// auto input = Input().shape( {12, 3} )();
+    /// auto l1 = Reshape().target_shape({4, 9})( input );
     /// \endcode
     ///
-    using Dropout = DropoutConfig;
+    using Reshape = ReshapeConfig;
 
-    struct DropoutLayer
+    struct ReshapeLayer
     {
-
-
-        DropoutConfig config_;
-        std::vector<unsigned long> input_shape_;
+        ReshapeConfig config_;
+        ReshapeLayer( ReshapeConfig const& config ) noexcept : config_{config} {}
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
         {
-            return drop_out(config_.factor_)( ex );
+            return reshape(config_.target_shape())( ex );
         }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept { return input_shape_; }
     };
 
 
-
-
-
+#if 0
 
 
     struct ReshapeLayer;

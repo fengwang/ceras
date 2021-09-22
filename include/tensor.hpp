@@ -9,7 +9,6 @@
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/id.hpp"
-#include "./utils/list.hpp"
 #include "./utils/view.hpp"
 #include "./backend/cuda.hpp"
 #include "./backend/cblas.hpp"
