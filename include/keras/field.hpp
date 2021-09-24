@@ -14,7 +14,7 @@ Decouple class fields into field-classes.
 
 Example:
 
-    struct my_layer : enabling_shape<a, 1, 1>, enabling_input_shape<a, 2, 2>, enabling_name<a, "...." >, enabling_alpha<a, "1.0" > {};
+    struct my_layer : enable_shape<a, 1, 1>, enable_input_shape<a, 2, 2>, enable_name<a, "...." >, enable_alpha<a, "1.0" > {};
     auto x = my_layer().shape( {1, 2, 3, 4} ).input_shape( { 4, 5, 6} ).name( "nameofx" ).alpha( 3.14159265f );
 
 #endif
@@ -29,7 +29,7 @@ Example:
 
 
     template< typename Container >
-    struct enabling_keras_layer_tag
+    struct enable_keras_layer_tag
     {
         typedef int keras_layer_tag; // for dispatching, just in case
     };
@@ -46,12 +46,12 @@ Example:
     /// @brief Adding shape to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_shape<X, shape_vals...> {};
+    /// struct X : enable_shape<X, shape_vals...> {};
     /// auto x = X().shape( new_shape_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_shape
+    struct enable_shape
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> shape_;
 
@@ -72,12 +72,12 @@ Example:
     /// @brief Adding input_shape to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_input_shape<X, input_shape_vals...> {};
+    /// struct X : enable_input_shape<X, input_shape_vals...> {};
     /// auto x = X().input_shape( new_input_shape_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_input_shape
+    struct enable_input_shape
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> input_shape_;
 
@@ -98,12 +98,12 @@ Example:
     /// @brief Adding output_shape to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_output_shape<X, output_shape_vals...> {};
+    /// struct X : enable_output_shape<X, output_shape_vals...> {};
     /// auto x = X().output_shape( new_output_shape_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_output_shape
+    struct enable_output_shape
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> output_shape_;
 
@@ -124,12 +124,12 @@ Example:
     /// @brief Adding target_shape to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_target_shape<X, target_shape_vals...> {};
+    /// struct X : enable_target_shape<X, target_shape_vals...> {};
     /// auto x = X().target_shape( new_target_shape_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_target_shape
+    struct enable_target_shape
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> target_shape_;
 
@@ -150,12 +150,12 @@ Example:
     /// @brief Adding noise_shape to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_noise_shape<X, noise_shape_vals...> {};
+    /// struct X : enable_noise_shape<X, noise_shape_vals...> {};
     /// auto x = X().noise_shape( new_noise_shape_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_noise_shape
+    struct enable_noise_shape
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> noise_shape_;
 
@@ -176,12 +176,12 @@ Example:
     /// @brief Adding cropping to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_cropping<X, cropping_vals...> {};
+    /// struct X : enable_cropping<X, cropping_vals...> {};
     /// auto x = X().cropping( new_cropping_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_cropping
+    struct enable_cropping
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> cropping_;
 
@@ -202,12 +202,12 @@ Example:
     /// @brief Adding paddings to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_paddings<X, paddings_vals...> {};
+    /// struct X : enable_paddings<X, paddings_vals...> {};
     /// auto x = X().paddings( new_paddings_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_paddings
+    struct enable_paddings
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> paddings_;
 
@@ -228,12 +228,12 @@ Example:
     /// @brief Adding size to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_size<X, size_vals...> {};
+    /// struct X : enable_size<X, size_vals...> {};
     /// auto x = X().size( new_size_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_size
+    struct enable_size
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> size_;
 
@@ -254,12 +254,12 @@ Example:
     /// @brief Adding kernel_size to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_size<X, kernel_size_vals...> {};
+    /// struct X : enable_kernel_size<X, kernel_size_vals...> {};
     /// auto x = X().kernel_size( new_kernel_size_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_kernel_size
+    struct enable_kernel_size
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> kernel_size_;
 
@@ -280,12 +280,12 @@ Example:
     /// @brief Adding strides to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_strides<X, strides_vals...> {};
+    /// struct X : enable_strides<X, strides_vals...> {};
     /// auto x = X().strides( new_strides_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_strides
+    struct enable_strides
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> strides_;
 
@@ -306,12 +306,12 @@ Example:
     /// @brief Adding dilation_rate to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_dilation_rate<X, dilation_rate_vals...> {};
+    /// struct X : enable_dilation_rate<X, dilation_rate_vals...> {};
     /// auto x = X().dilation_rate( new_dilation_rate_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_dilation_rate
+    struct enable_dilation_rate
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> dilation_rate_;
 
@@ -332,12 +332,12 @@ Example:
     /// @brief Adding output_padding to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_output_padding<X, output_padding_vals...> {};
+    /// struct X : enable_output_padding<X, output_padding_vals...> {};
     /// auto x = X().output_padding( new_output_padding_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_output_padding
+    struct enable_output_padding
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> output_padding_;
 
@@ -358,12 +358,12 @@ Example:
     /// @brief Adding shared_axes to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_shared_axes<X, shared_axes_vals...> {};
+    /// struct X : enable_shared_axes<X, shared_axes_vals...> {};
     /// auto x = X().shared_axes( new_shared_axes_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_shared_axes
+    struct enable_shared_axes
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> shared_axes_;
 
@@ -384,12 +384,12 @@ Example:
     /// @brief Adding axes to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_axes<X, axes_vals...> {};
+    /// struct X : enable_axes<X, axes_vals...> {};
     /// auto x = X().axes( new_axes_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_axes
+    struct enable_axes
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> axes_;
 
@@ -410,12 +410,12 @@ Example:
     /// @brief Adding dims to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_dims<X, dims_vals...> {};
+    /// struct X : enable_dims<X, dims_vals...> {};
     /// auto x = X().dims( new_dims_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_dims
+    struct enable_dims
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> dims_;
 
@@ -436,12 +436,12 @@ Example:
     /// @brief Adding center to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_center<X, center_val> {};
+    /// struct X : enable_center<X, center_val> {};
     /// auto x = X().center( new_center_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_center
+    struct enable_center
     {
         underlying_default_value<bool, bool, default_values> center_;
 
@@ -462,12 +462,12 @@ Example:
     /// @brief Adding mask_zero to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_mask_zero<X, mask_zero_val> {};
+    /// struct X : enable_mask_zero<X, mask_zero_val> {};
     /// auto x = X().mask_zero( new_mask_zero_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_mask_zero
+    struct enable_mask_zero
     {
         underlying_default_value<bool, bool, default_values> mask_zero_;
 
@@ -488,12 +488,12 @@ Example:
     /// @brief Adding scale to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_scale<X, scale_val> {};
+    /// struct X : enable_scale<X, scale_val> {};
     /// auto x = X().scale( new_scale_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_scale
+    struct enable_scale
     {
         underlying_default_value<bool, bool, default_values> scale_;
 
@@ -514,12 +514,12 @@ Example:
     /// @brief Adding use_scale to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_use_scale<X, use_scale_val> {};
+    /// struct X : enable_use_scale<X, use_scale_val> {};
     /// auto x = X().use_scale( new_use_scale_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_use_scale
+    struct enable_use_scale
     {
         underlying_default_value<bool, bool, default_values> use_scale_;
 
@@ -540,12 +540,12 @@ Example:
     /// @brief Adding use_bias to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_use_bias<X, use_bias_val> {};
+    /// struct X : enable_use_bias<X, use_bias_val> {};
     /// auto x = X().use_bias( new_use_bias_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_use_bias
+    struct enable_use_bias
     {
         underlying_default_value<bool, bool, default_values> use_bias_;
 
@@ -566,12 +566,12 @@ Example:
     /// @brief Adding normalize to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_normalize<X, normalize_val> {};
+    /// struct X : enable_normalize<X, normalize_val> {};
     /// auto x = X().normalize( new_normalize_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_normalize
+    struct enable_normalize
     {
         underlying_default_value<bool, bool, default_values> normalize_;
 
@@ -592,12 +592,12 @@ Example:
     /// @brief Adding alpha to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_alpha<X, alpha_val> {};
+    /// struct X : enable_alpha<X, alpha_val> {};
     /// auto x = X().alpha( new_alpha_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values="0.0" >
-    struct enabling_alpha
+    struct enable_alpha
     {
         //underlying_default_value<float, ceras::float32, default_values> alpha_;
         underlying_default_value<float, decltype(default_values), default_values> alpha_;
@@ -619,12 +619,12 @@ Example:
     /// @brief Adding epsilon to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_epsilon<X, epsilon_val> {};
+    /// struct X : enable_epsilon<X, epsilon_val> {};
     /// auto x = X().epsilon( new_epsilon_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_epsilon
+    struct enable_epsilon
     {
         //underlying_default_value<float, ceras::float32, default_values> epsilon_;
         underlying_default_value<float, decltype(default_values), default_values> epsilon_;
@@ -646,12 +646,12 @@ Example:
     /// @brief Adding mask_value to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_mask_value<X, mask_value_val> {};
+    /// struct X : enable_mask_value<X, mask_value_val> {};
     /// auto x = X().mask_value( new_mask_value_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_mask_value
+    struct enable_mask_value
     {
         underlying_default_value<float, decltype(default_values), default_values> mask_value_;
 
@@ -672,12 +672,12 @@ Example:
     /// @brief Adding max_value to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_max_value<X, max_value_val> {};
+    /// struct X : enable_max_value<X, max_value_val> {};
     /// auto x = X().max_value( new_max_value_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_max_value
+    struct enable_max_value
     {
         underlying_default_value<float, decltype(default_values), default_values> max_value_;
 
@@ -698,12 +698,12 @@ Example:
     /// @brief Adding momentum to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_momentum<X, momentum_val> {};
+    /// struct X : enable_momentum<X, momentum_val> {};
     /// auto x = X().momentum( new_momentum_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_momentum
+    struct enable_momentum
     {
         underlying_default_value<float, decltype(default_values), default_values> momentum_;
 
@@ -724,12 +724,12 @@ Example:
     /// @brief Adding negative_slope to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_negative_slope<X, negative_slope_val> {};
+    /// struct X : enable_negative_slope<X, negative_slope_val> {};
     /// auto x = X().negative_slope( new_negative_slope_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_negative_slope
+    struct enable_negative_slope
     {
         underlying_default_value<float, decltype(default_values), default_values> negative_slope_;
 
@@ -750,12 +750,12 @@ Example:
     /// @brief Adding rate to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_rate<X, rate_val> {};
+    /// struct X : enable_rate<X, rate_val> {};
     /// auto x = X().rate( new_rate_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_rate
+    struct enable_rate
     {
         underlying_default_value<float, decltype(default_values), default_values> rate_;
 
@@ -776,12 +776,12 @@ Example:
     /// @brief Adding theta to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_theta<X, theta_val> {};
+    /// struct X : enable_theta<X, theta_val> {};
     /// auto x = X().theta( new_theta_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_theta
+    struct enable_theta
     {
         underlying_default_value<float, decltype(default_values), default_values> theta_;
 
@@ -802,12 +802,12 @@ Example:
     /// @brief Adding threshold to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_threshold<X, threshold_val> {};
+    /// struct X : enable_threshold<X, threshold_val> {};
     /// auto x = X().threshold( new_threshold_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::float32 default_values >
-    struct enabling_threshold
+    struct enable_threshold
     {
         underlying_default_value<float, decltype(default_values), default_values> threshold_;
 
@@ -828,12 +828,12 @@ Example:
     /// @brief Adding activation to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_activation<X, activation_val> {};
+    /// struct X : enable_activation<X, activation_val> {};
     /// auto x = X().activation( new_activation_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_activation
+    struct enable_activation
     {
         underlying_default_value<std::string, decltype(default_values), default_values> activation_;
 
@@ -854,12 +854,12 @@ Example:
     /// @brief Adding activity_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_activity_regularizer<X, activity_regularizer_val> {};
+    /// struct X : enable_activity_regularizer<X, activity_regularizer_val> {};
     /// auto x = X().activity_regularizer( new_activity_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_activity_regularizer
+    struct enable_activity_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> activity_regularizer_;
 
@@ -880,12 +880,12 @@ Example:
     /// @brief Adding alpha_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_alpha_constraint<X, alpha_constraint_val> {};
+    /// struct X : enable_alpha_constraint<X, alpha_constraint_val> {};
     /// auto x = X().alpha_constraint( new_alpha_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_alpha_constraint
+    struct enable_alpha_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> alpha_constraint_;
 
@@ -906,12 +906,12 @@ Example:
     /// @brief Adding alpha_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_alpha_initializer<X, alpha_initializer_val> {};
+    /// struct X : enable_alpha_initializer<X, alpha_initializer_val> {};
     /// auto x = X().alpha_initializer( new_alpha_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_alpha_initializer
+    struct enable_alpha_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> alpha_initializer_;
 
@@ -932,12 +932,12 @@ Example:
     /// @brief Adding alpha_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_alpha_regularizer<X, alpha_regularizer_val> {};
+    /// struct X : enable_alpha_regularizer<X, alpha_regularizer_val> {};
     /// auto x = X().alpha_regularizer( new_alpha_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_alpha_regularizer
+    struct enable_alpha_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> alpha_regularizer_;
 
@@ -958,12 +958,12 @@ Example:
     /// @brief Adding beta_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_beta_constraint<X, beta_constraint_val> {};
+    /// struct X : enable_beta_constraint<X, beta_constraint_val> {};
     /// auto x = X().beta_constraint( new_beta_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_beta_constraint
+    struct enable_beta_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> beta_constraint_;
 
@@ -984,12 +984,12 @@ Example:
     /// @brief Adding beta_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_beta_initializer<X, beta_initializer_val> {};
+    /// struct X : enable_beta_initializer<X, beta_initializer_val> {};
     /// auto x = X().beta_initializer( new_beta_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_beta_initializer
+    struct enable_beta_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> beta_initializer_;
 
@@ -1010,12 +1010,12 @@ Example:
     /// @brief Adding beta_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_beta_regularizer<X, beta_regularizer_val> {};
+    /// struct X : enable_beta_regularizer<X, beta_regularizer_val> {};
     /// auto x = X().beta_regularizer( new_beta_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_beta_regularizer
+    struct enable_beta_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> beta_regularizer_;
 
@@ -1036,12 +1036,12 @@ Example:
     /// @brief Adding bias_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_bias_constraint<X, bias_constraint_val> {};
+    /// struct X : enable_bias_constraint<X, bias_constraint_val> {};
     /// auto x = X().bias_constraint( new_bias_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_bias_constraint
+    struct enable_bias_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> bias_constraint_;
 
@@ -1062,12 +1062,12 @@ Example:
     /// @brief Adding bias_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_bias_initializer<X, bias_initializer_val> {};
+    /// struct X : enable_bias_initializer<X, bias_initializer_val> {};
     /// auto x = X().bias_initializer( new_bias_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_bias_initializer
+    struct enable_bias_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> bias_initializer_;
 
@@ -1088,12 +1088,12 @@ Example:
     /// @brief Adding bias_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_bias_regularizer<X, bias_regularizer_val> {};
+    /// struct X : enable_bias_regularizer<X, bias_regularizer_val> {};
     /// auto x = X().bias_regularizer( new_bias_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_bias_regularizer
+    struct enable_bias_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> bias_regularizer_;
 
@@ -1114,12 +1114,12 @@ Example:
     /// @brief Adding embedding_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_embedding_initializer<X, embedding_initializer_val> {};
+    /// struct X : enable_embedding_initializer<X, embedding_initializer_val> {};
     /// auto x = X().embedding_initializer( new_embedding_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_embedding_initializer
+    struct enable_embedding_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> embedding_initializer_;
 
@@ -1140,12 +1140,12 @@ Example:
     /// @brief Adding embedding_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_embedding_regularizer<X, embedding_regularizer_val> {};
+    /// struct X : enable_embedding_regularizer<X, embedding_regularizer_val> {};
     /// auto x = X().embedding_regularizer( new_embedding_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_embedding_regularizer
+    struct enable_embedding_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> embedding_regularizer_;
 
@@ -1166,12 +1166,12 @@ Example:
     /// @brief Adding embeding_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_embeding_constraint<X, embeding_constraint_val> {};
+    /// struct X : enable_embeding_constraint<X, embeding_constraint_val> {};
     /// auto x = X().embeding_constraint( new_embeding_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_embeding_constraint
+    struct enable_embeding_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> embeding_constraint_;
 
@@ -1192,12 +1192,12 @@ Example:
     /// @brief Adding gamma_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_gamma_constraint<X, gamma_constraint_val> {};
+    /// struct X : enable_gamma_constraint<X, gamma_constraint_val> {};
     /// auto x = X().gamma_constraint( new_gamma_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_gamma_constraint
+    struct enable_gamma_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> gamma_constraint_;
 
@@ -1218,12 +1218,12 @@ Example:
     /// @brief Adding gamma_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_gamma_initializer<X, gamma_initializer_val> {};
+    /// struct X : enable_gamma_initializer<X, gamma_initializer_val> {};
     /// auto x = X().gamma_initializer( new_gamma_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_gamma_initializer
+    struct enable_gamma_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> gamma_initializer_;
 
@@ -1244,12 +1244,12 @@ Example:
     /// @brief Adding gamma_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_gamma_regularizer<X, gamma_regularizer_val> {};
+    /// struct X : enable_gamma_regularizer<X, gamma_regularizer_val> {};
     /// auto x = X().gamma_regularizer( new_gamma_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_gamma_regularizer
+    struct enable_gamma_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> gamma_regularizer_;
 
@@ -1270,12 +1270,12 @@ Example:
     /// @brief Adding interpolation to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_interpolation<X, interpolation_val> {};
+    /// struct X : enable_interpolation<X, interpolation_val> {};
     /// auto x = X().interpolation( new_interpolation_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_interpolation
+    struct enable_interpolation
     {
         underlying_default_value<std::string, decltype(default_values), default_values> interpolation_;
 
@@ -1296,12 +1296,12 @@ Example:
     /// @brief Adding kernel_constraint to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_constraint<X, kernel_constraint_val> {};
+    /// struct X : enable_kernel_constraint<X, kernel_constraint_val> {};
     /// auto x = X().kernel_constraint( new_kernel_constraint_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_kernel_constraint
+    struct enable_kernel_constraint
     {
         underlying_default_value<std::string, decltype(default_values), default_values> kernel_constraint_;
 
@@ -1322,12 +1322,12 @@ Example:
     /// @brief Adding kernel_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_initializer<X, kernel_initializer_val> {};
+    /// struct X : enable_kernel_initializer<X, kernel_initializer_val> {};
     /// auto x = X().kernel_initializer( new_kernel_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_kernel_initializer
+    struct enable_kernel_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> kernel_initializer_;
 
@@ -1348,12 +1348,12 @@ Example:
     /// @brief Adding kernel_regularizer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_regularizer<X, kernel_regularizer_val> {};
+    /// struct X : enable_kernel_regularizer<X, kernel_regularizer_val> {};
     /// auto x = X().kernel_regularizer( new_kernel_regularizer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_kernel_regularizer
+    struct enable_kernel_regularizer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> kernel_regularizer_;
 
@@ -1374,12 +1374,12 @@ Example:
     /// @brief Adding moving_mean_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_moving_mean_initializer<X, moving_mean_initializer_val> {};
+    /// struct X : enable_moving_mean_initializer<X, moving_mean_initializer_val> {};
     /// auto x = X().moving_mean_initializer( new_moving_mean_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_moving_mean_initializer
+    struct enable_moving_mean_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> moving_mean_initializer_;
 
@@ -1400,12 +1400,12 @@ Example:
     /// @brief Adding moving_variance_initializer to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_moving_variance_initializer<X, moving_variance_initializer_val> {};
+    /// struct X : enable_moving_variance_initializer<X, moving_variance_initializer_val> {};
     /// auto x = X().moving_variance_initializer( new_moving_variance_initializer_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_moving_variance_initializer
+    struct enable_moving_variance_initializer
     {
         underlying_default_value<std::string, decltype(default_values), default_values> moving_variance_initializer_;
 
@@ -1426,12 +1426,12 @@ Example:
     /// @brief Adding name to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_name<X, name_val> {};
+    /// struct X : enable_name<X, name_val> {};
     /// auto x = X().name( new_name_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_name
+    struct enable_name
     {
         underlying_default_value<std::string, decltype(default_values), default_values> name_;
 
@@ -1452,12 +1452,12 @@ Example:
     /// @brief Adding padding to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_padding<X, padding_val> {};
+    /// struct X : enable_padding<X, padding_val> {};
     /// auto x = X().padding( new_padding_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, ceras::string default_values >
-    struct enabling_padding
+    struct enable_padding
     {
         underlying_default_value<std::string, decltype(default_values), default_values> padding_;
 
@@ -1478,12 +1478,12 @@ Example:
     /// @brief Adding axis to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_axis<X, axis_val> {};
+    /// struct X : enable_axis<X, axis_val> {};
     /// auto x = X().axis( new_axis_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_axis
+    struct enable_axis
     {
         underlying_default_value<unsigned long, unsigned long, default_values> axis_;
 
@@ -1504,12 +1504,12 @@ Example:
     /// @brief Adding batch_size to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_batch_size<X, batch_size_val> {};
+    /// struct X : enable_batch_size<X, batch_size_val> {};
     /// auto x = X().batch_size( new_batch_size_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_batch_size
+    struct enable_batch_size
     {
         underlying_default_value<unsigned long, unsigned long, default_values> batch_size_;
 
@@ -1530,12 +1530,12 @@ Example:
     /// @brief Adding filters to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_filters<X, filters_val> {};
+    /// struct X : enable_filters<X, filters_val> {};
     /// auto x = X().filters( new_filters_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_filters
+    struct enable_filters
     {
         underlying_default_value<unsigned long, unsigned long, default_values> filters_;
 
@@ -1556,12 +1556,12 @@ Example:
     /// @brief Adding groups to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_groups<X, groups_val> {};
+    /// struct X : enable_groups<X, groups_val> {};
     /// auto x = X().groups( new_groups_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_groups
+    struct enable_groups
     {
         underlying_default_value<unsigned long, unsigned long, default_values> groups_;
 
@@ -1582,12 +1582,12 @@ Example:
     /// @brief Adding input_dim to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_input_dim<X, input_dim_val> {};
+    /// struct X : enable_input_dim<X, input_dim_val> {};
     /// auto x = X().input_dim( new_input_dim_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_input_dim
+    struct enable_input_dim
     {
         underlying_default_value<unsigned long, unsigned long, default_values> input_dim_;
 
@@ -1608,12 +1608,12 @@ Example:
     /// @brief Adding input_length to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_input_length<X, input_length_val> {};
+    /// struct X : enable_input_length<X, input_length_val> {};
     /// auto x = X().input_length( new_input_length_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_input_length
+    struct enable_input_length
     {
         underlying_default_value<unsigned long, unsigned long, default_values> input_length_;
 
@@ -1634,12 +1634,12 @@ Example:
     /// @brief Adding output_dim to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_output_dim<X, output_dim_val> {};
+    /// struct X : enable_output_dim<X, output_dim_val> {};
     /// auto x = X().output_dim( new_output_dim_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_output_dim
+    struct enable_output_dim
     {
         underlying_default_value<unsigned long, unsigned long, default_values> output_dim_;
 
@@ -1660,12 +1660,12 @@ Example:
     /// @brief Adding seed to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_seed<X, seed_val> {};
+    /// struct X : enable_seed<X, seed_val> {};
     /// auto x = X().seed( new_seed_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_seed
+    struct enable_seed
     {
         underlying_default_value<unsigned long, unsigned long, default_values> seed_;
 
@@ -1686,12 +1686,12 @@ Example:
     /// @brief Adding units to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_units<X, units_val> {};
+    /// struct X : enable_units<X, units_val> {};
     /// auto x = X().units( new_units_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long default_values >
-    struct enabling_units
+    struct enable_units
     {
         underlying_default_value<unsigned long, unsigned long, default_values> units_;
 
@@ -1713,12 +1713,12 @@ Example:
     /// @brief Adding kernel_regularizer_l1 to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_regularizer_l1<X, "0.0"> {};
+    /// struct X : enable_kernel_regularizer_l1<X, "0.0"> {};
     /// auto x = X().kernel_regularizer_l1( 1.0e-3f ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, float32 default_values >
-    struct enabling_kernel_regularizer_l1
+    struct enable_kernel_regularizer_l1
     {
         underlying_default_value<float, decltype(default_values), default_values> kernel_regularizer_l1_;
 
@@ -1739,12 +1739,12 @@ Example:
     /// @brief Adding kernel_regularizer_l2 to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_kernel_regularizer_l2<X, "1.1"> {};
+    /// struct X : enable_kernel_regularizer_l2<X, "1.1"> {};
     /// auto x = X().kernel_regularizer_l2( 0.1 ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, float32 default_values >
-    struct enabling_kernel_regularizer_l2
+    struct enable_kernel_regularizer_l2
     {
         underlying_default_value<float, decltype(default_values), default_values> kernel_regularizer_l2_;
 
@@ -1766,12 +1766,12 @@ Example:
     /// @brief Adding bias_regularizer_l1 to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_bias_regularizer_l1<X, "0.0"> {};
+    /// struct X : enable_bias_regularizer_l1<X, "0.0"> {};
     /// auto x = X().bias_regularizer_l1( 1.0e-3f ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, float32 default_values >
-    struct enabling_bias_regularizer_l1
+    struct enable_bias_regularizer_l1
     {
         underlying_default_value<float, decltype(default_values), default_values> bias_regularizer_l1_;
 
@@ -1792,12 +1792,12 @@ Example:
     /// @brief Adding bias_regularizer_l2 to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_bias_regularizer_l2<X, "1.1"> {};
+    /// struct X : enable_bias_regularizer_l2<X, "1.1"> {};
     /// auto x = X().bias_regularizer_l2( 0.1 ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, float32 default_values >
-    struct enabling_bias_regularizer_l2
+    struct enable_bias_regularizer_l2
     {
         underlying_default_value<float, decltype(default_values), default_values> bias_regularizer_l2_;
 
@@ -1818,12 +1818,12 @@ Example:
     /// @brief Adding trainable to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_trainable<X, trainable_val> {};
+    /// struct X : enable_trainable<X, trainable_val> {};
     /// auto x = X().trainable( new_trainable_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_trainable
+    struct enable_trainable
     {
         underlying_default_value<bool, bool, default_values> trainable_;
 
@@ -1844,12 +1844,12 @@ Example:
     /// @brief Adding uses_learning_phase to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_uses_learning_phase<X, uses_learning_phase_val> {};
+    /// struct X : enable_uses_learning_phase<X, uses_learning_phase_val> {};
     /// auto x = X().uses_learning_phase( new_uses_learning_phase_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, bool default_values >
-    struct enabling_uses_learning_phase
+    struct enable_uses_learning_phase
     {
         underlying_default_value<bool, bool, default_values> uses_learning_phase_;
 
@@ -1870,12 +1870,12 @@ Example:
     /// @brief Adding pool_size to the Concrete class.
     ///
     /// \code{.cpp}
-    /// struct X : enabling_pool_size<X, pool_size_vals...> {};
+    /// struct X : enable_pool_size<X, pool_size_vals...> {};
     /// auto x = X().pool_size( new_pool_size_val ). ... . (... );
     /// \endcode
     ///
     template< typename Concrete, unsigned long... default_values >
-    struct enabling_pool_size
+    struct enable_pool_size
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> pool_size_;
 

@@ -88,13 +88,13 @@ namespace ceras::keras
     struct InputLayer;
 
     struct InputConfig :
-         enabling_batch_size<InputConfig, None>,
-         enabling_input_shape<InputConfig, None>,
-         enabling_name<InputConfig, "Input">,
-         enabling_output_shape<InputConfig, None>,
-         enabling_shape<InputConfig, None>,
-         enabling_uses_learning_phase<InputConfig, false>,
-         enabling_trainable<InputConfig, false>
+         enable_batch_size<InputConfig, None>,
+         enable_input_shape<InputConfig, None>,
+         enable_name<InputConfig, "Input">,
+         enable_output_shape<InputConfig, None>,
+         enable_shape<InputConfig, None>,
+         enable_uses_learning_phase<InputConfig, false>,
+         enable_trainable<InputConfig, false>
     {
         auto operator()() const noexcept
         {
@@ -134,21 +134,21 @@ namespace ceras::keras
     struct DenseLayer;
 
     struct DenseConfig :
-        enabling_bias_constraint<DenseConfig, "None">,
-        enabling_bias_initializer<DenseConfig, "zeros">,
-        enabling_bias_regularizer_l1<DenseConfig, "0.0">,
-        enabling_bias_regularizer_l2<DenseConfig, "0.0">,
-        enabling_input_shape<DenseConfig, None>,
-        enabling_kernel_constraint<DenseConfig, "None">,
-        enabling_kernel_initializer<DenseConfig, "glorot_uniform">,
-        enabling_kernel_regularizer_l1<DenseConfig, "0.0">,
-        enabling_kernel_regularizer_l2<DenseConfig, "0.0">,
-        enabling_name<DenseConfig, "Dense">,
-        enabling_output_shape<DenseConfig, None>,
-        enabling_trainable<DenseConfig, true>,
-        enabling_units<DenseConfig, None>,
-        enabling_use_bias<DenseConfig, true>,
-        enabling_uses_learning_phase<DenseConfig, false>
+        enable_bias_constraint<DenseConfig, "None">,
+        enable_bias_initializer<DenseConfig, "zeros">,
+        enable_bias_regularizer_l1<DenseConfig, "0.0">,
+        enable_bias_regularizer_l2<DenseConfig, "0.0">,
+        enable_input_shape<DenseConfig, None>,
+        enable_kernel_constraint<DenseConfig, "None">,
+        enable_kernel_initializer<DenseConfig, "glorot_uniform">,
+        enable_kernel_regularizer_l1<DenseConfig, "0.0">,
+        enable_kernel_regularizer_l2<DenseConfig, "0.0">,
+        enable_name<DenseConfig, "Dense">,
+        enable_output_shape<DenseConfig, None>,
+        enable_trainable<DenseConfig, true>,
+        enable_units<DenseConfig, None>,
+        enable_use_bias<DenseConfig, true>,
+        enable_uses_learning_phase<DenseConfig, false>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -204,9 +204,9 @@ namespace ceras::keras
     struct ReLULayer;
 
     struct ReLUConfig :
-        enabling_name<ReLUConfig, "ReLU">,
-        enabling_input_shape<ReLUConfig, None>,
-        enabling_output_shape<ReLUConfig, None>
+        enable_name<ReLUConfig, "ReLU">,
+        enable_input_shape<ReLUConfig, None>,
+        enable_output_shape<ReLUConfig, None>
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -246,10 +246,10 @@ namespace ceras::keras
     struct LeakyReLULayer;
 
     struct LeakyReLUConfig :
-        enabling_input_shape<LeakyReLUConfig>,
-        enabling_output_shape<LeakyReLUConfig>,
-        enabling_name<LeakyReLUConfig, "LeakyReLU">,
-        enabling_alpha<LeakyReLUConfig, "0.3">
+        enable_input_shape<LeakyReLUConfig>,
+        enable_output_shape<LeakyReLUConfig>,
+        enable_name<LeakyReLUConfig, "LeakyReLU">,
+        enable_alpha<LeakyReLUConfig, "0.3">
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -290,12 +290,12 @@ namespace ceras::keras
     struct DropoutLayer;
 
     struct DropoutConfig :
-        enabling_input_shape<DropoutConfig>,
-        enabling_output_shape<DropoutConfig>,
-        enabling_noise_shape<DropoutConfig, None>,
-        enabling_seed<DropoutConfig, None>,
-        enabling_name<DropoutConfig, "Dropout">,
-        enabling_rate<DropoutConfig, "0.3">
+        enable_input_shape<DropoutConfig>,
+        enable_output_shape<DropoutConfig>,
+        enable_noise_shape<DropoutConfig, None>,
+        enable_seed<DropoutConfig, None>,
+        enable_name<DropoutConfig, "Dropout">,
+        enable_rate<DropoutConfig, "0.3">
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -333,10 +333,10 @@ namespace ceras::keras
     struct ReshapeLayer;
 
     struct ReshapeConfig :
-        enabling_name<ReshapeConfig, "Reshape" >,
-        enabling_input_shape< ReshapeConfig, None >,
-        enabling_output_shape< ReshapeConfig, None >,
-        enabling_target_shape< ReshapeConfig, None >
+        enable_name<ReshapeConfig, "Reshape" >,
+        enable_input_shape< ReshapeConfig, None >,
+        enable_output_shape< ReshapeConfig, None >,
+        enable_target_shape< ReshapeConfig, None >
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -372,12 +372,12 @@ namespace ceras::keras
     struct MaxPooling2DLayer;
 
     struct MaxPooling2DConfig:
-        enabling_name<MaxPooling2DConfig, "MaxPooling2D">,
-        enabling_input_shape<MaxPooling2DConfig, None>,
-        enabling_output_shape<MaxPooling2DConfig, None>,
-        enabling_pool_size<MaxPooling2DConfig, 2>,
-        enabling_strides<MaxPooling2DConfig, 1>,
-        enabling_padding<MaxPooling2DConfig, "None">
+        enable_name<MaxPooling2DConfig, "MaxPooling2D">,
+        enable_input_shape<MaxPooling2DConfig, None>,
+        enable_output_shape<MaxPooling2DConfig, None>,
+        enable_pool_size<MaxPooling2DConfig, 2>,
+        enable_strides<MaxPooling2DConfig, 1>,
+        enable_padding<MaxPooling2DConfig, "None">
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -421,12 +421,12 @@ namespace ceras::keras
     struct AveragePooling2DLayer;
 
     struct AveragePooling2DConfig:
-        enabling_name<AveragePooling2DConfig, "AveragePooling2D">,
-        enabling_input_shape<AveragePooling2DConfig, None>,
-        enabling_output_shape<AveragePooling2DConfig, None>,
-        enabling_pool_size<AveragePooling2DConfig, 2>,
-        enabling_strides<AveragePooling2DConfig, 1>,
-        enabling_padding<AveragePooling2DConfig, "None">
+        enable_name<AveragePooling2DConfig, "AveragePooling2D">,
+        enable_input_shape<AveragePooling2DConfig, None>,
+        enable_output_shape<AveragePooling2DConfig, None>,
+        enable_pool_size<AveragePooling2DConfig, 2>,
+        enable_strides<AveragePooling2DConfig, 1>,
+        enable_padding<AveragePooling2DConfig, "None">
     {
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
@@ -466,9 +466,58 @@ namespace ceras::keras
         }
     };
 
+
+
+    struct UpSampling2DLayer;
+
+    struct UpSampling2DConfig:
+        enable_name<UpSampling2DConfig, "UpSampling2D">,
+        enable_input_shape<UpSampling2DConfig, None>,
+        enable_output_shape<UpSampling2DConfig, None>,
+        enable_size<UpSampling2DConfig, 2>,
+        enable_interpolation<UpSampling2DConfig, "nearest" >
+    {
+        template< typename... Layers >
+        auto operator()( std::tuple<Layers...> const& lt ) const noexcept
+        {
+            auto const& prev_layer = *(std::get<0>(lt));
+            unsigned long const stride = *((*this).size().begin());
+            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
+            o_shape[0] /= stride;
+            o_shape[1] /= stride;
+
+            auto const& config = UpSampling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            return std::make_tuple( std::make_shared<UpSampling2DLayer>( config ), lt );
+        }
+
+    };
+
+    ///
+    /// @brief UpSampling2D layer.
+    ///
+    /// \code{.cpp}
+    /// auto input = Input()( {12, 12, 3} );
+    /// auto l1 = UpSampling2D().size({3,})( input );
+    /// \endcode
+    ///
+    using UpSampling2D = UpSampling2DConfig;
+
+    struct UpSampling2DLayer : Layer<UpSampling2DLayer>
+    {
+        UpSampling2DConfig config_;
+        UpSampling2DLayer( UpSampling2DConfig config ) noexcept : config_(config) {}
+
+        template< Expression Ex>
+        auto operator()(const Ex& ex ) const noexcept
+        {
+            return up_sampling_2d(*(config_.size().begin()))( ex );
+        }
+    };
+
+
+
 #if 0
-
-
 
 
     struct UpSampling2DLayer;

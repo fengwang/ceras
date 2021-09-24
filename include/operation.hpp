@@ -1263,6 +1263,12 @@ namespace ceras
         };
     }
 
+    // an alias name
+    inline auto upsampling_2d( unsigned long stride ) noexcept
+    {
+        return up_sampling_2d( stride );
+    }
+
 
 
     template< typename T=double > requires std::floating_point<T>
