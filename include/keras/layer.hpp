@@ -375,8 +375,8 @@ namespace ceras::keras
         enabling_name<MaxPooling2DConfig, "MaxPooling2D">,
         enabling_input_shape<MaxPooling2DConfig, None>,
         enabling_output_shape<MaxPooling2DConfig, None>,
-        enabling_pool_size<MaxPooling2DConfig, None>,
-        enabling_strides<MaxPooling2DConfig, None>,
+        enabling_pool_size<MaxPooling2DConfig, 2>,
+        enabling_strides<MaxPooling2DConfig, 1>,
         enabling_padding<MaxPooling2DConfig, "None">
     {
         template< typename... Layers >
@@ -405,7 +405,7 @@ namespace ceras::keras
     ///
     using MaxPooling2D = MaxPooling2DConfig;
 
-    struct MaxPooling2DLayer
+    struct MaxPooling2DLayer : Layer<MaxPooling2DLayer>
     {
         MaxPooling2DConfig config_;
         MaxPooling2DLayer( MaxPooling2DConfig config ) noexcept : config_(config) {}
@@ -417,21 +417,29 @@ namespace ceras::keras
         }
     };
 
-#if 0
-
-
 
     struct AveragePooling2DLayer;
 
-    struct AveragePooling2DConfig
+    struct AveragePooling2DConfig:
+        enabling_name<AveragePooling2DConfig, "AveragePooling2D">,
+        enabling_input_shape<AveragePooling2DConfig, None>,
+        enabling_output_shape<AveragePooling2DConfig, None>,
+        enabling_pool_size<AveragePooling2DConfig, 2>,
+        enabling_strides<AveragePooling2DConfig, 1>,
+        enabling_padding<AveragePooling2DConfig, "None">
     {
-        unsigned long stride_ = 2;
-
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<AveragePooling2DLayer>(*this, (*prev_layer).compute_output_shape()), lt );
+            auto const& prev_layer = *(std::get<0>(lt));
+            unsigned long const stride = *((*this).pool_size().begin());
+            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
+            o_shape[0] /= stride;
+            o_shape[1] /= stride;
+
+            auto const& config = AveragePooling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            return std::make_tuple( std::make_shared<AveragePooling2DLayer>( config ), lt );
         }
 
     };
@@ -440,32 +448,25 @@ namespace ceras::keras
     /// @brief AveragePooling2D layer.
     ///
     /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = AveragePooling2D(3)( input );
+    /// auto input = Input()( {12, 12, 3} );
+    /// auto l1 = AveragePooling2D().pool_size({3,})( input );
     /// \endcode
     ///
     using AveragePooling2D = AveragePooling2DConfig;
 
-    struct AveragePooling2DLayer
+    struct AveragePooling2DLayer : Layer<AveragePooling2DLayer>
     {
-
-
         AveragePooling2DConfig config_;
-        std::vector<unsigned long> input_shape_;
+        AveragePooling2DLayer( AveragePooling2DConfig config ) noexcept : config_(config) {}
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept
         {
-            return average_pooling_2d(config_.stride_)( ex );
-        }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept
-        {
-            std::vector<unsigned long> ans = input_shape_;
-            for_each( ans.begin()+1, ans.end(), [stride = config_.stride_]( auto& v ){ v /= stride; } );
-            return ans;
+            return average_pooling_2d(*(config_.pool_size().begin()))( ex );
         }
     };
+
+#if 0
 
 
 

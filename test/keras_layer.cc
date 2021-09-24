@@ -26,8 +26,9 @@ int main()
         auto l4 = Dropout().rate(0.5f)( l3 );
         auto l5 = Reshape().target_shape({8, 8, 2})( l4 );
         auto l6 = MaxPooling2D().pool_size({2,})( l5 );
+        auto l7 = AveragePooling2D().pool_size({2,})( l6 );
 
-        auto output = l6;
+        auto output = l7;
         auto e = ceras::keras::construct_computation_graph( output );
         auto g = ceras::computation_graph( e );
         std::cout << g << std::endl;
