@@ -47,40 +47,38 @@ namespace ceras::keras
         auto const& leading_layer = *(std::get<0>(lt));
 
         if constexpr( dim == 1 ) // input layer
-        {
             return leading_layer();
-        }
         else if constexpr( dim == 2 ) // unary operator
-        {
             return leading_layer( construct_computation_graph( std::get<1>(lt) ) );
-        }
         else if constexpr( dim == 3 ) // binary operator
-        {
             return leading_layer( construct_computation_graph( std::get<1>(lt) ), construct_computation_graph( std::get<2>(lt) ) );
-        }
         else
-        {
             better_assert( false, "Error: should never reach here." );
-        }
     }
 
-    // CRTP layer base, providing several interfaces such as input_shape, output_shape
+    ///
+    /// CRTP layer base, providing several interfaces such as input_shape, output_shape through config method
+    ///
+    /// \code{.cpp}
+    /// x_layer : Layer { /*...*/ };
+    /// x_layer x;
+    /// auto const& input_shape = x.config().input_shape();
+    /// auto const& output_shape = x.config().output_shape();
+    /// auto const& name = x.config().name();
+    /// //auto const& properity_xxxx = x.config().xxxx(); // were there such a properity
+    /// \endcode
+    ///
     template< typename Concrete_Layer >
     struct Layer
     {
-        std::string name() const noexcept
+        auto const& config() const noexcept
         {
-            return static_cast<Concrete_Layer const&>(*this).config_.name();
+            return static_cast<Concrete_Layer const&>(*this).config_;
         }
 
-        std::vector<unsigned long> input_shape() const noexcept
+        auto& config() noexcept
         {
-            return static_cast<Concrete_Layer const&>(*this).config_.input_shape();
-        }
-
-        std::vector<unsigned long> output_shape() const noexcept
-        {
-            return static_cast<Concrete_Layer const&>(*this).config_.output_shape();
+            return static_cast<Concrete_Layer&>(*this).config_;
         }
     };
 
@@ -98,7 +96,9 @@ namespace ceras::keras
     {
         auto operator()() const noexcept
         {
-            auto updated_config = InputConfig{*this}.input_shape(shape()).output_shape( shape() ); // update the shape information
+            auto const& input_shape = shape();
+            auto const& output_shape = shape();
+            auto const& updated_config = InputConfig{*this}.input_shape(input_shape).output_shape(output_shape);
             return std::make_tuple( std::make_shared<InputLayer>(updated_config) );
         }
     };
@@ -154,7 +154,7 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            unsigned long input_dim = *((*prev_layer).output_shape().rbegin());
+            unsigned long input_dim = *((*prev_layer).config().output_shape().rbegin());
             better_assert( input_dim != None, "DenseLayer: expecting an exact input dimension." );
             auto updated_config = DenseConfig{*this}.input_shape( {input_dim,} ).output_shape( {(*this).units(),} );
             return std::make_tuple( std::make_shared<DenseLayer>( updated_config ), lt );
@@ -212,7 +212,7 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            auto const& shape =  (*prev_layer).output_shape();
+            auto const& shape =  (*prev_layer).config().output_shape();
             auto const& updated_config = ReLUConfig{*this}.input_shape( shape ).output_shape( shape );
 
             return std::make_tuple( std::make_shared<ReLULayer>( updated_config ), lt );
@@ -255,7 +255,7 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            auto const& shape =  (*prev_layer).output_shape();
+            auto const& shape =  (*prev_layer).config().output_shape();
             auto const& updated_config = LeakyReLUConfig{*this}.input_shape( shape ).output_shape( shape );
 
             return std::make_tuple( std::make_shared<LeakyReLULayer>( updated_config ), lt );
@@ -301,7 +301,7 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            auto const& shape =  (*prev_layer).output_shape();
+            auto const& shape =  (*prev_layer).config().output_shape();
             auto const& updated_config = DropoutConfig{*this}.input_shape( shape ).output_shape( shape );
             return std::make_tuple( std::make_shared<DropoutLayer>( updated_config ), lt );
         }
@@ -341,7 +341,7 @@ namespace ceras::keras
         template< typename... Layers >
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
-            auto const& config = ReshapeConfig{ *this }.input_shape( (*(std::get<0>(lt))).output_shape() ).output_shape( (*this).target_shape() );
+            auto const& config = ReshapeConfig{ *this }.input_shape( (*(std::get<0>(lt))).config().output_shape() ).output_shape( (*this).target_shape() );
             return std::make_tuple( std::make_shared<ReshapeLayer>(config), lt );
         }
     };
@@ -384,12 +384,12 @@ namespace ceras::keras
         {
             auto const& prev_layer = *(std::get<0>(lt));
             unsigned long const stride = *((*this).pool_size().begin());
-            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            std::vector<unsigned long> o_shape = prev_layer.config().output_shape(); //
             better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
             o_shape[0] /= stride;
             o_shape[1] /= stride;
 
-            auto const& config = MaxPooling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            auto const& config = MaxPooling2DConfig{*this}.input_shape( prev_layer.config().output_shape() ).output_shape( o_shape );
             return std::make_tuple( std::make_shared<MaxPooling2DLayer>( config ), lt );
         }
 
@@ -433,12 +433,12 @@ namespace ceras::keras
         {
             auto const& prev_layer = *(std::get<0>(lt));
             unsigned long const stride = *((*this).pool_size().begin());
-            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            std::vector<unsigned long> o_shape = prev_layer.config().output_shape(); //
             better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
             o_shape[0] /= stride;
             o_shape[1] /= stride;
 
-            auto const& config = AveragePooling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            auto const& config = AveragePooling2DConfig{*this}.input_shape( prev_layer.config().output_shape() ).output_shape( o_shape );
             return std::make_tuple( std::make_shared<AveragePooling2DLayer>( config ), lt );
         }
 
@@ -482,12 +482,12 @@ namespace ceras::keras
         {
             auto const& prev_layer = *(std::get<0>(lt));
             unsigned long const stride = *((*this).size().begin());
-            std::vector<unsigned long> o_shape = prev_layer.output_shape(); //
+            std::vector<unsigned long> o_shape = prev_layer.config().output_shape(); //
             better_assert(o_shape.size()==3, fmt::format("Expecting 3D output, but got {}", o_shape.size()));
             o_shape[0] /= stride;
             o_shape[1] /= stride;
 
-            auto const& config = UpSampling2DConfig{*this}.input_shape( prev_layer.output_shape() ).output_shape( o_shape );
+            auto const& config = UpSampling2DConfig{*this}.input_shape( prev_layer.config().output_shape() ).output_shape( o_shape );
             return std::make_tuple( std::make_shared<UpSampling2DLayer>( config ), lt );
         }
 
