@@ -520,57 +520,6 @@ namespace ceras::keras
 #if 0
 
 
-    struct UpSampling2DLayer;
-
-    struct UpSampling2DConfig
-    {
-        unsigned long stride_ = 2;
-
-        template< typename... Layers >
-        auto operator()( std::tuple<Layers...> const& lt ) const noexcept
-        {
-            auto const& prev_layer = std::get<0>( lt );
-            return std::make_tuple( std::make_shared<UpSampling2DLayer>(*this, (*prev_layer).compute_output_shape()), lt );
-        }
-
-    };
-
-    ///
-    /// @brief UpSampling2D layer.
-    ///
-    /// \code{.cpp}
-    /// auto input = Input( {12, 3} );
-    /// auto l1 = UpSampling2D(3)( input );
-    /// \endcode
-    ///
-    using UpSampling2D = UpSampling2DConfig;
-
-    struct UpSampling2DLayer
-    {
-
-
-        UpSampling2DConfig config_;
-        std::vector<unsigned long> input_shape_;
-
-        template< Expression Ex>
-        auto operator()(const Ex& ex ) const noexcept
-        {
-            return up_sampling_2d(config_.stride_)( ex );
-        }
-
-        std::vector<unsigned long> compute_output_shape() const noexcept
-        {
-            std::vector<unsigned long> ans = input_shape_;
-            for_each( ans.begin()+1, ans.end(), [stride = config_.stride_]( auto& v ){ v *= stride; } );
-            return ans;
-        }
-    };
-
-
-
-
-
-
 
     struct NegativeLayer;
 
@@ -975,6 +924,10 @@ namespace ceras::keras
         // TODO: fix here
         std::vector<unsigned long> compute_output_shape() const noexcept { return input_shape_; }
     };
+
+
+
+
 
 
     struct OnesLikeLayer;
