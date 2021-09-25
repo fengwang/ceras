@@ -114,7 +114,6 @@ namespace ceras::keras
     ///
     using Input = InputConfig;
 
-
     struct InputLayer : Layer< InputLayer >
     {
         InputConfig config_;
@@ -154,10 +153,14 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            unsigned long input_dim = *((*prev_layer).config().output_shape().rbegin());
-            better_assert( input_dim != None, "DenseLayer: expecting an exact input dimension." );
-            auto updated_config = DenseConfig{*this}.input_shape( {input_dim,} ).output_shape( {(*this).units(),} );
-            return std::make_tuple( std::make_shared<DenseLayer>( updated_config ), lt );
+            auto const& input_shape = (*prev_layer).config().output_shape();
+            auto const& output_shape = std::vector<unsigned long>{ {(*this).units(),} };
+            auto const& config = DenseConfig{*this}.input_shape( input_shape ).output_shape( output_shape );
+
+            better_assert( input_shape.size() == 1, fmt::format("Dense layer expects incoming 1D layer, but got {}", input_shape) );
+            better_assert( *(input_shape.rbegin()) != None, fmt::format("Dense layer expects an exact dimension, but got {}", input_shape) );
+
+            return std::make_tuple( std::make_shared<DenseLayer>( config ), lt );
         }
     }; // struct DenseConfig
 
