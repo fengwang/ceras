@@ -519,6 +519,13 @@ mnist_debug: test/mnist_debug.cc
 layer_sum: test/layer_sum.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_sum.o test/layer_sum.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_sum $(OBJECTS_DIR)/test_layer_sum.o $(LFLAGS)
+field: test/field.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_field.o test/field.cc
+	$(LINK) -o $(BIN_DIR)/test_field $(OBJECTS_DIR)/test_field.o $(LFLAGS)
+
+keras_layer: test/keras_layer.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_keras_layer.o test/keras_layer.cc
+	$(LINK) -o $(BIN_DIR)/test_keras_layer $(OBJECTS_DIR)/test_keras_layer.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin

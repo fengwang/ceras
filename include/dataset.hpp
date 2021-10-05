@@ -55,7 +55,7 @@ namespace ceras::dataset
                 unsigned long const offset = 8;
                 unsigned long const samples = label_data.size() - offset;
                 auto ans = zeros<std::uint8_t>({samples, 10});
-                auto ans_2d = matrix{ ans.data(), samples, 10 };
+                auto ans_2d = matrix_view{ ans.data(), samples, 10 };
                 for ( auto idx : range( samples ) )
                     ans_2d[idx][label_data[idx+offset]] = 1;
                 return ans;
@@ -126,7 +126,7 @@ namespace ceras::dataset
                 unsigned long const offset = 8;
                 unsigned long const samples = label_data.size() - offset;
                 auto ans = zeros<std::uint8_t>({samples, 10});
-                auto ans_2d = matrix{ ans.data(), samples, 10 };
+                auto ans_2d = matrix_view{ ans.data(), samples, 10 };
                 for ( auto idx : range( samples ) )
                     ans_2d[idx][label_data[idx+offset]] = 1;
                 return ans;

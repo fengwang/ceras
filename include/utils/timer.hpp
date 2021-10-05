@@ -16,13 +16,13 @@ namespace ceras
         std::clock_t t;
 
         template<typename T >
-        timer( [[maybe_unused]]const T& val )
+        timer( [[maybe_unused]]const T& val ) noexcept
         {
             t = std::clock();
             //debug_log( fmt::format( "Timer begins with information \'{}\' at {}", val, t ) );
         }
 
-        timer()
+        timer() noexcept
         {
             t = std::clock();
             //debug_log( fmt::format( "Timer begins at {}", t ) );
@@ -33,28 +33,28 @@ namespace ceras
             //debug_log( fmt::format( "Timer ends. Duration: {} seconds", static_cast<long double>(*this) ) );
         }
 
-        operator clock_type () const
+        operator clock_type () const noexcept
         {
             const std::clock_t _t = std::clock();
             const std::clock_t  d = _t - t;
             return d;
         }
 
-        operator float_type () const
+        operator float_type () const noexcept
         {
             const std::clock_t _t = std::clock();
             const std::clock_t  d = _t - t;
             return  float_type(d) / CLOCKS_PER_SEC;
         }
 
-        operator double_type () const
+        operator double_type () const noexcept
         {
             const std::clock_t _t = std::clock();
             const std::clock_t  d = _t - t;
             return  double_type(d) / CLOCKS_PER_SEC;
         }
 
-        operator long_double_type () const
+        operator long_double_type () const noexcept
         {
             const std::clock_t _t = std::clock();
             const std::clock_t  d = _t - t;

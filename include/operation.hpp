@@ -692,6 +692,8 @@ namespace ceras
     template <Expression Ex>
     auto constexpr identity( Ex const& ex ) noexcept
     {
+        return ex;
+        /*
         return make_unary_operator
         (
             []<Tensor Tsor>( Tsor const& tsor ) noexcept
@@ -704,6 +706,7 @@ namespace ceras
             },
             "Identity"
         )( ex );
+        */
     }
 
     template< Expression Ex >
@@ -990,6 +993,15 @@ namespace ceras
         };
     }
 
+    ///
+    /// @brief dropout is an alias name of drop_out.
+    ///
+    template< typename T > requires std::floating_point<T>
+    inline auto dropout( T const factor ) noexcept
+    {
+        return drop_out( factor );
+    }
+
 
     namespace
     {
@@ -1252,6 +1264,12 @@ namespace ceras
                 "UpSampling2D"
             )( ex );
         };
+    }
+
+    // an alias name
+    inline auto upsampling_2d( unsigned long stride ) noexcept
+    {
+        return up_sampling_2d( stride );
     }
 
 

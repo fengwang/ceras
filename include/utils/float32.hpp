@@ -88,6 +88,19 @@ namespace ceras
 // no compiler support template like 'a<1.03> a_;', though it is valid in c++20
 // this is an temporary replacement
 //
+//template< ceras::float32 F="1.0" >
+//struct vx
+//{
+//    static constexpr float val = F;
+//
+//    void operator()() const noexcept
+//    {
+//        std::cout << val << std::endl;
+//    }
+//};
+//
+
+
 template< unsigned N >
 struct float32
 {

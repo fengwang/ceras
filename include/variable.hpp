@@ -37,7 +37,7 @@ namespace ceras
         value_type l2_;
         bool synchronized_;
 
-        constexpr regularizer( value_type l1, value_type l2, bool synchronized ) noexcept : l1_{l1}, l2_{l2}, synchronized_{synchronized} {}
+        constexpr regularizer( value_type l1=0.0, value_type l2=0.0, bool synchronized=false ) noexcept : l1_{l1}, l2_{l2}, synchronized_{synchronized} {}
     };
 
     template< Tensor Tsor >
@@ -60,7 +60,8 @@ namespace ceras
             ss.remember( *this );
         }
 
-        variable() = delete;
+        //variable() = delete;
+        variable() noexcept {}
         variable( variable const& other ) = default;
         variable( variable && ) = default;
         variable& operator=( variable&&) = default;
