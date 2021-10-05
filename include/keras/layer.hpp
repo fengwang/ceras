@@ -12,6 +12,7 @@
 #include "../session.hpp"
 #include "../utils/debug.hpp"
 #include "../utils/fmt.hpp"
+
 #include "./field.hpp"
 
 namespace ceras::keras
@@ -193,15 +194,8 @@ namespace ceras::keras
         {
             return ex * w_ + b_;
         }
-
     }; // struct DenseLayer
 
-
-    //
-    //
-    // Stateless unary layers
-    //
-    //
 
 
     struct ReLULayer;
@@ -215,12 +209,11 @@ namespace ceras::keras
         auto operator()( std::tuple<Layers...> const& lt ) const noexcept
         {
             auto const& prev_layer = std::get<0>( lt );
-            auto const& shape =  (*prev_layer).config().output_shape();
-            auto const& updated_config = ReLUConfig{*this}.input_shape( shape ).output_shape( shape );
-
-            return std::make_tuple( std::make_shared<ReLULayer>( updated_config ), lt );
+            auto const& input_shape = (*prev_layer).config().output_shape();
+            auto const& output_shape = input_shape;
+            auto const& config = ReLUConfig{*this}.input_shape( input_shape ).output_shape( output_shape );
+            return std::make_tuple( std::make_shared<ReLULayer>( config ), lt );
         }
-
     };
 
     ///
@@ -236,7 +229,7 @@ namespace ceras::keras
     struct ReLULayer : Layer< ReLULayer >
     {
         ReLUConfig config_;
-        ReLULayer( ReLUConfig const& config ) noexcept : config_(config) { /*  */} // <- cannot ommit this ctor...
+        ReLULayer( ReLUConfig const& config ) noexcept : config_(config) {}
 
         template< Expression Ex>
         auto operator()(const Ex& ex ) const noexcept

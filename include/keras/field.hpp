@@ -55,7 +55,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> shape_;
 
-        Concrete shape( std::vector<unsigned long> new_shape ) const noexcept
+        Concrete shape( std::vector<unsigned long> const& new_shape ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.shape_.val_ = new_shape;
@@ -81,7 +81,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> input_shape_;
 
-        Concrete input_shape( std::vector<unsigned long> new_input_shape ) const noexcept
+        Concrete input_shape( std::vector<unsigned long> const& new_input_shape ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.input_shape_.val_ = new_input_shape;
@@ -107,7 +107,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> output_shape_;
 
-        Concrete output_shape( std::vector<unsigned long> new_output_shape ) const noexcept
+        Concrete output_shape( std::vector<unsigned long> const& new_output_shape ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.output_shape_.val_ = new_output_shape;
@@ -133,7 +133,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> target_shape_;
 
-        Concrete target_shape( std::vector<unsigned long> new_target_shape ) const noexcept
+        Concrete target_shape( std::vector<unsigned long> const& new_target_shape ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.target_shape_.val_ = new_target_shape;
@@ -159,7 +159,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> noise_shape_;
 
-        Concrete noise_shape( std::vector<unsigned long> new_noise_shape ) const noexcept
+        Concrete noise_shape( std::vector<unsigned long> const& new_noise_shape ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.noise_shape_.val_ = new_noise_shape;
@@ -185,7 +185,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> cropping_;
 
-        Concrete cropping( std::vector<unsigned long> new_cropping ) const noexcept
+        Concrete cropping( std::vector<unsigned long> const& new_cropping ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.cropping_.val_ = new_cropping;
@@ -211,7 +211,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> paddings_;
 
-        Concrete paddings( std::vector<unsigned long> new_paddings ) const noexcept
+        Concrete paddings( std::vector<unsigned long> const& new_paddings ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.paddings_.val_ = new_paddings;
@@ -237,7 +237,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> size_;
 
-        Concrete size( std::vector<unsigned long> new_size ) const noexcept
+        Concrete size( std::vector<unsigned long> const& new_size ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.size_.val_ = new_size;
@@ -263,7 +263,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> kernel_size_;
 
-        Concrete kernel_size( std::vector<unsigned long> new_kernel_size ) const noexcept
+        Concrete kernel_size( std::vector<unsigned long> const& new_kernel_size ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.kernel_size_.val_ = new_kernel_size;
@@ -289,7 +289,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> strides_;
 
-        Concrete strides( std::vector<unsigned long> new_strides ) const noexcept
+        Concrete strides( std::vector<unsigned long> const& new_strides ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.strides_.val_ = new_strides;
@@ -315,7 +315,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> dilation_rate_;
 
-        Concrete dilation_rate( std::vector<unsigned long> new_dilation_rate ) const noexcept
+        Concrete dilation_rate( std::vector<unsigned long> const& new_dilation_rate ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.dilation_rate_.val_ = new_dilation_rate;
@@ -341,7 +341,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> output_padding_;
 
-        Concrete output_padding( std::vector<unsigned long> new_output_padding ) const noexcept
+        Concrete output_padding( std::vector<unsigned long> const& new_output_padding ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.output_padding_.val_ = new_output_padding;
@@ -367,7 +367,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> shared_axes_;
 
-        Concrete shared_axes( std::vector<unsigned long> new_shared_axes ) const noexcept
+        Concrete shared_axes( std::vector<unsigned long> const& new_shared_axes ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.shared_axes_.val_ = new_shared_axes;
@@ -393,7 +393,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> axes_;
 
-        Concrete axes( std::vector<unsigned long> new_axes ) const noexcept
+        Concrete axes( std::vector<unsigned long> const& new_axes ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.axes_.val_ = new_axes;
@@ -419,7 +419,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> dims_;
 
-        Concrete dims( std::vector<unsigned long> new_dims ) const noexcept
+        Concrete dims( std::vector<unsigned long> const& new_dims ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.dims_.val_ = new_dims;
@@ -1879,7 +1879,7 @@ Example:
     {
         underlying_default_value<std::vector<unsigned long>, unsigned long, default_values...> pool_size_;
 
-        Concrete pool_size( std::vector<unsigned long> new_pool_size ) const noexcept
+        Concrete pool_size( std::vector<unsigned long> const& new_pool_size ) const noexcept
         {
             Concrete ans{ static_cast<Concrete const&>(*this) };
             ans.pool_size_.val_ = new_pool_size;
