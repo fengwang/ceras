@@ -170,8 +170,8 @@ namespace ceras::keras
     ///
     /// \code{.cpp}
     /// auto input = Input().shape( {12} )();
-    //  auto l1 = Dense().name("first_layer").units( 127 )( input );
-    /// auto l2 = Dense().units( 129 ).name("second_layer")( l1 );
+    //  auto l1 = Dense().name("first_layer").units(127)( input );
+    /// auto l2 = Dense().units(129).name("second_layer")( l1 );
     /// \endcode
     ///
     using Dense = DenseConfig;
@@ -221,7 +221,7 @@ namespace ceras::keras
     ///
     /// \code{.cpp}
     /// auto input = Input().shape( {12, 34} )();
-    /// auto l1 = ReLU().name("relu").( input );
+    /// auto l1 = ReLU().name("relu")( input );
     /// \endcode
     ///
     using ReLU = ReLUConfig;
