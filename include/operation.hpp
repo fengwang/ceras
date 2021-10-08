@@ -3839,6 +3839,34 @@ namespace ceras
 
 
 
+    ///
+    /// `poisson` produces random tensor from a normal distribution
+    /// @return An unary operator that takes an unary operator, and producing output tensor subjects to a Poisson distribution.
+    ///         The shape of the output tensor has the same shape corresponding to the input unary operator.
+    ///
+    /// Example Code
+    /// @code
+    /// auto va = variable{ ones<float>({3, 3, 3}) };
+    /// auto v_rand = poisson( va ); // this expression will produces a tensor of shape (3, 3, 3) subjects to a Poisson distributio
+    /// @endcode
+    ///
+    template< Expression Ex>
+    auto poisson(Ex const& ex ) noexcept
+    {
+        return make_unary_operator
+        (
+            [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+            {
+                return poisson( tsor );
+            },
+            []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+            {
+                return grad;
+            },
+            "Poisson"
+        )(ex);
+    }
+
 
 }//namespace ceras
 

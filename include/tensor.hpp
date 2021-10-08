@@ -333,10 +333,6 @@ namespace ceras
 
     };
 
-
-
-
-
     template <typename T, typename A=default_allocator<T> >
     constexpr tensor<T, A> as_tensor( T val ) noexcept
     {
@@ -901,6 +897,19 @@ namespace ceras
             }
         }
 
+        return ans;
+    }
+
+    template< Tensor Tsor >
+    Tsor poisson( Tsor const& tsor )
+    {
+        std::poisson_distribution<long> distribution( 1 ); // Note: only integer type accepted for a std::poisson distribution
+        Tsor ans{ tsor.shape() };
+        for ( auto idx : range( ans.size() ) ) // Note: cannot parallel here
+        {
+            long const v = static_cast<long>(tsor[idx]);
+            ans[idx] = distribution( random_generator, std::poisson_distribution<long>::param_type(v) );
+        }
         return ans;
     }
 
