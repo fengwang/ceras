@@ -318,7 +318,7 @@ namespace ceras
     }
 
     //
-    // TODO: PReLU
+    // TODO: wrap more operations from 'operation.hpp'
     //
 
 

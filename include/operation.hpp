@@ -3847,7 +3847,7 @@ namespace ceras
     /// Example Code
     /// @code
     /// auto va = variable{ ones<float>({3, 3, 3}) };
-    /// auto v_rand = poisson( va ); // this expression will produces a tensor of shape (3, 3, 3) subjects to a Poisson distributio
+    /// auto v_rand = poisson( va ); // this expression will produces a tensor of shape (3, 3, 3) subjects to a Poisson distribution
     /// @endcode
     ///
     template< Expression Ex>

@@ -531,6 +531,10 @@ tensor_poisson: test/tensor_poisson.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_tensor_poisson.o test/tensor_poisson.cc
 	$(LINK) -o $(BIN_DIR)/test_tensor_poisson $(OBJECTS_DIR)/test_tensor_poisson.o $(LFLAGS)
 
+denoise_poisson: test/denoise_poisson.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_denoise_poisson.o test/denoise_poisson.cc
+	$(LINK) -o $(BIN_DIR)/test_denoise_poisson $(OBJECTS_DIR)/test_denoise_poisson.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
