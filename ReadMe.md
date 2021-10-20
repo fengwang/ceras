@@ -711,6 +711,8 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
 ## Supported layers
 + [Operations](./include/operation.hpp):
     - [`plus`](#plus), or operator `+`;
+    - `minus`, or operator `-`;
+    - `divide`, or operator `/`;
     - [`multiply`](#multiply), or operator `*`, note this operation implies matrix-matrix multiplication, i.e., `dot` in numpy;
     - [`log`](#log);
     - `negative`;
