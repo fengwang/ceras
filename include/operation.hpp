@@ -366,6 +366,13 @@ namespace ceras
     }
 
 
+    ///
+    /// @brief Negative operator, elementwise.
+    /// @code{.cpp}
+    /// auto x = variable{ ... };
+    /// auto ix = negative( x );
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr negative( Ex const& ex ) noexcept
     {
@@ -389,6 +396,50 @@ namespace ceras
         return negative( ex );
     }
 
+
+    ///
+    /// @brief Inverse operator, elementwise.
+    /// @code{.cpp}
+    /// auto x = variable{ ... };
+    /// auto ix = inverse( x );
+    /// @endcode
+    template <Expression Ex>
+    auto constexpr inverse( Ex const& ex ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& tensor ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( tensor.shape() );
+                                        //for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = (x > 0.0) ? (1.0/std::max(eps, x)) : (1.0/std::min(-eps, x)); });
+                                        for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = 1.0/x; } );
+                                        return ans;
+                                    },
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        //for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / std::max(z*z, eps); } );
+                                        for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / (z*z); } );
+                                        ans.resize( grad.shape() );
+                                        return ans;
+                                    },
+                                    "Inverse"
+                )( ex );
+    };
+
+
+
+
+    ///
+    /// @brief Multiply two input operators, elementwise.
+    /// @code{.cpp}
+    /// auto x = variable{ tensor<float>{ {2, 3, 5} } };
+    /// auto y = variable{ tensor<float>{ {2, 3, 5} } };
+    /// auto z = elementwise_product( x, y ); // z = x*y;
+    /// @endcode
+    ///
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr elementwise_product( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
@@ -427,6 +478,45 @@ namespace ceras
         return elementwise_product( lhs_ex, rhs_ex );
     }
 
+
+    ///
+    /// @brief Divide one tensor by the other.
+    /// @code{.cpp}
+    /// auto x = varialbe{ tensor<float>{ {17, 12} } };
+    /// auto y = varialbe{ tensor<float>{ {17, 12} } };
+    /// auto z = divide( x, y ); // z = x / y
+    /// @endcode
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr divide( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return elementwise_product( lhs_ex, inverse( rhs_ex ) );
+    }
+
+    ///
+    /// @brief Divide one tensor by the other.
+    /// @code{.cpp}
+    /// auto x = varialbe{ tensor<float>{ {17, 12} } };
+    /// auto y = varialbe{ tensor<float>{ {17, 12} } };
+    /// auto z = x/y; // same as  `divide( x, y );`
+    /// @endcode
+    ///
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto constexpr operator / ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return divide( lhs_ex, rhs_ex );
+    }
+
+
+
+
+    ///
+    /// @brief Sum up all elements, returns a scalar.
+    /// @code{.cpp}
+    /// auto x = variable{ ... };
+    /// auto y = sum_reduce( x );
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr sum_reduce( Ex const& ex ) noexcept
     {

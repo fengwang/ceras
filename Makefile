@@ -535,6 +535,10 @@ denoise_poisson: test/denoise_poisson.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_denoise_poisson.o test/denoise_poisson.cc
 	$(LINK) -o $(BIN_DIR)/test_denoise_poisson $(OBJECTS_DIR)/test_denoise_poisson.o $(LFLAGS)
 
+layer_divide: test/layer_divide.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_divide.o test/layer_divide.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_divide $(OBJECTS_DIR)/test_layer_divide.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:
