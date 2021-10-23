@@ -187,14 +187,25 @@ namespace ceras
             return *this;
         }
 
-        //reshape is resize
-        constexpr self_type& reshape( std::vector< unsigned long > const& new_shape )
+        ///
+        /// @brief Reshape tensor. -1 indicates the dimension needs recalculating.
+        /// @code{.cpp}
+        /// tensor<float> t{ {2, 3, 4} };
+        /// auto t1 = t.reshape( {3, 8} );
+        /// auto t2 = t.reshape( {1, 4, -1} );
+        /// @endcode
+        ///
+        constexpr self_type& reshape( std::vector<unsigned long> const& new_shape )
         {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if ( (*this).size() != new_size ) return resize( new_shape );
+            std::vector<unsigned long> _new_shape = new_shape;
+            if ( *(_new_shape.rbegin()) == static_cast<unsigned long>( -1 ) )
+                *(_new_shape.rbegin()) = (*this).size() / std::accumulate( _new_shape.begin(), _new_shape.end()-1, 1Ul, []( unsigned long x, unsigned long y ){ return x*y; } );
+
+            unsigned long const new_size = std::accumulate( _new_shape.begin(), _new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
+            if ( (*this).size() != new_size ) return resize( _new_shape );
 
             better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            (*this).shape_ = new_shape;
+            (*this).shape_ = _new_shape;
             return *this;
         }
 

@@ -412,6 +412,12 @@ int main()
         std::cout << "broadcasted(x, {7, 9}):\n" << y << std::endl;
     }
 
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {2, 3, 4} );
+        std::cout << "x.reshape({3, 8})\n" << x.reshape({3, 8}) << std::endl;
+        std::cout << "x.reshape({4, -1})\n" << x.reshape({4, -1UL}) << std::endl;
+    }
 
 
     return 0;

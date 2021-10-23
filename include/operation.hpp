@@ -783,20 +783,6 @@ namespace ceras
     auto constexpr identity( Ex const& ex ) noexcept
     {
         return ex;
-        /*
-        return make_unary_operator
-        (
-            []<Tensor Tsor>( Tsor const& tsor ) noexcept
-            {
-                return tsor;
-            },
-            []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
-            {
-                return grad;
-            },
-            "Identity"
-        )( ex );
-        */
     }
 
     template< Expression Ex >
