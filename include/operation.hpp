@@ -888,9 +888,20 @@ namespace ceras
     }
 
 
-
-
-
+    ///
+    /// @brief Returns the index with the smallest value across axes of an input tensor.
+    /// @code{.cpp}
+    /// auto a = variable{ ... };
+    /// auto ma = argmin( 1 )( a );
+    /// @endcode
+    ///
+    auto inline argmin( unsigned long axis=0 ) noexcept
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return argmax(axis)( -ex );
+        };
+    }
 
 
 
