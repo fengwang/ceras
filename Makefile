@@ -543,6 +543,10 @@ layer_expand_dims: test/layer_expand_dims.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_expand_dims.o test/layer_expand_dims.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_expand_dims $(OBJECTS_DIR)/test_layer_expand_dims.o $(LFLAGS)
 
+layer_argmax: test/layer_argmax.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_argmax.o test/layer_argmax.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_argmax $(OBJECTS_DIR)/test_layer_argmax.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin
 clean: clean_obj clean_bin
 clean_obj:

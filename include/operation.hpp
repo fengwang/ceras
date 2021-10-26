@@ -823,6 +823,74 @@ namespace ceras
     }
 
 
+    ///
+    /// @brief Returns the index with the largest value across axes of an input tensor.
+    /// @code{.cpp}
+    /// auto a = variable{ ... };
+    /// auto ma = argmax( 1 )( a );
+    /// @endcode
+    ///
+    auto inline argmax( unsigned long axis=0 ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    std::vector<unsigned long> const& shape = input.shape();
+                    better_assert( axis < shape.size(), fmt::format("axis {} is greater than the dimension of the input tensor shape {}", axis, shape) );
+
+                    // calculate the output tensor shape
+                    std::vector<unsigned long> output_shape = shape;
+                    std::copy( output_shape.begin()+axis+1, output_shape.end(), output_shape.begin()+axis );
+                    output_shape.resize( output_shape.size() - 1 );
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( output_shape );
+
+                    //  viewing the input tensor as a 3D tensor, and viewing the output tensor as a 2D tensor
+                    unsigned long const bs = std::accumulate( shape.begin(), shape.begin()+axis, 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                    unsigned long const row = shape[axis];
+                    unsigned long const col = std::accumulate( shape.begin()+axis+1, shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                    auto cube_input = view_3d{ input.data(), bs, row, col };
+                    auto matrix_output = view_2d{ ans.data(), bs, col };
+
+                    for ( auto _bs : range( bs ) )
+                        for ( auto _col : range( col ) )
+                        {
+                            unsigned long mx_idx = 0;
+                            auto mx = cube_input[_bs][0][_col];
+                            for ( auto _row : range( row ) )
+                            {
+                                if ( cube_input[_bs][_row][_col] > mx )
+                                {
+                                    mx = cube_input[_bs][_row][_col];
+                                    mx_idx = _row;
+                                }
+                            }
+                            matrix_output[_bs][_col] = mx_idx;
+                        }
+                    return ans;
+                },
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& /*output*/, Tsor const& /*grad*/ ) noexcept
+                {
+                    Tsor& back_ans = context_cast<Tsor>( backward_cache );
+                    back_ans.resize( input.shape() );
+                    for_each( back_ans.begin(), back_ans.end(), []( auto& v ){ v = 0.0; } ); // always return zero
+                    return back_ans;
+                },
+                "Argmax"
+            )(ex);
+        };
+    }
+
+
+
+
+
 
 
 
@@ -835,6 +903,9 @@ namespace ceras
         return ex;
     }
 
+    ///
+    /// @brief Transpose a matrix.
+    ///
     template< Expression Ex >
     auto transpose( Ex const& ex ) noexcept
     {

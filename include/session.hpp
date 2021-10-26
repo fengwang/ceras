@@ -33,23 +33,24 @@ namespace ceras
         session& operator=( session const& ) = delete;
         session& operator=( session&& ) = default;
 
-        void rebind( place_holder_type& p_holder, Tsor const& value )
+        session& rebind( place_holder_type& p_holder, Tsor const& value )
         {
             p_holder.bind( value );
+            return *this;
         }
 
-        void bind( place_holder_type& p_holder, Tsor const& value )
+        session& bind( place_holder_type& p_holder, Tsor const& value )
         {
             p_holder.bind( value );
             place_holders_.emplace_back( p_holder );
+            return *this;
         }
 
-        void remember( variable_type const& v )
+        session& remember( variable_type const& v )
         {
             if ( variables_.find( v.id_ ) == variables_.end() )
-            {
                 variables_.insert( {v.id_, v} );
-            }
+            return *this;
         }
 
         template< typename Operation >
@@ -79,7 +80,6 @@ namespace ceras
         void save( std::string const& file_path ) const
         {
             // find a tmp file
-            //char* tmp_file_path = std::tmpnam( nullptr );
             std::string const& tmp_file_path =  file_path + std::string{".tmp"};
 
             // save original to tmp file
@@ -93,14 +93,12 @@ namespace ceras
             }
 
             // remove original
-            //std::remove( tmp_file_path );
             std::remove( tmp_file_path.c_str() );
         }
 
         void restore( std::string const& file_path )
         {
             // find a tmp file
-            //char* tmp_file_path = std::tmpnam( nullptr );
             std::string const& tmp_file_path =  file_path + std::string{".tmp"};
 
             // uncompress tmp file
