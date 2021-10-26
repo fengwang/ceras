@@ -834,7 +834,7 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
 
 ### ExpandDims
 
-`expand_dims` expands the dimensions of the input layer at the given `axis`.
+`expand_dims` expands the dimensions of the input layer at the given `axis` by 1.
 
 ```cpp
     auto x = variable<float>{ {2, 3, 4}}
