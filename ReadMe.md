@@ -787,6 +787,8 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `tan`.
     - `tanh`.
     - `trunc`.
+    - `argmin`.
+    - `argmax`.
 
 + [Complex](./include/complex_operator.hpp)
     - `+`
