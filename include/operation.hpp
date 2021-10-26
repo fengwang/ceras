@@ -757,6 +757,13 @@ namespace ceras
         };
     }
 
+    ///
+    /// @brief Flatten input tensor.
+    /// @code{.cpp}
+    /// auto x = .....; // an operator returns tensor of shape ( 12, 34, 1 2 )
+    /// auto f = flatten( x ); // returns tensor of shape (12*34*1*2, )
+    /// @endcode
+    ///
     template <Expression Ex>
     auto constexpr flatten( Ex const& ex ) noexcept
     {
@@ -779,6 +786,49 @@ namespace ceras
         )( ex );
     }
 
+    ///
+    /// @brief Expand input tensor with a length 1 axis inserted at index axis.
+    /// @code{.cpp}
+    /// auto x = variable<float>{ {2, 3, 4}}
+    /// auto x0 = expand_dims(0)( x ); // new shape is ( 1, 2, 3, 4 )
+    /// auto x1 = expand_dims(1)( x ); // new shape is ( 2, 1, 3, 4 )
+    /// auto x2 = expand_dims(2)( x ); // new shape is ( 2, 3, 1, 4 )
+    /// auto x3 = expand_dims(-1)( x ); // new shape is ( 2, 3, 4, 1 )
+    /// @endcode
+    ///
+    constexpr auto inline expand_dims( int axis=-1 ) noexcept
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                {
+                    Tsor ans = tsor;
+                    std::vector<unsigned long> shape = ans.shape();
+                    int const _axis = (axis == -1) ? shape.size() : axis;
+                    shape.insert( shape.begin()+_axis, 1UL );
+                    ans.reshape( shape );
+                    return ans;
+                },
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& /*output*/, Tsor const& grad ) noexcept
+                {
+                    Tsor ans = grad;
+                    ans.reshape( input.shape() );
+                    return ans;
+                },
+                "ExpandDims"
+            )(ex);
+        };
+    }
+
+
+
+
+
+    ///
+    /// @brief Identity operation.
+    ///
     template <Expression Ex>
     auto constexpr identity( Ex const& ex ) noexcept
     {

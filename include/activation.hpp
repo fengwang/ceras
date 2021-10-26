@@ -31,7 +31,7 @@ namespace ceras
         };
     }
 
-
+    // alias of heaviside_step(20)
     template <Expression Ex>
     auto constexpr soft_sign( Ex const& ex ) noexcept // soft-sign
     {
@@ -39,12 +39,14 @@ namespace ceras
     }
 
 
+    // alias of heaviside_step(20)
     template <Expression Ex>
     auto constexpr unit_step( Ex const& ex ) noexcept
     {
         return soft_sign( ex );
     }
 
+    // alias of heaviside_step(20)
     template <Expression Ex>
     auto constexpr binary_step( Ex const& ex ) noexcept
     {
