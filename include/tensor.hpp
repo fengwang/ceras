@@ -192,7 +192,7 @@ namespace ceras
         /// @code{.cpp}
         /// tensor<float> t{ {2, 3, 4} };
         /// auto t1 = t.reshape( {3, 8} );
-        /// auto t2 = t.reshape( {1, 4, -1} );
+        /// auto t2 = t.reshape( {1, 4, -1UL} );
         /// @endcode
         ///
         constexpr self_type& reshape( std::vector<unsigned long> const& new_shape )
