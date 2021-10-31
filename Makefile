@@ -551,10 +551,14 @@ layer_argmin: test/layer_argmin.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_argmin.o test/layer_argmin.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_argmin $(OBJECTS_DIR)/test_layer_argmin.o $(LFLAGS)
 
-.PHONY: clean clean_obj clean_bin
-clean: clean_obj clean_bin
+.PHONY: clean clean_obj clean_bin clean_misc
+clean: clean_obj clean_bin clean_misc
 clean_obj:
 	-rm $(OBJECTS_DIR)/*.o
 clean_bin:
 	-rm $(BIN_DIR)/*
+clean_misc:
+	-rm ./*.png
+	-rm ./*.dot
+	-rm ./*.session
 

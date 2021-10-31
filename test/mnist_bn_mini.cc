@@ -40,15 +40,20 @@ int main()
     using namespace ceras;
     typedef tensor<float> tensor_type;
     //auto input = place_holder<tensor_type>{}; // 1-D, 28x28 pixels
-    auto input = Input();
+    auto input = Input( {28*28,} );
 
-    auto l1_1 = Dense( 256, 28*28 )( input );
+    //auto l1_1 = Dense( 256, 28*28 )( input );
+    auto l1_1 = Dense( 256 )( input );
 
-    auto l1 = relu( BatchNormalization({256,})( l1_1 ) );
+    //auto l1 = relu( BatchNormalization({256,})( l1_1 ) );
+    auto l1 = relu( BatchNormalization()( l1_1 ) );
 
-    auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
+    //auto l2 = sigmoid( Dense( 128, 256 )( l1 ) );
+    auto l2 = sigmoid( Dense( 128 )( l1 ) );
 
-    auto output = Dense( 10, 128 )( l2 );
+    //auto output = Dense( 10, 128 )( l2 );
+    auto output = Dense( 10 )( l2 );
+
     auto ground_truth = place_holder<tensor_type>{}; // 1-D, 10
     auto loss = cross_entropy_loss( ground_truth, output );
 

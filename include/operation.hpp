@@ -1314,6 +1314,65 @@ namespace ceras
         };
     }
 
+
+    ///
+    /// @brief Conv2D not constrained by the input shape.
+    ///
+    auto inline general_conv2d
+    (
+        unsigned long const row_stride=1, unsigned long const col_stride=1,
+        unsigned long const row_dilation=1, unsigned long const col_dilation=1,
+        std::string const& padding="valid"
+    ) noexcept
+    {
+        // lhs_ex is for one 4D tensor of [BS, R, C, CH]
+        // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
+        // the output tensor is of shape [BS, .., .., NC]
+        //
+        // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
+        //
+        return [ row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
+        {
+            auto const& lhs_shape = lhs_ex.shape();
+            better_assert( lhs_shape.size() == 4, fmt::format( "expecting lhs_shape size of 4, but got {}", lhs_shape.size() ) );
+            auto [_bs, row_input, col_input, _ch] = std::make_tuple( lhs_shape[0], lhs_shape[1], lhs_shape[2], lhs_shape[3] );
+
+            std::vector<unsigned long> const& shape = rhs_ex.shape();
+            better_assert( shape.size() == 4 );
+            auto const[new_channel, row_kernel, col_kernel, channel] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+            unsigned long row_padding = 0;
+            unsigned long col_padding = 0;
+            if ( padding == "same" )
+            {
+                unsigned long const row_padding_total = (row_kernel + (row_kernel - 1) * (row_dilation - 1) - row_stride);
+                unsigned long const col_padding_total = (col_kernel + (col_kernel - 1) * (col_dilation - 1) - col_stride);
+                row_padding = ((row_kernel&1)+row_padding_total) >> 1;
+                col_padding = ((col_kernel&1)+col_padding_total) >> 1;
+            }
+
+            unsigned long const row_output = ( row_input + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
+            unsigned long const col_output = ( col_input + 2 * row_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
+
+            auto lhs_ex_as_col = img2col(row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation)( lhs_ex ); // [BS, R, C, CH] ==> [r*c*CH, BS*new_row*new_col]
+
+            auto rhs_ex_flatten = reshape({row_kernel*col_kernel*channel,})( rhs_ex ); // [NC, r, c, CH] ==> [NC, r*c*CH]
+
+            auto flatten_output = rhs_ex_flatten * lhs_ex_as_col; // [NC, BS * new_row * new_col]
+
+            auto tr_output = transpose( flatten_output ); // [BS*new_row*new_col, NC]
+
+            auto ans = reshape({row_output, col_output, new_channel})( tr_output );
+
+            return ans;
+        };
+    }
+
+
+
+
+
+
+
     template< typename T > requires std::floating_point<T>
     inline auto drop_out( T const factor ) noexcept
     {
