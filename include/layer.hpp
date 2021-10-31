@@ -42,7 +42,7 @@ namespace ceras
     /// auto m = model{ x, u };
     /// \endcode
     ///
-    [[deprecated("input_shape is not required in the new Conv2D()")]]
+    [[deprecated("input_shape is not required in the new Conv2D(), this interface will be removed.")]]
     inline auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size,
                         std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
                         std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
