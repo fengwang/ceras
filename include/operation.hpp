@@ -79,6 +79,9 @@ namespace ceras
 
     };
 
+    ///
+    /// @brief Construct an unary operator by passing the forward/backward actions and output shape calculator
+    ///
     template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
     auto constexpr make_unary_operator( Forward_Action const& unary_forward_action,
                                         Backward_Action const& unary_backward_action,
@@ -97,13 +100,14 @@ namespace ceras
     ///
     /// @brief A binary operator is composed of a.) a left-side input expression, b.) a right-side input expression, c.)  a forward action and d.) a backward action.
     ///
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
     struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">
     {
         Lhs_Operator lhs_op_;
         Rhs_Operator rhs_op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
+        Output_Shape_Calculator output_shape_calculator_;
 
         typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
 
@@ -111,8 +115,8 @@ namespace ceras
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
-        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
+        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator ) noexcept :
+            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator } { }
 
         auto forward()
         {
@@ -137,6 +141,9 @@ namespace ceras
             return output_data_;
         }
 
+        ///
+        /// @brief Backward action, grad back-propagated.
+        ///
         void backward( tensor_type const& grad )
         {
             auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
@@ -144,8 +151,32 @@ namespace ceras
             rhs_op_.backward( current_gradient_rhs );
         }
 
+        ///
+        /// @brief Calculate the output shape of this operator
+        ///
+        std::vector<unsigned long> compute_output_shape() const noexcept
+        {
+            return output_shape_calculator_( lhs_op_.output_shape(), rhs_op_.output_shape() );
+        }
+
     };
 
+    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
+    auto make_binary_operator( Forward_Action const& binary_forward_action,
+                               Backward_Action const& binary_backward_action,
+                               std::string const& name = "Anonymous Binary Operator",
+                               Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{} ) noexcept
+    {
+        return [&]( auto const& lhs_op, auto const& rhs_op ) noexcept
+        {
+            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action, output_shape_calculator };
+            ans.name_ = name;
+            return ans;
+        };
+    }
+
+
+    /*
     static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator" ) noexcept
     {
         return [&binary_forward_action, &binary_backward_action, &name]( auto const& lhs_op, auto const& rhs_op ) noexcept
@@ -155,6 +186,7 @@ namespace ceras
             return ans;
         };
     };
+    */
 
     template< typename T >
     struct is_unary_operator : std::false_type{};
