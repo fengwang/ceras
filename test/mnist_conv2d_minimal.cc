@@ -5,7 +5,7 @@ int main()
     using namespace ceras;
     random_generator.seed( 42 );
 
-    auto input = Input(); // shape( 28, 28 )
+    auto input = Input( {28, 28} ); // shape( 28, 28 )
     auto l0 = Reshape({28, 28, 1})( input );
     auto l1 = ReLU( Conv2D( 32, {3, 3}, {28, 28, 1}, "same" )(l0) );
     auto l2 = MaxPooling2D( 2 )( l1 );

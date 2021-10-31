@@ -77,6 +77,8 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
+            debug_log( fmt::format("Calcuating the output shape of unary operator {} with id {}", (*this).name(), (*this).id()) );
+            debug_log( fmt::format("the op is {} with id {}", op_.name(), op_.id()));
             return output_shape_calculator_( op_.shape() );
         }
 
@@ -159,6 +161,11 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
+            debug_log( fmt::format("calculating output shape of binary operator {} with id {}", (*this).name(), (*this).id() ) );
+            debug_log( fmt::format("the lhs is {} with id {}", lhs_op_.name(), lhs_op_.id()));
+            debug_log( fmt::format("the rhs is {} with id {}", rhs_op_.name(), rhs_op_.id()));
+
+
             if constexpr ( is_value_v<Lhs_Operator> )
                 return rhs_op_.shape();
             else if constexpr ( is_value_v<Rhs_Operator> )
@@ -199,8 +206,8 @@ namespace ceras
     template< typename T >
     struct is_unary_operator : std::false_type{};
 
-    template< typename Operator, typename Forward_Action, typename Backward_Action >
-    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action> > : std::true_type {};
+    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator >
+    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator> > : std::true_type {};
 
     ///
     /// If T is an instance of a unary_operator, the constant value equals to `true`. `false` otherwise.
@@ -219,8 +226,8 @@ namespace ceras
     template< typename T >
     struct is_binary_operator : std::false_type{};
 
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action >
-    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action> > : std::true_type {};
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator >
+    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator> > : std::true_type {};
 
     ///
     /// If T is an instance of a binary_operator, the constant value equals to `true`. Otherwise this value is `false`.
@@ -260,16 +267,29 @@ namespace ceras
     {
         auto generate_node_and_label = []<Expression Expr>( Expr const& expr ) noexcept
         {
+            debug_log( fmt::format("generating label for expression {} with id {}", expr.name(), expr.id()) );
             std::string const id = std::to_string( expr.id() );
             std::string const name = expr.name();
             std::string node = std::string{"n"} + id;
             //std::string label = name + std::string{"<"} + id + std::string{">"};
-            std::string label = fmt::format( "{} <shape:{}> [id:{}]", name, expr.shape(), id);
+
+            std::vector<long long> shape;
+            {
+                std::vector<unsigned long> _shape = expr.shape();
+                shape.resize( _shape.size() );
+                std::copy( _shape.begin(), _shape.end(), shape.begin() );
+                if ( _shape.size() > 0 && _shape[0] == -1UL )
+                    shape[0] = -1;
+            }
+
+            std::string label = fmt::format( "{} <shape:{}> [id:{}]", name, shape, id);
             return std::make_tuple( node, label );
         };
 
         auto generate_dot = [&generate_node_and_label]<Expression Expr>( Expr const& expr, auto const& _generate_dot ) noexcept
         {
+            debug_log( fmt::format("generating dot for expression {} with id {}", expr.name(), expr.id()) );
+
             auto const& [node, label] = generate_node_and_label( expr );
             std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
 
@@ -363,7 +383,13 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto constexpr plus( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus")( lhs_ex, rhs_ex );
+        auto const& shape_calculator = []( std::vector<unsigned long> const& l, std::vector<unsigned long> const& r ) noexcept
+        {
+            return broadcast_shape( l, r );
+        };
+
+
+        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus", shape_calculator )( lhs_ex, rhs_ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -425,6 +451,8 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
+
+
         // case of Value * Operator and Operator * Value
         if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
         {
@@ -432,10 +460,17 @@ namespace ceras
         }
         else
         {
+            auto const& shape_calculator = []( std::vector<unsigned long> const& l, std::vector<unsigned long> const& r ) noexcept
+            {
+                better_assert( l.size() == 2, fmt::format( "expecting l size of 2, but got {}", l.size() ) );
+                better_assert( r.size() == 2, fmt::format( "expecting r size of 2, but got {}", r.size() ) );
+                better_assert( l[1] == r[0], fmt::format( "expecting l[1] == r[0], but l[1]={}, r[0]={}", l[1], r[0] ) ); // TODO: what if unknown dimension???
+                return std::vector<unsigned long>{ {l[0], r[1]} };
+            };
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
-            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply")( lhs_ex, rhs_ex );
+            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply", shape_calculator )( lhs_ex, rhs_ex );
         }
     }
 
@@ -607,7 +642,8 @@ namespace ceras
                                         ans *= grad[0];
                                         return ans;
                                     },
-                                    "Sum"
+                                    "Sum",
+                                    []( std::vector<unsigned long> const& ) noexcept { return std::vector<unsigned long>{ {1,} }; }
                 )( ex );
     }
 
@@ -647,7 +683,8 @@ namespace ceras
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
                                     },
-                                    "Mean"
+                                    "Mean",
+                                    []( std::vector<unsigned long> const& ) noexcept { return std::vector<unsigned long>{ {1,} }; }
                 )( ex );
     }
 
@@ -826,7 +863,36 @@ namespace ceras
                     ans.reshape( input.shape() );
                     return ans;
                 },
-                "Reshape"
+                "Reshape",
+                [new_shape, include_batch_flag]( std::vector<unsigned long> const& shape ) noexcept
+                {
+
+                    debug_log( fmt::format("Calculating Reshape layer size include_batch_flag = {}", include_batch_flag) );
+                    debug_log( fmt::format("Calculating Reshape layer size with shape = {}", shape) );
+                    debug_log( fmt::format("Calculating Reshape layer size with new_shape = {}, ", new_shape) );
+
+                    if ( include_batch_flag == false )
+                        return new_shape;
+
+                    unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const total_size = std::accumulate( shape.begin(), shape.end(), 1UL, []( unsigned long x, unsigned long y ){ return x*y; } );
+                    unsigned long const batch_size = total_size / new_size;
+                    std::vector<unsigned long> batched_new_shape;
+                    {
+                        batched_new_shape.resize( 1 + new_shape.size() );
+                        batched_new_shape[0] = batch_size;
+                        std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
+                    }
+                    return batched_new_shape;
+
+                    /*
+                    std::vector<unsigned long> ans;
+                    ans.resize( new_shape.size()+1 );
+                    ans[0] = shape[0];
+                    std::copy( new_shape.begin(), new_shape.end(), ans.begin()+1 );
+                    return ans;
+                    */
+                }
             )( ex );
         };
     }
@@ -856,7 +922,12 @@ namespace ceras
                 Tsor ans = grad;
                 return ans.reshape( input.shape() );
             },
-            "Flatten"
+            "Flatten",
+            []( std::vector<unsigned long> const& shape ) noexcept
+            {
+                unsigned long const total = std::accumulate( shape.begin()+1, shape.end(), 1, []( unsigned long x, unsigned long y ){ return x*y; } );
+                return std::vector<unsigned long>{ {shape[0], total,} }; // the 1st dim is batch size
+            }
         )( ex );
     }
 
@@ -891,7 +962,13 @@ namespace ceras
                     ans.reshape( input.shape() );
                     return ans;
                 },
-                "ExpandDims"
+                "ExpandDims",
+                [axis]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    if ( axis == -1 ) axis = ans.size();
+                    ans.insert( ans.begin()+axis, 1 );
+                }
             )(ex);
         };
     }
@@ -956,7 +1033,14 @@ namespace ceras
                     for_each( back_ans.begin(), back_ans.end(), []( auto& v ){ v = 0.0; } ); // always return zero
                     return back_ans;
                 },
-                "Argmax"
+                "Argmax",
+                [axis]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    ans.resize( ans.size() - 1 );
+                    return ans;
+                }
             )(ex);
         };
     }
@@ -1037,7 +1121,12 @@ namespace ceras
 
                 return back_ans;
             },
-            "Transpose"
+            "Transpose",
+            []( std::vector<unsigned long> const shape ) noexcept
+            {
+                better_assert( shape.size() == 2, fmt::format( "expecting shape size of 2, but got {}", shape.size() ) );
+                return std::vector<unsigned long>{ {shape[1], shape[0]} };
+            }
         )( ex );
     }
 
@@ -1159,7 +1248,18 @@ namespace ceras
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
                 },
-                "Img2Col"
+                "Img2Col",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    better_assert( shape.size() == 4, fmt::format("Expecting a 4D tensor, but got {}.", shape.size()) );
+                    auto const [BS, R, C, CH] = std::make_tuple( shape[0], shape[1], shape[2], shape[3] );
+
+                    unsigned long const output_row = ( R + 2 * row_padding - ( row_dilation * (row_kernel - 1) + 1 ) ) / row_stride + 1;
+                    unsigned long const output_col = ( C + 2 * col_padding - ( col_dilation * (col_kernel - 1) + 1 ) ) / col_stride + 1;
+                    unsigned long const output_column_matrix_row = row_kernel * col_kernel * CH;
+                    unsigned long const output_column_matrix_col = BS * output_row * output_col;
+                    return std::vector<unsigned long>{ {output_column_matrix_row, output_column_matrix_col} };
+                }
             )( ex );
         };
     }
@@ -1391,7 +1491,12 @@ namespace ceras
             (
                 max_pooling_2d_context{}.make_forward()( stride, mask, forward_cache ),
                 max_pooling_2d_context{}.make_backward()( stride, mask, backward_cache ),
-                "MaxPooling2D"
+                "MaxPooling2D",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
+                    return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
+                }
             )( ex );
         };
     }
@@ -1455,7 +1560,12 @@ namespace ceras
                                     ta[bs][r][c][ch] = factor * tg[bs][r/stride][c/stride][ch];
                     return ans;
                 },
-                "AveragePooling2D"
+                "AveragePooling2D",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
+                    return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
+                }
             )( ex );
         };
     }
@@ -1543,7 +1653,12 @@ namespace ceras
             (
                 up_sampling_2d_context{}.make_forward()( stride, forward_cache ),
                 up_sampling_2d_context{}.make_backward()( stride, backward_cache ),
-                "UpSampling2D"
+                "UpSampling2D",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
+                    return std::vector<unsigned long>{ {shape[0], shape[1]*stride, shape[2]*stride, shape[3]} };
+                }
             )( ex );
         };
     }
@@ -1748,7 +1863,16 @@ namespace ceras
 
                     return std::make_tuple( l_ans, r_ans );
                 },
-                "Concatenate"
+                "Concatenate",
+                [axe]( std::vector<unsigned long> const& l, std::vector<unsigned long> const& r ) noexcept
+                {
+                    better_assert( l.size() == r.size(), fmt::format( "expecting of same size, but lhs.size is {} and rhs.size is {}.", l.size(), r.size() ) );
+                    // more assertion ?
+                    std::vector<unsigned long> ans = l;
+                    if ( axe > ans.size() ) axe = ans.size() - 1;
+                    ans[axe] += r[axe];
+                    return ans;
+                }
             )( lhs_ex, rhs_ex );
         };
     }
@@ -2150,7 +2274,8 @@ namespace ceras
             (
                 zero_padding_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
                 zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
-                "ZeroPadding2D"
+                "ZeroPadding2D",
+                [=]( std::vector<unsigned long> const& shape ) noexcept { return std::vector<unsigned long>{ {shape[0], shape[1]+top+bottom, shape[2]+left+right, shape[3]} }; }
             )( ex );
         };
     }
@@ -2269,7 +2394,11 @@ namespace ceras
             (
                 cropping_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
                 cropping_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
-                "ZeroPadding2D"
+                "ZeroPadding2D",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    return std::vector<unsigned long>{ {shape[0], shape[1]-top-bottom, shape[2]-left-right, shape[3]} };
+                }
             )( ex );
         };
     }
@@ -2480,7 +2609,14 @@ namespace ceras
             (
                 repeat_context{}.make_forward()( repeats, axis, forward_cache ),
                 repeat_context{}.make_backward()( repeats, axis, backward_cache ),
-                "Repeat"
+                "Repeat",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    if ( axis >= ans.size() ) axis = ans.size()-1;
+                    ans[axis] *= repeats;
+                    return ans;
+                }
             )
             ( ex );
         };
@@ -2605,7 +2741,15 @@ namespace ceras
             (
                 reduce_min_context{}.make_forward()( axis, forward_cache, index_cache ),
                 reduce_min_context{}.make_backward()( axis, backward_cache, index_cache ),
-                "ReduceMin"
+                "ReduceMin",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    if ( axis >= shape.size() ) axis = shape.size() - 1;
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    ans.resize( ans.size() - 1 );
+                    return ans;
+                }
             )
             ( ex );
         };
@@ -2731,7 +2875,15 @@ namespace ceras
             (
                 reduce_max_context{}.make_forward()( axis, forward_cache, index_cache ),
                 reduce_max_context{}.make_backward()( axis, backward_cache, index_cache ),
-                "ReduceMax"
+                "ReduceMax",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    if ( axis >= shape.size() ) axis = shape.size() - 1;
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    ans.resize( ans.size() - 1 );
+                    return ans;
+                }
             )
             ( ex );
         };
@@ -2838,7 +2990,15 @@ namespace ceras
             (
                 reduce_sum_context{}.make_forward()( axis, forward_cache ),
                 reduce_sum_context{}.make_backward()( axis, backward_cache ),
-                "ReduceSum"
+                "ReduceSum",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    std::vector<unsigned long> ans = shape;
+                    if ( axis >= shape.size() ) axis = shape.size() - 1;
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    ans.resize( ans.size() - 1 );
+                    return ans;
+                }
             )
             ( ex );
         };

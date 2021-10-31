@@ -39,6 +39,11 @@ namespace ceras
         {
             (*this).state_ = std::make_shared<place_holder_state<Tsor>>();
             (*((*this).state_)).shape_hint_ = shape_hint;
+            if ( shape_hint[0] != -1UL )
+            {
+                auto & si = (*((*this).state_)).shape_hint_;
+                si.insert( si.begin(), 1UL );
+            }
         }
 
         void bind( Tsor data )
@@ -55,7 +60,11 @@ namespace ceras
             return (*((*this).state_)).data_;
         }
 
-        void reset() noexcept { }
+        void reset() noexcept
+        {
+            (*((*this).state_)).data_ = Tsor{};
+            (*((*this).state_)).shape_hint_ = std::vector<unsigned long>{{-1UL}};
+        }
 
         void backward( auto ) const noexcept { }
 
@@ -66,6 +75,11 @@ namespace ceras
 
         std::vector<unsigned long> shape() const noexcept
         {
+            if ( ! (*((*this).state_)).data_.empty() )
+                return (*((*this).state_)).data_.shape();
+
+            debug_log( fmt::format("calculating the shape for place_holder with id {} ", (*this).id()) );
+            debug_log( fmt::format("got {} ",  (*((*this).state_)).shape_hint_ ) ) ;
             return (*((*this).state_)).shape_hint_;
         }
 

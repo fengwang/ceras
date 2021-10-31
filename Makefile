@@ -12,10 +12,10 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofa
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=999999 -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
 #OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
-OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCBLAS
+OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
@@ -25,10 +25,10 @@ CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=3 -ftemplate-backtrace-lim
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 #LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
 LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
+LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
 LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
 
 #CXX           = g++
