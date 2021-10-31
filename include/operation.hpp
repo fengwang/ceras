@@ -77,8 +77,8 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
-            debug_log( fmt::format("Calcuating the output shape of unary operator {} with id {}", (*this).name(), (*this).id()) );
-            debug_log( fmt::format("the op is {} with id {}", op_.name(), op_.id()));
+            //debug_log( fmt::format("Calcuating the output shape of unary operator {} with id {}", (*this).name(), (*this).id()) );
+            //debug_log( fmt::format("the op is {} with id {}", op_.name(), op_.id()));
             return output_shape_calculator_( op_.shape() );
         }
 
@@ -161,9 +161,9 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
-            debug_log( fmt::format("calculating output shape of binary operator {} with id {}", (*this).name(), (*this).id() ) );
-            debug_log( fmt::format("the lhs is {} with id {}", lhs_op_.name(), lhs_op_.id()));
-            debug_log( fmt::format("the rhs is {} with id {}", rhs_op_.name(), rhs_op_.id()));
+            //debug_log( fmt::format("calculating output shape of binary operator {} with id {}", (*this).name(), (*this).id() ) );
+            //debug_log( fmt::format("the lhs is {} with id {}", lhs_op_.name(), lhs_op_.id()));
+            //debug_log( fmt::format("the rhs is {} with id {}", rhs_op_.name(), rhs_op_.id()));
 
 
             if constexpr ( is_value_v<Lhs_Operator> )
@@ -267,7 +267,7 @@ namespace ceras
     {
         auto generate_node_and_label = []<Expression Expr>( Expr const& expr ) noexcept
         {
-            debug_log( fmt::format("generating label for expression {} with id {}", expr.name(), expr.id()) );
+            //debug_log( fmt::format("generating label for expression {} with id {}", expr.name(), expr.id()) );
             std::string const id = std::to_string( expr.id() );
             std::string const name = expr.name();
             std::string node = std::string{"n"} + id;
@@ -288,7 +288,7 @@ namespace ceras
 
         auto generate_dot = [&generate_node_and_label]<Expression Expr>( Expr const& expr, auto const& _generate_dot ) noexcept
         {
-            debug_log( fmt::format("generating dot for expression {} with id {}", expr.name(), expr.id()) );
+            //debug_log( fmt::format("generating dot for expression {} with id {}", expr.name(), expr.id()) );
 
             auto const& [node, label] = generate_node_and_label( expr );
             std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
@@ -867,9 +867,9 @@ namespace ceras
                 [new_shape, include_batch_flag]( std::vector<unsigned long> const& shape ) noexcept
                 {
 
-                    debug_log( fmt::format("Calculating Reshape layer size include_batch_flag = {}", include_batch_flag) );
-                    debug_log( fmt::format("Calculating Reshape layer size with shape = {}", shape) );
-                    debug_log( fmt::format("Calculating Reshape layer size with new_shape = {}, ", new_shape) );
+                    //debug_log( fmt::format("Calculating Reshape layer size include_batch_flag = {}", include_batch_flag) );
+                    //debug_log( fmt::format("Calculating Reshape layer size with shape = {}", shape) );
+                    //debug_log( fmt::format("Calculating Reshape layer size with new_shape = {}, ", new_shape) );
 
                     if ( include_batch_flag == false )
                         return new_shape;

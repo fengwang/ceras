@@ -7,9 +7,9 @@ int main()
 
     auto input = Input( {28, 28} ); // shape( 28, 28 )
     auto l0 = Reshape({28*28,})( input );
-    auto l1 = ReLU( Dense( 512, 28*28 )( l0 ) );
-    auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
-    auto output = Dense( 10, 256 )( l2 );
+    auto l1 = ReLU( Dense( 512 )( l0 ) );
+    auto l2 = ReLU( Dense( 256 )( l1 ) );
+    auto output = Dense( 10 )( l2 );
     auto m = model( input, output );
 
     m.summary( "./mnist_minimal.dot" );

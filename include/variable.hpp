@@ -112,7 +112,7 @@ namespace ceras
         std::vector<std::size_t> shape() const noexcept
         {
             auto& state = *((*this).state_);
-            debug_log( fmt::format("calculating the shape of variable with id {}, got {}", (*this).id(), state.data_.shape() ) );
+            //debug_log( fmt::format("calculating the shape of variable with id {}, got {}", (*this).id(), state.data_.shape() ) );
             return state.data_.shape();
         }
 

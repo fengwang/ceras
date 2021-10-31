@@ -78,8 +78,8 @@ namespace ceras
             if ( ! (*((*this).state_)).data_.empty() )
                 return (*((*this).state_)).data_.shape();
 
-            debug_log( fmt::format("calculating the shape for place_holder with id {} ", (*this).id()) );
-            debug_log( fmt::format("got {} ",  (*((*this).state_)).shape_hint_ ) ) ;
+            //debug_log( fmt::format("calculating the shape for place_holder with id {} ", (*this).id()) );
+            //debug_log( fmt::format("got {} ",  (*((*this).state_)).shape_hint_ ) ) ;
             return (*((*this).state_)).shape_hint_;
         }
 
