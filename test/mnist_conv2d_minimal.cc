@@ -21,11 +21,11 @@ int main()
     auto m = model( input, output );
     m.summary( "./mnist_conv2d_minimal.dot" );
 
-    std::size_t const batch_size = 100;
+    std::size_t const batch_size = 1000;
     float learning_rate = 0.005f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
-    unsigned long epoches = 10;
+    unsigned long epoches = 5;
     int verbose = 1;
     double validation_split = 0.1;
     auto const& [x_training, y_training, x_test, y_test] = dataset::mnist::load_data();

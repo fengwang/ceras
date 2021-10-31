@@ -551,6 +551,10 @@ layer_argmin: test/layer_argmin.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_argmin.o test/layer_argmin.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_argmin $(OBJECTS_DIR)/test_layer_argmin.o $(LFLAGS)
 
+yolov3: examples/yolov3/yolov3.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_yolov3.o examples/yolov3/yolov3.cc
+	$(LINK) -o $(BIN_DIR)/test_yolov3 $(OBJECTS_DIR)/test_yolov3.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
