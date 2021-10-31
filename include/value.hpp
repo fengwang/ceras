@@ -32,6 +32,12 @@ namespace ceras
             ans *= data_;
             return ans;
         }
+
+        std::vector<unsigned long> shape() const noexcept
+        {
+            return std::vector<unsigned long>{ {-1UL,} };
+        }
+
     };//struct value
 
     template< typename T >

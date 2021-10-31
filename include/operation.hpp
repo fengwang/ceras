@@ -18,6 +18,9 @@
 namespace ceras
 {
 
+    ///
+    /// @brief The default identity output shape calculator for unary/binary operators. Should be overrided for some special operators
+    ///
     struct identity_output_shape_calculator
     {
         std::vector<unsigned long> operator()( std::vector<unsigned long> const& input_shape ) const noexcept
@@ -72,9 +75,9 @@ namespace ceras
         ///
         /// @brief Calculate the output tensor shape.
         ///
-        std::vector<unsigned long> compute_output_shape() const noexcept
+        std::vector<unsigned long> shape() const noexcept
         {
-            return output_shape_calculator_( op_.compute_output_shape() );
+            return output_shape_calculator_( op_.shape() );
         }
 
     };
@@ -152,11 +155,16 @@ namespace ceras
         }
 
         ///
-        /// @brief Calculate the output shape of this operator
+        /// @brief Calculate the output shape.
         ///
-        std::vector<unsigned long> compute_output_shape() const noexcept
+        std::vector<unsigned long> shape() const noexcept
         {
-            return output_shape_calculator_( lhs_op_.output_shape(), rhs_op_.output_shape() );
+            if constexpr ( is_value_v<Lhs_Operator> )
+                return rhs_op_.shape();
+            else if constexpr ( is_value_v<Rhs_Operator> )
+                return lhs_op_.shape();
+            else
+                return output_shape_calculator_( lhs_op_.shape(), rhs_op_.shape() );
         }
 
     };
@@ -255,7 +263,8 @@ namespace ceras
             std::string const id = std::to_string( expr.id() );
             std::string const name = expr.name();
             std::string node = std::string{"n"} + id;
-            std::string label = name + std::string{"<"} + id + std::string{">"};
+            //std::string label = name + std::string{"<"} + id + std::string{">"};
+            std::string label = fmt::format( "{} <shape:{}> [id:{}]", name, expr.shape(), id);
             return std::make_tuple( node, label );
         };
 

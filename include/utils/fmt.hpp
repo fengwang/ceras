@@ -839,12 +839,16 @@ namespace fmt
 
         inline std::string to_string( std::string const& st )
         {
-            return std::string{"\""} + st + std::string{"\""};
+            //return std::string{"\""} + st + std::string{"\""};
+            //return std::string{"_"} + st + std::string{"_"};
+            return st;
         }
 
         inline std::string to_string( char ch )
         {
-            return std::string{"\'"} + std::string{1, ch} + std::string{"\'"};
+            //return std::string{"\'"} + std::string{1, ch} + std::string{"\'"};
+            //return std::string{"_"} + std::string{1, ch} + std::string{"_"};
+            return std::string{1, ch};
         }
 
         template< typename ... K >

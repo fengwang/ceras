@@ -32,6 +32,7 @@ namespace ceras
         place_holder()
         {
             (*this).state_ = std::make_shared<place_holder_state<Tsor>>();
+            (*((*this).state_)).shape_hint_ = std::vector< unsigned long >{ {-1UL,} };
         }
 
         place_holder( std::vector<unsigned long> const& shape_hint )
@@ -44,6 +45,7 @@ namespace ceras
         {
             better_assert( (*this).state_, "Error with empty state." );
             (*((*this).state_)).data_ = data;
+            (*((*this).state_)).shape_hint_ = data.shape();
         }
 
         Tsor const forward() const

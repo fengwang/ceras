@@ -5,7 +5,7 @@ int main()
     using namespace ceras;
     random_generator.seed( 42 );
 
-    auto input = Input(); // shape( 28, 28 )
+    auto input = Input( {28, 28} ); // shape( 28, 28 )
     auto l0 = Reshape({28*28,})( input );
     auto l1 = ReLU( Dense( 512, 28*28 )( l0 ) );
     auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
