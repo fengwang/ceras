@@ -3,7 +3,7 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20210826UL;
+    inline constexpr unsigned long version = 20211031UL;
     inline constexpr unsigned long __version__ = version;
 
     ///
