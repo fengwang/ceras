@@ -18,23 +18,43 @@
 namespace ceras
 {
 
+    struct identity_output_shape_calculator
+    {
+        std::vector<unsigned long> operator()( std::vector<unsigned long> const& input_shape ) const noexcept
+        {
+            return input_shape;
+        }
+
+        std::vector<unsigned long> operator()( std::vector<unsigned long> const& lhs_input_shape, std::vector<unsigned long> const& rhs_input_shape ) const noexcept
+        {
+            return lhs_input_shape.size() > rhs_input_shape.size() ? lhs_input_shape : rhs_input_shape;
+        }
+
+        std::vector<unsigned long> operator()() const noexcept
+        {
+            return std::vector<unsigned long>{ {-1UL,} };
+        }
+    }; // struct identity_output_shape_calculator
+
+
     ///
     /// @brief A unary operator is composed of a.) an input expression, b.) a forward action and c.) a backward action.
     ///
-    template< typename Operator, typename Forward_Action, typename Backward_Action >
+    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator = identity_output_shape_calculator >
     struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
     {
         Operator op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_;
+        Output_Shape_Calculator output_shape_calculator_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
         tensor_type output_data_;
 
-        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action ) noexcept :
-            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action } { }
+        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator ) noexcept :
+            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator } { }
 
         auto forward()// const
         {
@@ -49,17 +69,30 @@ namespace ceras
             op_.backward( current_gradient );
         }
 
+        ///
+        /// @brief Calculate the output tensor shape.
+        ///
+        std::vector<unsigned long> compute_output_shape() const noexcept
+        {
+            return output_shape_calculator_( op_.compute_output_shape() );
+        }
+
     };
 
-    static auto constexpr make_unary_operator = []( auto const& unary_forward_action, auto const& unary_backward_action, std::string const& name="Anonymous Unary Operator" ) noexcept
+    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
+    auto constexpr make_unary_operator( Forward_Action const& unary_forward_action,
+                                        Backward_Action const& unary_backward_action,
+                                        std::string const& name = "Anonymous Unary Operator",
+                                        Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{} ) noexcept
     {
-        return [&unary_forward_action, &unary_backward_action, &name]( auto const& op ) noexcept
+        return [&]( auto const& op ) noexcept
         {
-            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action };
+            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action, output_shape_calculator };
             ans.name_ = name;
             return ans;
         };
-    };
+    }
+
 
     ///
     /// @brief A binary operator is composed of a.) a left-side input expression, b.) a right-side input expression, c.)  a forward action and d.) a backward action.
