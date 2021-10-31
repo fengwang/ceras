@@ -7,9 +7,9 @@ int main()
 
     auto input = Input(); // shape( 28, 28 )
     auto l0 = Reshape({28*28,})( input );
-    auto l1 = ReLU( Dense( 512, 28*28 )( l0 ) );
-    auto l2 = ReLU( Dense( 256, 512 )( l1 ) );
-    auto output = Dense( 10, 256 )( l2 );
+    auto l1 = ReLU( Dense( 512 )( l0 ) );
+    auto l2 = ReLU( Dense( 256 )( l1 ) );
+    auto output = Dense( 10 )( l2 );
     auto m = model( input, output );
 
     std::size_t const batch_size = 10;

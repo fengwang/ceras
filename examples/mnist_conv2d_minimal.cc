@@ -5,15 +5,15 @@ int main()
     using namespace ceras;
     random_generator.seed( 42 );
 
-    auto input = Input(); // shape( 28, 28 )
+    auto input = Input({28, 28}); // shape( 28, 28 )
     auto l0 = Reshape({28, 28, 1})( input );
-    auto l1 = ReLU( Conv2D( 32, {3, 3}, {28, 28, 1}, "same" )(l0) );
+    auto l1 = ReLU( Conv2D( 32, {3, 3}, "same" )(l0) );
     auto l2 = MaxPooling2D( 2 )( l1 );
-    auto l3 = ReLU( Conv2D( 64, {3, 3}, {14, 14, 32}, "same" )(l2) );
+    auto l3 = ReLU( Conv2D( 64, {3, 3}, "same" )(l2) );
     auto l4 = MaxPooling2D( 2 )( l3 ); // 7, 7, 64
     auto l5 = Flatten()( l4 );
-    auto l6 = ReLU( Dense( 128, 7*7*64 )( l5 ) );
-    auto output = Dense( 10, 128 )( l6 );
+    auto l6 = ReLU( Dense( 128, )( l5 ) );
+    auto output = Dense( 10 )( l6 );
     auto m = model( input, output );
 
     std::size_t const batch_size = 10;

@@ -43,7 +43,8 @@ int main()
 
     auto l0 = reshape( {28, 28, 1} )( input );
 
-    auto l1 = relu( Conv2D( 32, {3, 3}, {28, 28, 1}, "valid" )( l0 ) );
+    //auto l1 = relu( Conv2D( 32, {3, 3}, {28, 28, 1}, "valid" )( l0 ) );
+    auto l1 = relu( Conv2D( 32, {3, 3}, "valid" )( l0 ) );
     /*
     auto k1 = variable{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
     auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
@@ -51,7 +52,8 @@ int main()
 
     auto l2 = max_pooling_2d( 2 ) ( l1 ); // 13, 13, 32
 
-    auto l3 = relu( Conv2D( 64, {3, 3}, {13, 13, 32}, "valid" )( l2 ) );
+    //auto l3 = relu( Conv2D( 64, {3, 3}, {13, 13, 32}, "valid" )( l2 ) );
+    auto l3 = relu( Conv2D( 64, {3, 3}, "valid" )( l2 ) );
     /*
     auto k2 = variable{ randn<float>( {64, 3, 3, 32}, 0.0, 10.0/std::sqrt(64.0*3*3*1) ) };
     auto l3 = relu( conv2d(13, 13, 1, 1, 1, 1, "valid")( l2, k2 ) ); // 11, 11, 64
@@ -60,7 +62,8 @@ int main()
     auto l4 = max_pooling_2d( 2 )( l3 ); //5, 5, 64
     auto l5 = drop_out(0.5)( flatten( l4 ) );
 
-    auto output = Dense( 10, 5*5*64 )( l5 );
+    //auto output = Dense( 10, 5*5*64 )( l5 );
+    auto output = Dense( 10 )( l5 );
     /*
     auto w6 = variable{ randn<float>( {5*5*64, 10}, 0.0, 10.0/std::sqrt(7.0*7*64*10) ) };
     auto b6 = variable{ zeros<float>( {1, 10} ) };
