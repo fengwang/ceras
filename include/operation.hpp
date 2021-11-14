@@ -59,7 +59,7 @@ namespace ceras
         unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator ) noexcept :
             op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator } { }
 
-        auto forward()// const
+        auto forward()
         {
             input_data_ = op_.forward();
             output_data_ = forward_action_( input_data_ );
@@ -77,8 +77,6 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
-            //debug_log( fmt::format("Calcuating the output shape of unary operator {} with id {}", (*this).name(), (*this).id()) );
-            //debug_log( fmt::format("the op is {} with id {}", op_.name(), op_.id()));
             return output_shape_calculator_( op_.shape() );
         }
 
@@ -161,11 +159,6 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
-            //debug_log( fmt::format("calculating output shape of binary operator {} with id {}", (*this).name(), (*this).id() ) );
-            //debug_log( fmt::format("the lhs is {} with id {}", lhs_op_.name(), lhs_op_.id()));
-            //debug_log( fmt::format("the rhs is {} with id {}", rhs_op_.name(), rhs_op_.id()));
-
-
             if constexpr ( is_value_v<Lhs_Operator> )
                 return rhs_op_.shape();
             else if constexpr ( is_value_v<Rhs_Operator> )
@@ -190,18 +183,6 @@ namespace ceras
         };
     }
 
-
-    /*
-    static auto constexpr make_binary_operator = []( auto const& binary_forward_action, auto const& binary_backward_action, std::string const& name="Anonymous Binary Operator" ) noexcept
-    {
-        return [&binary_forward_action, &binary_backward_action, &name]( auto const& lhs_op, auto const& rhs_op ) noexcept
-        {
-            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action };
-            ans.name_ = name;
-            return ans;
-        };
-    };
-    */
 
     template< typename T >
     struct is_unary_operator : std::false_type{};
@@ -267,11 +248,9 @@ namespace ceras
     {
         auto generate_node_and_label = []<Expression Expr>( Expr const& expr ) noexcept
         {
-            //debug_log( fmt::format("generating label for expression {} with id {}", expr.name(), expr.id()) );
             std::string const id = std::to_string( expr.id() );
             std::string const name = expr.name();
             std::string node = std::string{"n"} + id;
-            //std::string label = name + std::string{"<"} + id + std::string{">"};
 
             std::vector<long long> shape;
             {
@@ -288,8 +267,6 @@ namespace ceras
 
         auto generate_dot = [&generate_node_and_label]<Expression Expr>( Expr const& expr, auto const& _generate_dot ) noexcept
         {
-            //debug_log( fmt::format("generating dot for expression {} with id {}", expr.name(), expr.id()) );
-
             auto const& [node, label] = generate_node_and_label( expr );
             std::string const& expr_dot = node + std::string{" [label=\""} + label + std::string{"\"] ;\n"};
 

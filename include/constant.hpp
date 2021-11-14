@@ -20,13 +20,14 @@ namespace ceras
     template< Tensor Tsor >
     struct constant : enable_id<constant<Tsor>, "Constant">
     {
-        Tsor data_;
+        typedef Tsor tensor_type;
+        tensor_type data_;
 
-        constant( Tsor const& data ) : enable_id<constant<Tsor>, "Constant">{}, data_{data} {}
+        constant( tensor_type const& data ) : enable_id<constant<tensor_type>, "Constant">{}, data_{data} {}
 
         void backward( auto ) const {}
 
-        Tsor forward() const
+        tensor_type forward() const
         {
             return data_;
         }

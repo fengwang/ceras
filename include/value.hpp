@@ -14,6 +14,7 @@ namespace ceras
     struct value : enable_id< value<T>, "Value" >
     {
         typedef T value_type;
+        typedef tensor<value_type> tensor_type;
         value_type data_;
 
         value() = delete;

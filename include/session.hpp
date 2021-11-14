@@ -178,10 +178,42 @@ namespace ceras
 
     } //namespace ceras_private
 
+    ///
+    /// @brief Get the default global session.
+    ///
     template< Tensor Tsor >
     ceras_private::session<Tsor>& get_default_session()
     {
         return singleton<ceras_private::session<Tsor>>::instance();
+    }
+
+
+    ///
+    /// @brief Bind a tensor to a place holder
+    ///
+    /// @param p_holder The place holder.
+    /// @param value The tensor to bind.
+    /// @return A default session.
+    ///
+    template< Tensor Tsor >
+    auto& bind( place_holder<Tsor>& p_holder, Tsor const& value )
+    {
+        auto& ss = get_default_session<Tsor>();
+        ss.bind( p_holder, value );
+        return ss;
+    }
+
+    ///
+    /// @brief Run an expression
+    /// @param op An expression.
+    /// @return The result of the expression.
+    ///
+    template< typename Operation >
+    auto run( Operation& op )
+    {
+        typedef typename Operation::tensor_type tensor_type;
+        auto ss = get_default_session<tensor_type>();
+        return ss.run( op );
     }
 
 }//namespace ceras
