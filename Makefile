@@ -555,6 +555,11 @@ yolov3: examples/yolov3/yolov3.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_yolov3.o examples/yolov3/yolov3.cc
 	$(LINK) -o $(BIN_DIR)/test_yolov3 $(OBJECTS_DIR)/test_yolov3.o $(LFLAGS)
 
+gemm_n2: test/gemm_n2.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_n2.o test/gemm_n2.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_n2 $(OBJECTS_DIR)/test_gemm_n2.o $(LFLAGS)
+
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
