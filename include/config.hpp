@@ -3,7 +3,7 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20211031UL;
+    inline constexpr unsigned long version = 20211219UL;
     inline constexpr unsigned long __version__ = version;
 
     ///
@@ -50,6 +50,7 @@ namespace ceras
     #else
         inline constexpr unsigned long cuda_mode = 0;
     #endif
+
     inline int visible_device = 0; // using GPU 0 by default
     inline unsigned long cuda_gemm_threshold = 0UL; // will be updated if in CUDA mode, always assume float multiplications as double is rearly used
 
@@ -57,7 +58,9 @@ namespace ceras
     inline constexpr double epsilon = eps; // alias of `eps`
 
     ///
-    /// @brief Learning phase flag. 1 for learning, others for testing. Some layers, such as batch normalization and drop out, behave differently during the training and the testing time.
+    /// @brief Learning phase flag.
+    ///
+    /// 1 for learning phase, other values for inference. Some layers such as batch normalization and drop out behave differently during the training and the inference time.
     ///
     /// Example code:
     ///

@@ -1,31 +1,40 @@
 #ifndef HQKGLAXWWVFBFHQNHBVTQJKGUFTPCQPTPXDVNOSBDJIBHITCEKDISJYNAMCPLJDURURDAISFV
 #define HQKGLAXWWVFBFHQNHBVTQJKGUFTPCQPTPXDVNOSBDJIBHITCEKDISJYNAMCPLJDURURDAISFV
 
+#include "./backend/cblas.hpp"
+#include "./backend/cuda.hpp"
+#include "./config.hpp"
 #include "./includes.hpp"
 #include "./utils/better_assert.hpp"
-#include "./utils/range.hpp"
-#include "./utils/stride_iterator.hpp"
-#include "./utils/for_each.hpp"
 #include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
-#include "./utils/id.hpp"
-#include "./utils/view.hpp"
-#include "./backend/cuda.hpp"
-#include "./backend/cblas.hpp"
 #include "./utils/fmt.hpp"
+#include "./utils/for_each.hpp"
+#include "./utils/id.hpp"
+#include "./utils/range.hpp"
+#include "./utils/stride_iterator.hpp"
+#include "./utils/view.hpp"
 
 namespace ceras
 {
-    // random_seed for random numbers
+    ///
+    /// @brief Random seed for the tensor library.
+    ///
+    /// To reproduce the result involving random variates such as `rand`, `normal`, `poisson`, it is necessary to fix the random seed by
+    /// \code{.cpp}
+    /// random_seed=42;
+    /// \endcode
+    ///
     static unsigned long random_seed = std::chrono::system_clock::now().time_since_epoch().count();
+
     // static random number random_generator
     static std::mt19937 random_generator{random_seed};
 
     template< typename T >
-    //using default_allocator = buffered_allocator<T, 256>;
-    using default_allocator = std::allocator<T>;
+    using default_allocator = buffered_allocator<T, 256>;
+    //using default_allocator = std::allocator<T>;
 
-    // Beware: shallow copy
+
     template< typename T, typename Allocator = default_allocator<T> >
     struct tensor : enable_id<tensor<T, Allocator>, "Tensor">
     {
@@ -37,37 +46,231 @@ namespace ceras
 
         std::vector<unsigned long> shape_;
         unsigned long memory_offset_;
-        shared_vector vector_; //shared across different instances
+        shared_vector vector_;
 
+        ///
+        /// @breif Construct an empty vector
+        ///
+        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()} { }
+
+        ///
+        /// @brief Construct a vector with the specified shape, initialized value and a (default) allocator.
+        ///
+        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{shape}, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
+        {
+            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
+        }
+
+        ///
+        /// @brief Construct a vector with the specified shape. All values initialized to default. With a default constructed allocator
+        ///
+        constexpr tensor( std::vector<unsigned long> const& shape ) : shape_{shape}, memory_offset_{0},
+                                                                      vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}{}
+
+        ///
+        /// @brief Construct a vector with the specified shape and all values initialized to `init`. With a default constructed allocator
+        ///
+        constexpr tensor( std::vector<unsigned long> const& shape, T init ) : shape_{shape}, memory_offset_{0},
+                                                                              vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
+        {
+            std::fill( begin(), end(), init );
+        }
+
+        constexpr tensor( tensor const& other, unsigned long memory_offset ) noexcept : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
+
+        ///
+        /// @brief Copy-ctor.
+        ///
+        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+        }
+
+        ///
+        /// @brief Move-ctor.
+        ///
+        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
+        {
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+        }
+
+        ///
+        /// @brief Copy-assignment.
+        ///
+        constexpr self_type& operator = ( self_type const& other ) noexcept
+        {
+            shape_ = other.shape_;
+            memory_offset_ = other.memory_offset_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            return *this;
+        }
+
+        ///
+        /// @brief Move-assignment.
+        ///
+        constexpr self_type& operator = ( self_type && other ) noexcept
+        {
+            shape_ = other.shape_;
+            memory_offset_ = other.memory_offset_;
+            vector_ = other.vector_;
+            (*this).id_ = other.id_;
+            return *this;
+        }
+
+        ///
+        /// @brief Iterator to the first element of the tensor.
+        ///
         constexpr auto begin() noexcept
         {
             return data();
         }
 
+        ///
+        /// @brief Iterator to the first element of the tensor.
+        ///
         constexpr auto begin() const noexcept
         {
             return data();
         }
 
+        ///
+        /// @brief Iterator to the first element of the tensor.
+        ///
         constexpr auto cbegin() const noexcept
         {
             return begin();
         }
 
+        ///
+        /// @brief Iterator to the element following the last element of the tensor.
+        ///
         constexpr auto end() noexcept
         {
             return begin() + size();
         }
 
+        ///
+        /// @brief Iterator to the element following the last element of the tensor.
+        ///
         constexpr auto end() const noexcept
         {
             return begin() + size();
         }
 
+        ///
+        /// @brief Iterator to the element following the last element of the tensor.
+        ///
         constexpr auto cend() const noexcept
         {
             return  end();
         }
+
+
+        ///
+        /// @brief Reverse iterator to the first element of the tensor.
+        ///
+        constexpr auto rbegin() noexcept
+        {
+            return make_reverse_iterator( end() );
+        }
+
+        ///
+        /// @brief Reverse iterator to the first element of the tensor.
+        ///
+        constexpr auto rbegin() const noexcept
+        {
+            return make_reverse_iterator( end() );
+        }
+
+        ///
+        /// @brief Reverse iterator to the first element of the tensor.
+        ///
+        constexpr auto crbegin() const noexcept
+        {
+            return make_reverse_iterator( cend() );
+        }
+
+        ///
+        /// @brief Reverse iterator to the element following the last element of the tensor.
+        ///
+        constexpr auto rend() noexcept
+        {
+            return make_reverse_iterator( begin() );
+        }
+
+        ///
+        /// @brief Reverse iterator to the element following the last element of the tensor.
+        ///
+        constexpr auto rend() const noexcept
+        {
+            return make_reverse_iterator( begin() );
+        }
+
+        ///
+        /// @brief Reverse iterator to the element following the last element of the tensor.
+        ///
+        constexpr auto crend() const noexcept
+        {
+            return make_reverse_iterator( cbegin() );
+        }
+
+        ///
+        /// @breif Reference to the first element in the tensor.
+        ///
+        constexpr auto front()
+        {
+            return (*vector_).front();
+        }
+
+        ///
+        /// @breif Reference to the first element in the tensor.
+        ///
+        constexpr auto front() const
+        {
+            return (*vector_).front();
+        }
+
+
+        ///
+        /// @breif Reference to the last element in the tensor.
+        ///
+        constexpr auto back()
+        {
+            return (*vector_).back();
+        }
+
+        ///
+        /// @breif Reference to the last element in the tensor.
+        ///
+        constexpr auto back() const
+        {
+            return (*vector_).back();
+        }
+
+
+        ///
+        /// @brief Number of elements in the tensor.
+        ///
+        constexpr unsigned long size() const noexcept
+        {
+            if ( !vector_ ) return 0;
+            return (*vector_ ).size() - memory_offset_;
+            //return std::accumulate( shape_.begin(), shape_.end(), 1UL, [](unsigned long x, unsigned long y){return x*y;} );
+        }
+
+
+        ///
+        /// @brief Check if the tensor has elements.
+        ///
+        [[nodiscard]] constexpr bool empty() const noexcept
+        {
+            return cbegin() == cend();
+        }
+
+
 
         ///
         /// Resetting all elements in the tensor to a fixed value (default to 0), without change the shape.
@@ -75,8 +278,7 @@ namespace ceras
         /// Example code:
         /// \code{.cpp}
         /// tensor<float> ts;
-        /// //...
-        /// ts.reset();
+        /// ts.reset( 0.0f );
         /// \endcode
         ///
         constexpr self_type& reset( T val = T{0} )
@@ -85,11 +287,26 @@ namespace ceras
             return *this;
         }
 
+        ///
+        /// @brief Dimension of the tensor
+        ///
         constexpr unsigned long ndim() const noexcept
         {
             return shape_.size();
         }
 
+        ///
+        /// @brief Shape of the tensor.
+        ///
+        constexpr std::vector<unsigned long> const& shape() const noexcept
+        {
+            return shape_;
+        }
+
+
+        ///
+        /// @brief A deep copy of the tensor.
+        ///
         constexpr self_type& deep_copy( self_type const& other )
         {
             (*this).resize( other.shape() );
@@ -121,60 +338,9 @@ namespace ceras
             return *(data()+idx);
         }
 
-        tensor() : shape_{std::vector<unsigned long>{}}, memory_offset_{0}, vector_{std::make_shared<vector_type>()} { }
-
-        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init, const Allocator& alloc = Allocator() ) : shape_{ shape }, memory_offset_{0}, vector_{std::make_shared<vector_type>(init, alloc)}
-        {
-            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
-        }
-
-        constexpr tensor( std::vector<unsigned long> const& shape ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) } { }
-
-        constexpr tensor( std::vector<unsigned long> const& shape, T init ):shape_{shape}, memory_offset_{0}, vector_{ std::make_shared<vector_type>( std::accumulate( shape_.begin(), shape_.end(), 1UL, []( auto x, auto y ){ return x*y; } ), T{0} ) }
-        {
-            std::fill( begin(), end(), init );
-        }
-
-        constexpr tensor( tensor const& other, unsigned long memory_offset ) : shape_{ other.shape_ }, memory_offset_{ memory_offset }, vector_{ other.vector_ } {}
-
-        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
-        {
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-        }
-
-        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }, memory_offset_{ other.memory_offset_ }
-        {
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-        }
-
-        constexpr self_type& operator = ( self_type const& other ) noexcept
-        {
-            shape_ = other.shape_;
-            memory_offset_ = other.memory_offset_;
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-            return *this;
-        }
-        constexpr self_type& operator = ( self_type && other ) noexcept
-        {
-            shape_ = other.shape_;
-            memory_offset_ = other.memory_offset_;
-            vector_ = other.vector_;
-            (*this).id_ = other.id_;
-            return *this;
-        }
-
-        constexpr std::vector< unsigned long > const& shape() const noexcept { return shape_; }
-
-        constexpr unsigned long size() const noexcept
-        {
-            if ( !vector_ )
-                return 0;
-            return (*vector_).size() - memory_offset_;
-        }
-
+        ///
+        /// @brief Resize the tensor with a new shape.
+        ///
         constexpr self_type& resize( std::vector< unsigned long > const& new_shape )
         {
             unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
@@ -189,11 +355,12 @@ namespace ceras
 
         ///
         /// @brief Reshape tensor. -1 indicates the dimension needs recalculating.
-        /// @code{.cpp}
+        ///
+        /// \code{.cpp}
         /// tensor<float> t{ {2, 3, 4} };
         /// auto t1 = t.reshape( {3, 8} );
         /// auto t2 = t.reshape( {1, 4, -1UL} );
-        /// @endcode
+        /// \endcode
         ///
         constexpr self_type& reshape( std::vector<unsigned long> const& new_shape )
         {
@@ -225,26 +392,36 @@ namespace ceras
             return *this;
         }
 
-        [[nodiscard]] constexpr bool empty() const noexcept
-        {
-            return 0 == shape_.size();
-        }
-
+        ///
+        /// @brief Returns pointer to the underlying array serving as element storage.
+        ///
+        /// The pointer is such that range [data(); data() + size()) is always a valid range,
+        /// even if the container is empty (data() is not dereferenceable in that case).
+        ///
         constexpr value_type* data() noexcept
         {
             return (*vector_).data() + memory_offset_;
         }
 
+        ///
+        /// @brief Returns pointer to the underlying array serving as element storage.
+        ///
+        /// The pointer is such that range [data(); data() + size()) is always a valid range,
+        /// even if the container is empty (data() is not dereferenceable in that case).
+        ///
         constexpr const value_type* data() const noexcept
         {
             return (*vector_).data() + memory_offset_;
         }
 
-        // element-wise operation
-        //
-        //    tensor<double> x{...};
-        //    x.map( []( double v ){ return 1.0/v+1.0; } );
-        //
+        ///
+        /// @brief Applying element-wise operation on each element in the tensor.
+        ///
+        /// \code{.cpp}
+        ///    tensor<double> x{...};
+        ///    x.map( []( double v ){ return 1.0/v+1.0; } );
+        /// \endcode
+        ///
         template< typename Function >
         constexpr self_type& map( Function const& f )
         {
@@ -321,7 +498,7 @@ namespace ceras
         template< typename U >
         constexpr auto as_type() const noexcept
         {
-            tensor<U> ans{ (*this).shape() };
+            tensor<U, typename std::allocator_traits<Allocator>::rebind_alloc<U>> ans{ (*this).shape() };
             std::copy( (*this).begin(), (*this).end(), ans.begin() );
             return ans;
         }
@@ -364,6 +541,9 @@ namespace ceras
     template< typename T >
     concept Tensor = is_tensor_v<T>;
 
+
+
+#if 0
 
     template< Tensor Tsor, typename CharT, typename Traits >
     std::basic_ostream<CharT, Traits>& operator << ( std::basic_ostream<CharT, Traits>& os_, Tsor const& tsor )
@@ -957,11 +1137,13 @@ namespace ceras
         return random<T,A>( shape, -bound, bound );
     }
 
+    /*
     template< Tensor Tsor >
     Tsor deep_copy( Tsor const& tsor )
     {
         return tsor.deep_copy();
     }
+    */
 
     template< Tensor Tsor >
     Tsor copy( Tsor const& tsor )
@@ -1031,11 +1213,13 @@ namespace ceras
         return ans;
     }
 
+    /*
     template< Tensor Tsor >
     constexpr bool empty(  Tsor const& tsor ) noexcept
     {
         return tsor.size() == 0;
     }
+    */
 
     template< typename T, typename A=default_allocator<T> >
     constexpr tensor<T,A> zeros( std::vector<unsigned long> const& shape )
@@ -1359,7 +1543,12 @@ namespace ceras
         ofs.close();
     }
 
+#endif
+
+
 }//namespace ceras
+
+#include "./tensor.tcc"
 
 #endif//HQKGLAXWWVFBFHQNHBVTQJKGUFTPCQPTPXDVNOSBDJIBHITCEKDISJYNAMCPLJDURURDAISFV
 

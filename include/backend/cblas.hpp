@@ -4,6 +4,7 @@
 #include "../includes.hpp"
 #include "../config.hpp"
 #include "../utils/debug.hpp"
+#include "../utils/better_assert.hpp"
 
 extern "C"
 {
