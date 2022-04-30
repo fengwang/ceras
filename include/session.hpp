@@ -19,12 +19,14 @@ namespace ceras
     template< Tensor Tsor >
     struct session
     {
-        typedef place_holder<Tsor> place_holder_type;
-        typedef variable<Tsor> variable_type;
-        typedef variable_state<Tsor> variable_state_type;
+        typedef Tsor tensor_type;
+        typedef place_holder<tensor_type> place_holder_type;
+        typedef variable<tensor_type> variable_type;
+        typedef variable_state<tensor_type> variable_state_type;
 
         std::vector<place_holder_type> place_holders_;
-        std::map<int, variable_type> variables_;
+        std::unordered_map<int, variable_type> variables_;
+        std::unordered_map<int, tensor_type> forward_cache_;
 
         session() { }
 
@@ -33,13 +35,13 @@ namespace ceras
         session& operator=( session const& ) = delete;
         session& operator=( session&& ) = default;
 
-        session& rebind( place_holder_type& p_holder, Tsor const& value )
+        session& rebind( place_holder_type& p_holder, tensor_type const& value )
         {
             p_holder.bind( value );
             return *this;
         }
 
-        session& bind( place_holder_type& p_holder, Tsor const& value )
+        session& bind( place_holder_type& p_holder, tensor_type const& value )
         {
             p_holder.bind( value );
             place_holders_.emplace_back( p_holder );
@@ -54,8 +56,9 @@ namespace ceras
         }
 
         template< typename Operation >
-        auto run( Operation& op ) const
+        auto run( Operation& op )
         {
+            clear_forward_cache();
             return op.forward();
         }
 
@@ -172,8 +175,27 @@ namespace ceras
             place_holders_.clear();
             variables_.clear();
 
-            singleton<session<Tsor>*>::instance() = nullptr;
+            singleton<session<tensor_type>*>::instance() = nullptr;
         }
+
+        tensor_type query_forward_cache( int operation_id ) const
+        {
+            auto itor = forward_cache_.find( operation_id );
+            if ( itor == forward_cache_.end() )
+                return tensor_type{};
+            return (*itor).second;
+        }
+
+        void update_forward_cache( int operation_id, tensor_type tsor )
+        {
+            forward_cache_[operation_id] = tsor;
+        }
+
+        void clear_forward_cache()
+        {
+            forward_cache_.clear();
+        }
+
     }; // session
 
     } //namespace ceras_private

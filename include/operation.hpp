@@ -6,6 +6,7 @@
 #include "./variable.hpp"
 #include "./constant.hpp"
 #include "./value.hpp"
+#include "./session.hpp"
 #include "./utils/range.hpp"
 #include "./utils/debug.hpp"
 #include "./config.hpp"
@@ -61,8 +62,16 @@ namespace ceras
 
         auto forward()
         {
-            input_data_ = op_.forward();
-            output_data_ = forward_action_( input_data_ );
+            auto& sess = get_default_session<tensor_type>();
+            output_data_= sess.query_forward_cache( (*this).id() );
+
+            if ( output_data_.empty() )
+            {
+                input_data_ = op_.forward();
+                output_data_ = forward_action_( input_data_ );
+                sess.update_forward_cache( (*this).id(), output_data_ );
+            }
+
             return output_data_;
         }
 
@@ -123,6 +132,12 @@ namespace ceras
 
         auto forward()
         {
+            auto& sess = get_default_session<tensor_type>();
+            output_data_= sess.query_forward_cache( (*this).id() );
+
+            if ( !output_data_.empty() )
+                return output_data_;
+
             static_assert( !(is_value_v<Lhs_Operator> && is_value_v<Rhs_Operator>), "Not valid for two values" );
 
             if constexpr ( is_value_v<Lhs_Operator> )
@@ -140,7 +155,9 @@ namespace ceras
                 lhs_input_data_ = lhs_op_.forward();
                 rhs_input_data_ = rhs_op_.forward();
             }
+
             output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+            sess.update_forward_cache( (*this).id(), output_data_ );
             return output_data_;
         }
 
@@ -318,6 +335,67 @@ namespace ceras
         std::string const& tail = "}\n\n";
         return head + generate_dot( ex, generate_dot ) + tail;
     }
+
+
+    ///
+    /// @brief Broadcast an expression to produce a new shape.
+    ///
+    /// \code{.cpp}
+    /// auto e = ...; // shape `(1, 64)`
+    /// auto f = broadcast( {128, 128, 64} )( e ); // shape `(128, 128, 64)`
+    /// \endcode
+    ///
+    auto inline broadcast( std::vector<unsigned long> const& new_shape ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+
+        return [new_shape, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [new_shape, forward_cache]<Tensor Tsor>( Tsor const& input )noexcept
+                {
+                    std::vector<unsigned long> const& old_shape = input.shape();
+                    if (new_shape == old_shape) return input;
+
+                    // Note: ceras only considers simple cases such as `Wx+b`, in which `b` is either has shape `(n,)` or shape `(1,n)`, the implementation is simplified accordingly.
+                    unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const old_size = std::accumulate( old_shape.begin(), old_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const factor = new_size / old_size;
+
+                    Tsor& ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( new_shape );
+                    for ( auto idx : range( factor ) )
+                        for_each( input.begin(), input.end(), ans.begin()+idx*old_size, []( auto x, auto& y ){ y = x; } );
+                    return ans;
+                },
+                [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad) noexcept
+                {
+                    if ( input.shape() == output.shape() ) return grad;
+
+                    better_assert( output.shape() == grad.shape(), fmt::format( "Error with broadcast: shape mismatch. Output shape is {}, but grad shape is {}", output.shape(), grad.shape() ) );
+
+                    std::vector<unsigned long> const& old_shape = input.shape();
+                    unsigned long const old_size = std::accumulate( old_shape.begin(), old_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    std::vector<unsigned long> const& new_shape = grad.shape();
+                    unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, []( auto x, auto y ){ return x*y; } );
+                    unsigned long const factor = new_size / old_size;
+
+                    Tsor& ans = context_cast<Tsor>( backward_cache );
+                    ans.resize( input.shape() );
+                    for_each( ans.begin(), ans.end(), []( auto& x ){ x = 0; } );
+                    for ( auto idx : range( factor ) )
+                        for_each( ans.begin(), ans.end(), grad.begin()+idx*old_size, []( auto& x, auto y ){ x += y; } );
+
+                    return ans;
+                },
+                "Broadcast",
+                [new_shape]( std::vector<unsigned long> const&) noexcept { return new_shape; }
+            )(ex);
+        };
+    }
+
 
 
     namespace
