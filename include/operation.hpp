@@ -4423,6 +4423,38 @@ namespace ceras
         )(ex);
     }
 
+    ///
+    /// @brief Computes expression raised to the power exponent.
+    ///
+    /// Example code:
+    /// \code{.cpp}
+    /// auto a = variable{ random<float>( {2, 3, 5} ) };
+    /// auto b = pow( a, -1.0 );
+    /// \endcode
+    ///
+    template<Expression Ex, typename T>
+    auto constexpr pow( Ex const& ex, T exponent ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [forward_cache, exponent]<Tensor Tsor>( Tsor const& input ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), ans.begin(), [exponent]( auto x, auto& v ) noexcept { v = std::pow(x, exponent); } );
+                                        return ans;
+                                    },
+                                    [backward_cache, exponent]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( input.shape() );
+                                        for_each( input.begin(), input.end(), grad.begin(), ans.begin(), [exponent]( auto x, auto g, auto& v ) noexcept { v = exponent * g * std::pow(x, exponent-1.0); } );
+                                        return ans;
+                                    },
+                                    "Pow"
+                )( ex );
+    };
+
 
 }//namespace ceras
 
