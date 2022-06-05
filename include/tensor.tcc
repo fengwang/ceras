@@ -436,23 +436,23 @@ namespace ceras
 
         if ( a_transposed == false && b_transposed == false )
             for ( auto r = 0UL; r != m; ++r )
-                for ( auto c = 0UL; c != k; ++c )
-                    for ( auto idx = 0UL; idx != n; ++idx )
+                for ( auto idx = 0UL; idx != n; ++idx )
+                    for ( auto c = 0UL; c != k; ++c )
                         c_view[r][c] += a_view[r][idx] * b_view[idx][c];
         else if ( a_transposed == false && b_transposed == true )
             for ( auto r = 0UL; r != m; ++r )
-                for ( auto c = 0UL; c != k; ++c )
-                    for ( auto idx = 0UL; idx != n; ++idx )
+                for ( auto idx = 0UL; idx != n; ++idx )
+                    for ( auto c = 0UL; c != k; ++c )
                         c_view[r][c] += a_view[r][idx] * b_view[c][idx];
         else if ( a_transposed == true && b_transposed == false )
             for ( auto r = 0UL; r != m; ++r )
-                for ( auto c = 0UL; c != k; ++c )
-                    for ( auto idx = 0UL; idx != n; ++idx )
+                for ( auto idx = 0UL; idx != n; ++idx )
+                    for ( auto c = 0UL; c != k; ++c )
                         c_view[r][c] += a_view[idx][r] * b_view[idx][c];
         else
             for ( auto r = 0UL; r != m; ++r )
-                for ( auto c = 0UL; c != k; ++c )
-                    for ( auto idx = 0UL; idx != n; ++idx )
+                for ( auto idx = 0UL; idx != n; ++idx )
+                    for ( auto c = 0UL; c != k; ++c )
                         c_view[r][c] += a_view[idx][r] * b_view[c][idx];
     }
 
