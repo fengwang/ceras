@@ -33,8 +33,8 @@ namespace ceras
 
     template< typename T >
     using default_allocator = cached_allocator<T>;
-    //using default_allocator = buffered_allocator<T, 256>;
     //using default_allocator = std::allocator<T>;
+    //using default_allocator = buffered_allocator<T, 256>;
 
 
     template< typename T, typename Allocator = default_allocator<T> >

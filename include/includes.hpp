@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <exception>
 #include <filesystem>

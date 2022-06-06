@@ -112,7 +112,10 @@ namespace ceras
 
         [[nodiscard]] T* allocate( unsigned long const n )
         {
-            return reinterpret_cast<T*>( get_memory_cache().allocate( n*sizeof(T) ));
+            std::byte* ans = get_memory_cache().allocate( n*sizeof(T) );
+            std::memset( ans, 0, n*sizeof(T) );
+            return reinterpret_cast<T*>( ans );
+            //return reinterpret_cast<T*>( get_memory_cache().allocate( n*sizeof(T) ));
         }
 
         void deallocate( T* p, unsigned long const n )
