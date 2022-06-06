@@ -7,6 +7,7 @@
 #include "./includes.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/buffered_allocator.hpp"
+#include "./utils/cached_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/fmt.hpp"
 #include "./utils/for_each.hpp"
@@ -31,7 +32,8 @@ namespace ceras
     static std::mt19937 random_generator{random_seed};
 
     template< typename T >
-    using default_allocator = buffered_allocator<T, 256>;
+    using default_allocator = cached_allocator<T>;
+    //using default_allocator = buffered_allocator<T, 256>;
     //using default_allocator = std::allocator<T>;
 
 
