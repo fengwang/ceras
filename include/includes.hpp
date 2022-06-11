@@ -12,6 +12,7 @@
 #include <cmath>
 #include <compare>
 #include <concepts>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>

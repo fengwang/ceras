@@ -21,6 +21,7 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftem
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG -Og -ggdb
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DDEBUG
 
 CXX           = g++
 #CXX           = clang++
@@ -566,6 +567,10 @@ gemm_n2: test/gemm_n2.cc
 layer_pow: test/layer_pow.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_pow.o test/layer_pow.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_pow $(OBJECTS_DIR)/test_layer_pow.o $(LFLAGS)
+
+debug_test: test/debug.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_debug.o test/debug.cc
+	$(LINK) -o $(BIN_DIR)/test_debug $(OBJECTS_DIR)/test_debug.o $(LFLAGS)
 
 
 .PHONY: clean clean_obj clean_bin clean_misc
