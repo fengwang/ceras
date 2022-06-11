@@ -2,6 +2,7 @@
 #include "../include/utils/range.hpp"
 #include "../include/utils/better_assert.hpp"
 #include "../include/utils/color.hpp"
+#include "../include/utils/debug.hpp"
 
 #include <fstream>
 #include <string>
@@ -34,8 +35,7 @@ int main()
     //load training set
     std::vector<std::uint8_t> training_images = load_binary( training_image_path ); // [u32, u32, u32, u32, uint8, uint8, ... ]
     std::vector<std::uint8_t> training_labels = load_binary( training_label_path ); // [u32, u32, uint8, uint8, ... ]
-
-
+    ceras::debug_log( "Training set loaded.\n" );                                                                                    //
     // define computation graph, a 3-layered dense net with topology 784x256x128x10
     using namespace ceras;
     typedef tensor<float> tensor_type;
@@ -149,7 +149,8 @@ int main()
         if ( predicted_number != ground_truth )
         {
             errors += 1;
-            std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth << std::endl;
+            ceras::debug_error( "Prediction error at ", i, ": predicted ", predicted_number, ", but the ground_truth is ", ground_truth, "\n" );
+            //std::cout << "Prediction error at " << i << ": predicted " << predicted_number << ", but the ground_truth is " << ground_truth << std::endl;
         }
 
     }
