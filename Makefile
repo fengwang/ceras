@@ -19,6 +19,8 @@ OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=nativ
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=skylake -DNDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG -Og -ggdb
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
 
 CXX           = g++
 #CXX           = clang++
