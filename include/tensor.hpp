@@ -257,7 +257,6 @@ namespace ceras
         {
             if ( !vector_ ) return 0;
             return (*vector_ ).size();
-            //return std::accumulate( shape_.begin(), shape_.end(), 1UL, [](unsigned long x, unsigned long y){return x*y;} );
         }
 
 
@@ -371,16 +370,7 @@ namespace ceras
             (*this).shape_ = _new_shape;
             return *this;
         }
-#if 0
-        //mapping a smaller tensor on a larger one
-        constexpr self_type& shrink_to( std::vector< unsigned long > const& new_shape )
-        {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            better_assert( (*this).size() >= new_size, "reshape: expecting smaller size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            (*this).shape_ = new_shape;
-            return *this;
-        }
-#endif
+
         ///
         /// @brief Returns pointer to the underlying array serving as element storage.
         ///
@@ -516,6 +506,7 @@ namespace ceras
 
 }//namespace ceras
 
+// All numerical operations defined in tensor.tcc
 #include "./tensor.tcc"
 
 #endif//HQKGLAXWWVFBFHQNHBVTQJKGUFTPCQPTPXDVNOSBDJIBHITCEKDISJYNAMCPLJDURURDAISFV
