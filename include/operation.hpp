@@ -1422,7 +1422,118 @@ namespace ceras
         };
     }
 
+    ///
+    /// @brief Conv2D Transpose intemediate layer
+    ///
+    auto inline conv2d_tranpose_intermediate
+    (
+        unsigned long const row_kernel, unsigned long const col_kernel,
+        unsigned long const row_stride=1, unsigned long const col_stride=1,
+        std::string const& padding="valid"
+    ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
+        auto shape_calculator = [=]( std::vector<unsigned long> const& old_shape )
+        {
+            std::vector<unsigned long> new_shape = old_shape;
+            new_shape[1] *= row_stride;
+            new_shape[2] *= col_stride;
+            if (padding == std::string("valid"))
+            {
+                new_shape[1] += row_kernel * 2 - 2;
+                new_shape[2] += col_kernel * 2 - 2;
+            }
+            return new_shape;
+        };
+
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& input ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    std::vector<unsigned long> const& old_shape = input.shape();
+                    auto [_bs, old_row, old_col, _ch] = std::make_tuple( old_shape[0], old_shape[1], old_shape[2], old_shape[3] );
+                    view_4d<value_type> input_4d{ input.data(), _bs, old_row, old_col, _ch };
+
+                    std::vector<unsigned long> const& new_shape = shape_calculator( old_shape );
+                    auto [bs, new_row, new_col, ch] = std::make_tuple( new_shape[0], new_shape[1], new_shape[2], new_shape[3] );
+
+                    ans = context_cast<Tsor>( forward_cache );
+                    ans.resize( new_shape );
+                    std::fill( ans.begin(), ans.end(), value_type{0} ); // just in case not initialized
+                    view_4d<value_type> output_4d{ output.data(), bs, new_row, new_col, ch };
+
+                    unsigned long row_offset = (padding == std::string{"valid"}) ? (row_kernel-1) : 0;
+                    unsigned long col_offset = (padding == std::string{"valid"}) ? (col_kernel-1) : 0;
+
+                    for ( auto bs_index : range( bs ) )
+                        for ( auto row_index : range( old_row ) )
+                            for ( auto col_index : range( old_col ) )
+                                for ( auto ch_index : range( ch ) )
+                                    output_4d[bs_index][row_offset+row_index*row_stride][col_offset+col_index*col_stride][ch_index] =
+                                     input_4d[bs_index][           row_index][                      col_index][           ch_index];
+
+                    return ans;
+                },
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                {
+                    typedef typename Tsor::value_type value_type;
+                    std::vector<unsigned long> const& input_shape = input.shape();
+                    auto [bs, i_row, i_col, ch] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
+                    back_ans = context_cast<Tsor>( backward_cache );
+                    back_ans.resize( input_shape );
+                    view_4d<value_type> b_4d{ back_ans.data(), bs, i_row, i_col, ch };
+
+                    std::vector<unsigned long> const& output_shape = grad.shape();
+                    auto [_bs, o_row, o_col, _ch] = std::make_tuple( output_shape[0], output_shape[1], output_shape[2], output_shape[3] );
+                    view_4d<value_type> g_4d{ grad.data(), bs, o_row, o_col, ch };
+
+                    unsigned long row_offset = (padding == std::string{"valid"}) ? (row_kernel-1) : 0;
+                    unsigned long col_offset = (padding == std::string{"valid"}) ? (col_kernel-1) : 0;
+
+                    for ( auto bs_index : range( bs ) )
+                        for ( auto row_index : range( i_row ) )
+                            for ( auto col_index : range( i_col ) )
+                                for ( auto ch_index : range( ch ) )
+                                     b_4d[bs_index][           row_index][                      col_index][           ch_index] =
+                                     g_4d[bs_index][row_offset+row_index*row_stride][col_offset+col_index*col_stride][ch_index];
+
+                    return back_ans;
+                },
+                "Conv2dTransposeIntermediate",
+                shape_calculator
+            )(ex);
+        };
+    }
+
+
+    ///
+    /// @brief Conv2D Transpose
+    ///
+    auto inline conv2d_transpose
+    (
+        unsigned long const row_kernel, unsigned long const col_kernel,
+        unsigned long const row_stride=1, unsigned long const col_stride=1,
+        unsigned long const row_dilation=1, unsigned long const col_dilation=1,
+        std::string const& padding="valid"
+    ) noexcept
+    {
+        // lhs_ex is for one 4D tensor of [BS, R, C, CH]
+        // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
+        // the output tensor is of shape [BS, .., .., NC]
+        //
+        // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
+        //
+        return [ row_kernel, col_kernel, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
+        {
+            auto new_lhs_ex = conv2d_tranpose_intermediate( row_kernel, col_kernel, row_stride, col_stride, padding )( lhs_ex );
+            return general_conv2d( row_stride, col_stride, row_dilation, col_dilation, padding )( new_lhs_ex, rhs_ex );
+        };
+    }
 
 
 
