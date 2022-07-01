@@ -300,7 +300,8 @@ namespace ceras
                 {
                     typedef typename Tsor::value_type value_type;
                     Tsor ans = grad; // shallow copy
-                    for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){ if ( x <= value_type{0} ) v = value_type{0}; } );
+                    //for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){ if ( x <= value_type{0} ) v = value_type{0}; } );
+                    for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){  v *= ( x > value_type{0} ); } );
                     return ans;
                 };
             }

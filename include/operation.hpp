@@ -1462,10 +1462,10 @@ namespace ceras
                     std::vector<unsigned long> const& new_shape = shape_calculator( old_shape );
                     auto [bs, new_row, new_col, ch] = std::make_tuple( new_shape[0], new_shape[1], new_shape[2], new_shape[3] );
 
-                    ans = context_cast<Tsor>( forward_cache );
+                    auto ans = context_cast<Tsor>( forward_cache );
                     ans.resize( new_shape );
                     std::fill( ans.begin(), ans.end(), value_type{0} ); // just in case not initialized
-                    view_4d<value_type> output_4d{ output.data(), bs, new_row, new_col, ch };
+                    view_4d<value_type> output_4d{ ans.data(), bs, new_row, new_col, ch };
 
                     unsigned long row_offset = (padding == std::string{"valid"}) ? (row_kernel-1) : 0;
                     unsigned long col_offset = (padding == std::string{"valid"}) ? (col_kernel-1) : 0;
@@ -1484,7 +1484,7 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     std::vector<unsigned long> const& input_shape = input.shape();
                     auto [bs, i_row, i_col, ch] = std::make_tuple( input_shape[0], input_shape[1], input_shape[2], input_shape[3] );
-                    back_ans = context_cast<Tsor>( backward_cache );
+                    auto back_ans = context_cast<Tsor>( backward_cache );
                     back_ans.resize( input_shape );
                     view_4d<value_type> b_4d{ back_ans.data(), bs, i_row, i_col, ch };
 
