@@ -1457,7 +1457,7 @@ namespace ceras
                     typedef typename Tsor::value_type value_type;
                     std::vector<unsigned long> const& old_shape = input.shape();
                     auto [_bs, old_row, old_col, _ch] = std::make_tuple( old_shape[0], old_shape[1], old_shape[2], old_shape[3] );
-                    view_4d<value_type> input_4d{ input.data(), _bs, old_row, old_col, _ch };
+                    view_4d<value_type const> input_4d{ input.data(), _bs, old_row, old_col, _ch };
 
                     std::vector<unsigned long> const& new_shape = shape_calculator( old_shape );
                     auto [bs, new_row, new_col, ch] = std::make_tuple( new_shape[0], new_shape[1], new_shape[2], new_shape[3] );
@@ -1524,6 +1524,7 @@ namespace ceras
     {
         // lhs_ex is for one 4D tensor of [BS, R, C, CH]
         // rhs_ex is for NC 4D filter of [1, r, c, CH], thus the shape is [NC, r, c, CH]
+        // NOTE: here rhs_ex serves as the transposed convolution kernel, its row and column are inversed. Be careful when importing weights from other places.
         // the output tensor is of shape [BS, .., .., NC]
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it

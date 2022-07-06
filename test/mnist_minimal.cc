@@ -18,7 +18,7 @@ int main()
     float learning_rate = 0.005f;
     auto cm = m.compile( CategoricalCrossentropy(), SGD(batch_size, learning_rate) );
 
-    unsigned long epoches = 50;
+    unsigned long epoches = 10;
     int verbose = 1;
     double validation_split = 0.1;
     auto const& [x_training, y_training, x_test, y_test] = dataset::mnist::load_data();
