@@ -21,7 +21,7 @@ OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftem
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG -Og -ggdb
 OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DDEBUG
+OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DDEBUG -DCUDA
 
 CXX           = g++
 #CXX           = clang++
@@ -572,6 +572,14 @@ debug_test: test/debug.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_debug.o test/debug.cc
 	$(LINK) -o $(BIN_DIR)/test_debug $(OBJECTS_DIR)/test_debug.o $(LFLAGS)
 
+mnist_conv2dtranspose_minimal: test/mnist_conv2dtranspose_minimal.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2dtranspose_minimal.o test/mnist_conv2dtranspose_minimal.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_conv2dtranspose_minimal $(OBJECTS_DIR)/test_mnist_conv2dtranspose_minimal.o $(LFLAGS)
+
+
+conv2d_transpose: test/conv2d_transpose.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_conv2d_transpose.o test/conv2d_transpose.cc
+	$(LINK) -o $(BIN_DIR)/test_conv2d_transpose $(OBJECTS_DIR)/test_conv2d_transpose.o $(LFLAGS)
 
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
