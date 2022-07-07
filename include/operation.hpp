@@ -1127,6 +1127,18 @@ namespace ceras
         return ex;
     }
 
+
+    // TODO impls flip(axis)(expression) function
+#if 0
+    auto inline flip( unsigned long axis ) noexcept
+    {
+
+        return -1;
+    }
+#endif
+
+
+
     ///
     /// @brief Transpose a matrix.
     ///
@@ -1177,7 +1189,7 @@ namespace ceras
                 return back_ans;
             },
             "Transpose",
-            []( std::vector<unsigned long> const shape ) noexcept
+            []( std::vector<unsigned long> const& shape ) noexcept
             {
                 better_assert( shape.size() == 2, fmt::format( "expecting shape size of 2, but got {}", shape.size() ) );
                 return std::vector<unsigned long>{ {shape[1], shape[0]} };

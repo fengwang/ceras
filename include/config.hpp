@@ -3,7 +3,7 @@
 
 namespace ceras
 {
-    inline constexpr unsigned long version = 20211219UL;
+    inline constexpr unsigned long version = 20220707UL;
     inline constexpr unsigned long __version__ = version;
 
     ///
@@ -56,6 +56,7 @@ namespace ceras
 
     inline constexpr double eps = 1.0e-8;
     inline constexpr double epsilon = eps; // alias of `eps`
+    inline constexpr unsigned long memory_alignment = 64;
 
     ///
     /// @brief Learning phase flag.
