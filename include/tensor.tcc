@@ -1243,6 +1243,130 @@ namespace ceras
         ofs.close();
     }
 
+    namespace
+    {
+
+        template< Tensor Tsor>
+        void flip_3D( Tsor const& tsor, Tsor& ans, int axis )
+        {
+            std::vector<unsigned long> shape = tsor.shape();
+            auto [r, c, ch] = std::make_tuple( shape[0], shape[1], shape[2] );
+
+            auto src = view_3d{ tsor.data(), r, c, ch };
+            auto dst = view_3d{ ans.data(), r, c, ch };
+
+            if ( 0 == axis )
+            {
+                for ( auto _r : range(r) )
+                    for ( auto _c : range(c) )
+                        for ( auto _ch : range(ch) )
+                            dst[r-_r-1][_c][_ch] = src[_r][_c][_ch];
+                return;
+            }
+
+            if ( 1 == axis )
+            {
+                for ( auto _r : range(r) )
+                    for ( auto _c : range(c) )
+                        for ( auto _ch : range(ch) )
+                            dst[_r][c-_c-1][_ch] = src[_r][_c][_ch];
+                return;
+            }
+
+            for ( auto _r : range(r) )
+                for ( auto _c : range(c) )
+                    for ( auto _ch : range(ch) )
+                        dst[_r][_c][ch-_ch-1] = src[_r][_c][_ch];
+        }
+
+        // impls flip for 1D, 2D, 3D and 4D.
+        // ceras only considers up to 4D tensors.
+        template< Tensor Tsor>
+        void flip_1D( Tsor const& tsor, Tsor& ans, int /* axis can only be 0 for 1D case */ )
+        {
+            std::copy( tsor.begin(), tsor.end(), ans.rbegin() );
+        }
+
+        template< Tensor Tsor>
+        void flip_2D( Tsor const& tsor, Tsor& ans, int axis )
+        {
+            std::vector<unsigned long> const& shape = tsor.shape();
+            std::vector<unsigned long> const new_shape{ {shape[0], shape[1], 1} };
+            Tsor _tsor = tsor;
+            _tsor.reshape( new_shape );
+            ans.reshape( new_shape );
+
+            flip_3D( _tsor, ans, axis );
+            ans.reshape( shape );
+        }
+
+
+        template< Tensor Tsor>
+        void flip_4D( Tsor const& tsor, Tsor& ans, int axis )
+        {
+            std::vector<unsigned long> const& shape = tsor.shape();
+
+            if ( 0 == axis || 1 == axis) // merge dim 2 and dim 3 for case of (0, 1), then flip along axis
+            {
+                std::vector<unsigned long> const new_shape{ {shape[0], shape[1], shape[2]*shape[3] } };
+                Tsor _tsor = tsor;
+                _tsor.reshape( new_shape );
+                ans.reshape( new_shape );
+                flip_3D( _tsor, ans, axis );
+                ans.reshape( shape );
+
+                return;
+            }
+
+            // merge dim 0 and dim 1 for case of (2, 3), then flip along axis-1
+            std::vector<unsigned long> const new_shape{ {shape[0]*shape[1], shape[2], shape[3] } };
+            Tsor _tsor = tsor;
+            _tsor.reshape( new_shape );
+            ans.reshape( new_shape );
+            flip_3D( _tsor, ans, axis-1 );
+            ans.reshape( shape );
+        }
+    }
+
+    template< Tensor Tsor >
+    void flip( Tsor const& tsor, int axis, Tsor& ans )
+    {
+        if ( 0 == tsor.size() )
+            return;
+
+        unsigned long const ndim = tsor.ndim();
+        better_assert( (4 >= ndim), fmt::format( "Expect a tensor up to 4D, but got {} dimensions.", ndim ) );
+
+        if (-1 == axis)
+            axis = static_cast<int>( ndim - 1 );
+
+        better_assert( (axis < static_cast<int>(ndim)), fmt::format( "Expect a smaller axis, but got {} for a tensor with {} dimensions", axis, ndim ) );
+
+        ans.resize( tsor.shape() );
+        switch (ndim)
+        {
+            case 1 :
+                flip_1D( tsor, ans, axis );
+                break;
+            case 2 :
+                flip_2D( tsor, ans, axis );
+                break;
+            case 3 :
+                flip_3D( tsor, ans, axis );
+                break;
+            default: // up to 4D
+                flip_4D( tsor, ans, axis );
+        }
+    }
+
+    template< Tensor Tsor >
+    Tsor flip( Tsor const& tsor, int axis = -1 )
+    {
+        Tsor ans;
+        flip( tsor, axis, ans );
+        return ans;
+    }
+
 
 }//namespace ceras
 
