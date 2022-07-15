@@ -4456,6 +4456,32 @@ namespace ceras
     };
 
 
+    auto constexpr inline flip( int axis ) noexcept
+    {
+        return [=]<Expression Ex>( Ex const& ex )
+        {
+            std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+            std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+            return make_unary_operator( [forward_cache, axis]<Tensor Tsor>( Tsor const& input ) noexcept
+                                        {
+                                            Tsor& ans = context_cast<Tsor>( forward_cache );
+                                            flip( input, axis, ans );
+                                            return ans;
+                                        },
+                                        [backward_cache, axis]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                        {
+                                            Tsor& ans = context_cast<Tsor>( backward_cache );
+                                            flip( grad, axis, ans );
+                                            return ans;
+                                        },
+                                        "Flip"
+                    )( ex );
+        };
+    }
+
+
+
+
 }//namespace ceras
 
 #endif//IPKVWSJOCMGGVRASCBLPYHFBCHRIVEXYBOMMDAKFAUDFYVYOOOISLRXJNUJKPJEVMLDPRDSNM
