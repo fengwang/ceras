@@ -572,6 +572,7 @@ debug_test: test/debug.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_debug.o test/debug.cc
 	$(LINK) -o $(BIN_DIR)/test_debug $(OBJECTS_DIR)/test_debug.o $(LFLAGS)
 
+<<<<<<< HEAD
 mnist_conv2dtranspose_minimal: test/mnist_conv2dtranspose_minimal.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_conv2dtranspose_minimal.o test/mnist_conv2dtranspose_minimal.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_conv2dtranspose_minimal $(OBJECTS_DIR)/test_mnist_conv2dtranspose_minimal.o $(LFLAGS)
@@ -580,6 +581,12 @@ mnist_conv2dtranspose_minimal: test/mnist_conv2dtranspose_minimal.cc
 conv2d_transpose: test/conv2d_transpose.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_conv2d_transpose.o test/conv2d_transpose.cc
 	$(LINK) -o $(BIN_DIR)/test_conv2d_transpose $(OBJECTS_DIR)/test_conv2d_transpose.o $(LFLAGS)
+=======
+layer_flip: test/layer_flip.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_flip.o test/layer_flip.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_flip $(OBJECTS_DIR)/test_layer_flip.o $(LFLAGS)
+
+>>>>>>> 10499a1 (add test case for operator flip)
 
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
