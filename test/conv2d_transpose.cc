@@ -12,7 +12,8 @@ void test_22()
     std::cout << "a created with:\n" << a << std::endl;
     a.reshape( {1, 2, 2, 1} );
 
-    auto b = ceras::tensor<double>{ {2, 2}, {3.0, 2.0, 1.0, 0.0} };
+    //auto b = ceras::tensor<double>{ {2, 2}, {3.0, 2.0, 1.0, 0.0} };
+    auto b = ceras::tensor<double>{ {2, 2}, {0.0, 1.0, 2.0, 3.0} };
     std::cout << "b created with:\n" << b << std::endl;
     b.reshape( {1, 2, 2, 1} );
 

@@ -1128,14 +1128,29 @@ namespace ceras
     }
 
 
-    // TODO impls flip(axis)(expression) function
-#if 0
-    auto inline flip( unsigned long axis ) noexcept
+    auto constexpr inline flip( int axis ) noexcept
     {
-
-        return -1;
+        return [=]<Expression Ex>( Ex const& ex )
+        {
+            std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+            std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+            return make_unary_operator( [forward_cache, axis]<Tensor Tsor>( Tsor const& input ) noexcept
+                                        {
+                                            Tsor& ans = context_cast<Tsor>( forward_cache );
+                                            flip( input, axis, ans );
+                                            return ans;
+                                        },
+                                        [backward_cache, axis]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                        {
+                                            Tsor& ans = context_cast<Tsor>( backward_cache );
+                                            flip( grad, axis, ans );
+                                            return ans;
+                                        },
+                                        "Flip"
+                    )( ex );
+        };
     }
-#endif
+
 
 
 
@@ -1543,8 +1558,9 @@ namespace ceras
         //
         return [ row_kernel, col_kernel, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
         {
+            //auto new_lhs_ex = conv2d_tranpose_intermediate( row_kernel, col_kernel, row_stride, col_stride, padding )( lhs_ex );
             auto new_lhs_ex = conv2d_tranpose_intermediate( row_kernel, col_kernel, row_stride, col_stride, padding )( lhs_ex );
-            return general_conv2d( row_stride, col_stride, row_dilation, col_dilation, padding )( new_lhs_ex, rhs_ex );
+            return general_conv2d( row_stride, col_stride, row_dilation, col_dilation, padding )( new_lhs_ex, flip(1)(flip(2)(rhs_ex)) );
         };
     }
 
@@ -4450,14 +4466,6 @@ namespace ceras
     };
 
 
-
-
-
-
-
-
-
-
     ///
     /// @brief Computes Trunc of the given expression.
     ///
@@ -4578,6 +4586,8 @@ namespace ceras
                                     "Pow"
                 )( ex );
     };
+
+
 
 
 }//namespace ceras

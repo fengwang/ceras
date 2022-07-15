@@ -419,6 +419,14 @@ int main()
         std::cout << "x.reshape({4, -1})\n" << x.reshape({4, -1UL}) << std::endl;
     }
 
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<double>( {3, 4} );
+        std::cout << "random x\n" << x << std::endl;
+        std::cout << "flip(x, 0)\n" << ceras::flip(x, 0) << std::endl;
+        std::cout << "flip(x, 1)\n" << ceras::flip(x, 1) << std::endl;
+    }
+
 
     return 0;
 }
