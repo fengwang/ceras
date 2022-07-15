@@ -171,7 +171,7 @@ namespace ceras
         ///
         constexpr auto rbegin() noexcept
         {
-            return make_reverse_iterator( end() );
+            return std::make_reverse_iterator( end() );
         }
 
         ///
@@ -179,7 +179,7 @@ namespace ceras
         ///
         constexpr auto rbegin() const noexcept
         {
-            return make_reverse_iterator( end() );
+            return std::make_reverse_iterator( end() );
         }
 
         ///
@@ -187,7 +187,7 @@ namespace ceras
         ///
         constexpr auto crbegin() const noexcept
         {
-            return make_reverse_iterator( cend() );
+            return std::make_reverse_iterator( cend() );
         }
 
         ///
@@ -195,7 +195,7 @@ namespace ceras
         ///
         constexpr auto rend() noexcept
         {
-            return make_reverse_iterator( begin() );
+            return std::make_reverse_iterator( begin() );
         }
 
         ///
@@ -203,7 +203,7 @@ namespace ceras
         ///
         constexpr auto rend() const noexcept
         {
-            return make_reverse_iterator( begin() );
+            return std::make_reverse_iterator( begin() );
         }
 
         ///
@@ -211,7 +211,7 @@ namespace ceras
         ///
         constexpr auto crend() const noexcept
         {
-            return make_reverse_iterator( cbegin() );
+            return std::make_reverse_iterator( cbegin() );
         }
 
 #if 0
