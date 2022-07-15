@@ -1154,9 +1154,6 @@ namespace ceras
 
 
 
-    ///
-    /// @brief Transpose a matrix.
-    ///
     template< Expression Ex >
     auto transpose( Ex const& ex ) noexcept
     {
@@ -4586,7 +4583,6 @@ namespace ceras
                                     "Pow"
                 )( ex );
     };
-
 
 
 
