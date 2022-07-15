@@ -727,9 +727,11 @@ Note: this convolutional model uses `drop_out`, when training this model, we sho
     - `clip`;
     - `reshape`;
     - `flatten`;
+    - `flip`;
     - `identity`;
     - `transpose`;
     - `conv2d`;
+    - `conv2d_transpose`;
     - `drop_out`;
     - `max_pooling_2d`;
     - `zero_padding_2d`;
