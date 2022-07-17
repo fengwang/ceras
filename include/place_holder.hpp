@@ -8,6 +8,7 @@
 #include "./utils/id.hpp"
 #include "./utils/enable_shared.hpp"
 #include "./utils/state.hpp"
+#include "./utils/type2string.hpp"
 
 namespace ceras
 {
@@ -23,6 +24,7 @@ namespace ceras
     struct place_holder : enable_id< place_holder<Tsor>, "PlaceHolder" >, enable_shared_state<place_holder<Tsor>, place_holder_state<Tsor>>
     {
         typedef Tsor tensor_type;
+        typedef typename tensor_type::value_type value_type;
 
         place_holder( place_holder const& other) = default;
         place_holder( place_holder && other) = default;
@@ -78,8 +80,6 @@ namespace ceras
             if ( ! (*((*this).state_)).data_.empty() )
                 return (*((*this).state_)).data_.shape();
 
-            //debug_log( fmt::format("calculating the shape for place_holder with id {} ", (*this).id()) );
-            //debug_log( fmt::format("got {} ",  (*((*this).state_)).shape_hint_ ) ) ;
             return (*((*this).state_)).shape_hint_;
         }
 
@@ -131,6 +131,15 @@ namespace ceras
     bool operator >= ( Ph const& lhs, Ph const& rhs )
     {
         return lhs.id() >= rhs.id();
+    }
+
+    template< Place_Holder Ph >
+    std::tuple<std::string, std::string> serialize( Ph const& ph )
+    {
+        std::string const& ph_type = type2string<typename Ph::value_type>();
+        std::string const& ph_name = fmt::format( "place_holder_{}", ph.id() );
+        std::string const& ph_code = fmt::format( "ceras::place_holder<ceras::tensor<{}>> {};\n", ph_type, ph_name );
+        return std::make_tuple( ph_name, ph_code );
     }
 
 }//namespace ceras

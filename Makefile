@@ -585,6 +585,10 @@ layer_flip: test/layer_flip.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_flip.o test/layer_flip.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_flip $(OBJECTS_DIR)/test_layer_flip.o $(LFLAGS)
 
+place_holder: test/place_holder.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_place_holder.o test/place_holder.cc
+	$(LINK) -o $(BIN_DIR)/test_place_holder $(OBJECTS_DIR)/test_place_holder.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
