@@ -6,7 +6,6 @@
 #include "./config.hpp"
 #include "./includes.hpp"
 #include "./utils/better_assert.hpp"
-//#include "./utils/buffered_allocator.hpp"
 #include "./utils/cached_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/fmt.hpp"
@@ -16,6 +15,7 @@
 #include "./utils/stride_iterator.hpp"
 #include "./utils/view.hpp"
 #include "./utils/vector.hpp"
+#include "./utils/type2string.hpp"
 
 namespace ceras
 {
@@ -214,41 +214,6 @@ namespace ceras
             return std::make_reverse_iterator( cbegin() );
         }
 
-#if 0
-        ///
-        /// @breif Reference to the first element in the tensor.
-        ///
-        constexpr auto front()
-        {
-            return (*vector_).front();
-        }
-
-        ///
-        /// @breif Reference to the first element in the tensor.
-        ///
-        constexpr auto front() const
-        {
-            return (*vector_).front();
-        }
-
-
-        ///
-        /// @breif Reference to the last element in the tensor.
-        ///
-        constexpr auto back()
-        {
-            return (*vector_).back();
-        }
-
-        ///
-        /// @breif Reference to the last element in the tensor.
-        ///
-        constexpr auto back() const
-        {
-            return (*vector_).back();
-        }
-
-#endif
 
         ///
         /// @brief Number of elements in the tensor.

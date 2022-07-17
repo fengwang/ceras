@@ -1239,9 +1239,34 @@ namespace ceras
     void save_tensor( std::string const& file_name, Tsor const& tsor )
     {
         std::ofstream ofs{ file_name };
+        typedef typename Tsor::value_type value_type;
+        if constexpr (std::is_same_v<value_type, float> )
+            ofs.precision( 8 );
+        else if constexpr (std::is_same_v<value_type, double> )
+            ofs.precision( 15 );
+        else if constexpr (std::is_same_v<value_type, long double> )
+            ofs.precision( 25 );
+
         write_tensor( ofs, tsor );
         ofs.close();
     }
+
+
+    template< Tensor Tsor >
+    std::tuple<std::string, std::string> serialize( Tsor const& tsor )
+    {
+        std::string const& tensor_name = fmt::format( "tensor_{}", tsor.id() );
+        std::string const& file_name = fmt::format( "{}.txt", tensor_name );
+        save_tensor( file_name, tsor );
+
+        typedef typename Tsor::value_type value_type;
+        std::string const& type = type2string<value_type>();
+
+        std::string const& cpp_code = fmt::format( "ceras::tensor<{}> {};\n{}.load_tensor( \"{}\" );\n", type, tensor_name, tensor_name, file_name );
+        return std::make_tuple( tensor_name, cpp_code );
+    }
+
+
 
     namespace
     {
@@ -1359,6 +1384,9 @@ namespace ceras
         }
     }
 
+    ///
+    ///@brief Reverse the order of elements in an array along the given axis.
+    ///
     template< Tensor Tsor >
     Tsor flip( Tsor const& tsor, int axis = -1 )
     {

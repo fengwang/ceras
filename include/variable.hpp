@@ -112,7 +112,6 @@ namespace ceras
         std::vector<std::size_t> shape() const noexcept
         {
             auto& state = *((*this).state_);
-            //debug_log( fmt::format("calculating the shape of variable with id {}, got {}", (*this).id(), state.data_.shape() ) );
             return state.data_.shape();
         }
 
@@ -158,20 +157,8 @@ namespace ceras
             gradient().reset();
         }
 
-        /*
-        void reset_states()
-        {
-            if ( stateful_ )
-                reset();
-        }
-        */
-
         bool trainable() const noexcept { return trainable_; }
         void trainable( bool t ) { trainable_ = t; }
-        /*
-        bool stateful() const noexcept { return stateful_; }
-        void stateful( bool s ){ stateful_ = s; }
-        */
 
     };//struct variable
 

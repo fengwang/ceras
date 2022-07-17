@@ -427,6 +427,14 @@ int main()
         std::cout << "flip(x, 1)\n" << ceras::flip(x, 1) << std::endl;
     }
 
+    {
+        std::cout << fmt::format("test case: {}\n", i++) << std::endl;
+        auto x = ceras::random<float>( {2, 3, 4, 5} );
+        auto [tensor_name, tensor_code] = ceras::serialize( x );
+        std::cout << "random x\n" << x << std::endl;
+        std::cout << "Serialized to " << tensor_name << ", with cpp code:\n" << tensor_code << std::endl;
+    }
+
 
     return 0;
 }
