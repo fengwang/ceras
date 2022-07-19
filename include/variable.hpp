@@ -8,6 +8,8 @@
 #include "./config.hpp"
 #include "./utils/enable_shared.hpp"
 #include "./utils/state.hpp"
+#include "./utils/type2string.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
@@ -158,7 +160,29 @@ namespace ceras
         }
 
         bool trainable() const noexcept { return trainable_; }
+        bool& trainable() noexcept { return trainable_; }
+
         void trainable( bool t ) { trainable_ = t; }
+
+        value_type l1_regularizer() const
+        {
+            return regularizer_.l1_;
+        }
+
+        value_type& l1_regularizer()
+        {
+            return regularizer_.l1_;
+        }
+
+        value_type l2_regularizer() const
+        {
+            return regularizer_.l2_;
+        }
+
+        value_type& l2_regularizer()
+        {
+            return regularizer_.l2_;
+        }
 
     };//struct variable
 
@@ -179,6 +203,20 @@ namespace ceras
     {
         return lhs.id_ == rhs.id_;
     }
+
+    template< Variable Var >
+    std::tuple<std::string, std::vector<std::string>> const serialize( Var const& var )
+    {
+        auto const& [data_name, data_code] = serialize( var.data() );
+        // serialize the gradient? TODO: usefule to store checkpoint for a training process
+
+        std::string var_name = fmt::format( "variable_{}", var.id() );
+        std::vector<std::string> var_code = data_code;
+        var_code.emplace_back( fmt::format( "ceras::variable<ceras::tensor<{}>> {}( {}, {}, {}, {} );", type2string<typename Var::value_type>(), var_name, data_name, var.l1_regularizer(), var.l2_regularizer(), var.trainable()  ) );
+
+        return std::forward_as_tuple( var_name, var_code );
+    }
+
 
 }//namespace ceras
 

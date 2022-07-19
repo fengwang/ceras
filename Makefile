@@ -589,6 +589,10 @@ place_holder: test/place_holder.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_place_holder.o test/place_holder.cc
 	$(LINK) -o $(BIN_DIR)/test_place_holder $(OBJECTS_DIR)/test_place_holder.o $(LFLAGS)
 
+variable: test/variable.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_variable.o test/variable.cc
+	$(LINK) -o $(BIN_DIR)/test_variable $(OBJECTS_DIR)/test_variable.o $(LFLAGS)
+
 
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
