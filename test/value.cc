@@ -33,10 +33,25 @@ void test_1()
 
 }
 
+void test_serialize()
+{
+    auto va = ceras::value{ 1.1f };
+    std::cout << "created value of  1.1f\n";
+
+    auto const& [v_name, v_code] = ceras::serialize( va );
+    std::cout << "serialize value " << v_name << "\n";
+    std::cout << "Code is \n";
+    for ( auto const& c : v_code )
+        std::cout << c << "\n";
+
+}
+
 
 int main()
 {
     test_1();
+
+    test_serialize();
 
     return 0;
 }

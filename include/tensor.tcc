@@ -1253,7 +1253,7 @@ namespace ceras
 
 
     template< Tensor Tsor >
-    std::tuple<std::string, std::vector<std::string>> serialize( Tsor const& tsor )
+    std::tuple<std::string, std::vector<std::string>> const serialize( Tsor const& tsor )
     {
         std::string tensor_name = fmt::format( "tensor_{}", tsor.id() );
         std::string const& file_name = fmt::format( "{}.txt", tensor_name );

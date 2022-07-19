@@ -134,7 +134,7 @@ namespace ceras
     }
 
     template< Place_Holder Ph >
-    std::tuple<std::string, std::vector<std::string>> serialize( Ph const& ph )
+    std::tuple<std::string, std::vector<std::string>> const serialize( Ph const& ph )
     {
         std::string const& ph_type = type2string<typename Ph::value_type>();
         std::string const& ph_name = fmt::format( "place_holder_{}", ph.id() );

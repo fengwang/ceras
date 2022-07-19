@@ -64,7 +64,7 @@ namespace ceras
     concept Constant = is_constant_v<T>;
 
     template< Constant Con >
-    std::tuple<std::string, std::vector<std::string>> serialize( Con const& con )
+    std::tuple<std::string, std::vector<std::string>> const serialize( Con const& con )
     {
         std::string constant_name = fmt::format( "constant_{}", con.id() );
 

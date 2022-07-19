@@ -6,10 +6,19 @@
 #include "./utils/id.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/enable_shared.hpp"
+#include "./utils/type2string.hpp"
+#include "./utils/fmt.hpp"
 
 namespace ceras
 {
 
+    ///
+    /// @brief Create a constant scalar.
+    ///
+    /// \code{.cpp}
+    /// value<double> one{ 1.0 };
+    /// \endcode
+    ///
     template< typename T > requires std::floating_point<T>
     struct value : enable_id< value<T>, "Value" >
     {
@@ -39,7 +48,20 @@ namespace ceras
             return std::vector<unsigned long>{ {-1UL,} };
         }
 
+        value_type data() const noexcept
+        {
+            return data_;
+        }
+
+        value_type& data() noexcept
+        {
+            return data_;
+        }
+
     };//struct value
+
+    template< typename T >
+    using scalar = value<T>;
 
     template< typename T >
     struct is_value : std::false_type {};
@@ -62,6 +84,17 @@ namespace ceras
         using tensor_type = std::remove_cv_t<decltype(std::declval<op_type>().forward())>;
     };
 
+    ///
+    /// @brief Dump a value to cpp code.
+    ///
+    template< Value Val >
+    std::tuple<std::string, std::vector<std::string>> const serialize( Val const& v ) noexcept
+    {
+        std::string value_name = fmt::format( "value_{}", v.id() );
+        std::vector<std::string> value_code;
+        value_code.emplace_back( fmt::format( "ceras::value<{}> {}( {} );", type2string<typename Val::value_type>(), value_name, v.data() ) );
+        return std::forward_as_tuple( value_name, value_code );
+    }
 
 }//namespace ceras
 
