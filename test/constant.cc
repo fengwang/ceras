@@ -23,6 +23,22 @@ void test_45()
 }
 
 
+void test_serialize()
+{
+    auto a = ceras::linspace<double>( 1.0, 20.0, 20 );
+    a.reshape( {4, 5} );
+    std::cout << "a created with:\n" << a << std::endl;
+    auto ca = ceras::constant<ceras::tensor<double>>{ a };
+
+    auto const& [con_name, con_code] = ceras::serialize( ca );
+    std::cout << "serialized constant " << con_name << "\n";
+    std::cout << "serialized constat code:\n";
+    for ( auto const& c : con_code )
+        std::cout << c << std::endl;
+}
+
+
+
 TEST_CASE("softmax_constant", "[softmax_constant]")
 {
     using namespace ceras;
@@ -69,4 +85,5 @@ TEST_CASE("softmax_constant", "[softmax_constant]")
     }
 
     test_45();
+    test_serialize();
 }

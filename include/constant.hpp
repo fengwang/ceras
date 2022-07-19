@@ -32,12 +32,22 @@ namespace ceras
 
         tensor_type forward() const
         {
-            return data_;
+            return data();
         }
 
         auto shape() const
         {
-            return data_.shape();
+            return data().shape();
+        }
+
+        tensor_type data() const noexcept
+        {
+            return data_;
+        }
+
+        tensor_type& data() noexcept
+        {
+            return data_;
         }
     };
 
@@ -53,13 +63,18 @@ namespace ceras
     template< typename T >
     concept Constant = is_constant_v<T>;
 
-#if 0
     template< Constant Con >
     std::tuple<std::string, std::vector<std::string>> serialize( Con const& con )
     {
+        std::string constant_name = fmt::format( "constant_{}", con.id() );
 
+        auto const& [tensor_name, tensor_code] = serialize( con.data() );
+
+        std::vector<std::string> constant_code = tensor_code;
+        constant_code.emplace_back( fmt::format( "ceras::constant<ceras::tensor<{}>> {} ( {} );", type2string<typename Con::value_type>(), constant_name, tensor_name ) );
+
+        return std::forward_as_tuple(  constant_name, constant_code );
     }
-#endif
 
 }//namespace ceras
 
