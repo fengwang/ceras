@@ -1253,17 +1253,20 @@ namespace ceras
 
 
     template< Tensor Tsor >
-    std::tuple<std::string, std::string> serialize( Tsor const& tsor )
+    std::tuple<std::string, std::vector<std::string>> serialize( Tsor const& tsor )
     {
-        std::string const& tensor_name = fmt::format( "tensor_{}", tsor.id() );
+        std::string tensor_name = fmt::format( "tensor_{}", tsor.id() );
         std::string const& file_name = fmt::format( "{}.txt", tensor_name );
         save_tensor( file_name, tsor );
 
         typedef typename Tsor::value_type value_type;
         std::string const& type = type2string<value_type>();
 
-        std::string const& cpp_code = fmt::format( "ceras::tensor<{}> {};\n{}.load_tensor( \"{}\" );\n", type, tensor_name, tensor_name, file_name );
-        return std::make_tuple( tensor_name, cpp_code );
+        std::vector<std::string> cpp_code;
+        cpp_code.emplace_back( fmt::format( "ceras::tensor<{}> {};", type, tensor_name ) );
+        cpp_code.emplace_back( fmt::format( "{}.load_tensor( \"{}\" );", tensor_name, file_name ) );
+
+        return std::forward_as_tuple( tensor_name, cpp_code );
     }
 
 

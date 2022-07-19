@@ -432,7 +432,9 @@ int main()
         auto x = ceras::random<float>( {2, 3, 4, 5} );
         auto [tensor_name, tensor_code] = ceras::serialize( x );
         std::cout << "random x\n" << x << std::endl;
-        std::cout << "Serialized to " << tensor_name << ", with cpp code:\n" << tensor_code << std::endl;
+        std::cout << "Serialized to " << tensor_name << ", with cpp code:\n";
+        for ( auto const& c : tensor_code )
+            std::cout << c << "\n";
     }
 
 

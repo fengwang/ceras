@@ -134,12 +134,13 @@ namespace ceras
     }
 
     template< Place_Holder Ph >
-    std::tuple<std::string, std::string> serialize( Ph const& ph )
+    std::tuple<std::string, std::vector<std::string>> serialize( Ph const& ph )
     {
         std::string const& ph_type = type2string<typename Ph::value_type>();
         std::string const& ph_name = fmt::format( "place_holder_{}", ph.id() );
-        std::string const& ph_code = fmt::format( "ceras::place_holder<ceras::tensor<{}>> {};\n", ph_type, ph_name );
-        return std::make_tuple( ph_name, ph_code );
+        std::vector<std::string> ph_code;
+        ph_code.emplace_back( fmt::format( "ceras::place_holder<ceras::tensor<{}>> {};\n", ph_type, ph_name ) );
+        return std::forward_as_tuple( ph_name, ph_code );
     }
 
 }//namespace ceras

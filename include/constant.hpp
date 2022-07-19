@@ -6,6 +6,7 @@
 #include "./utils/id.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/enable_shared.hpp"
+#include "./utils/type2string.hpp"
 
 namespace ceras
 {
@@ -21,6 +22,8 @@ namespace ceras
     struct constant : enable_id<constant<Tsor>, "Constant">
     {
         typedef Tsor tensor_type;
+        typedef typename tensor_type::value_type value_type;
+
         tensor_type data_;
 
         constant( tensor_type const& data ) : enable_id<constant<tensor_type>, "Constant">{}, data_{data} {}
@@ -49,6 +52,14 @@ namespace ceras
 
     template< typename T >
     concept Constant = is_constant_v<T>;
+
+#if 0
+    template< Constant Con >
+    std::tuple<std::string, std::vector<std::string>> serialize( Con const& con )
+    {
+
+    }
+#endif
 
 }//namespace ceras
 
