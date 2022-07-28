@@ -112,7 +112,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ) { a *= o * ( typename Tsor::value_type{1} - o ); } );
                                         return ans;
                                     },
-                                    "Softmax"
+                                    "softmax"
                 )( ex );
     }
 
@@ -158,7 +158,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), [lambda, alpha]( auto& a, auto i, auto g ){ a = (i >= value_type{0}) ? (g * lambda) : (g * lambda * alpha * std::exp(i)); } );
                                         return ans;
                                     },
-                                    "SeLU"
+                                    "selu"
                 )( ex );
     }
 
@@ -194,7 +194,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), []( auto& a, auto i, auto g ){ a = g / ( typename Tsor::value_type{1} - std::exp(-i) ); } );
                                         return ans;
                                     },
-                                    "SoftPlus"
+                                    "softplus"
                 )( ex );
     }
 
@@ -231,7 +231,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), input.begin(), grad.begin(), []( auto& a, auto i, auto g ){ auto tmp = typename Tsor::value_type{1} + std::abs(i); a = g / (tmp*tmp); } );
                                         return ans;
                                     },
-                                    "SoftSign"
+                                    "softsign"
                 )( ex );
     }
 
@@ -268,7 +268,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), output.begin(), grad.begin(), []( auto & a, auto o, auto g ){ a = g * o * ( typename Tsor::value_type{1} - o ); } );
                                         return ans;
                                     },
-                                    "Sigmoid"
+                                    "sigmoid"
                 )( ex );
     }
 
@@ -324,7 +324,7 @@ namespace ceras
     auto relu( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        return make_unary_operator( relu_context{}.make_forward()( forward_cache ), relu_context{}.make_backward(), "Relu")( ex );
+        return make_unary_operator( relu_context{}.make_forward()( forward_cache ), relu_context{}.make_backward(), "relu")( ex );
     }
 
 
@@ -377,7 +377,7 @@ namespace ceras
     auto relu6( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-        return make_unary_operator( relu6_context{}.make_forward()( forward_cache ), relu6_context{}.make_backward(), "Relu6")( ex );
+        return make_unary_operator( relu6_context{}.make_forward()( forward_cache ), relu6_context{}.make_backward(), "relu6")( ex );
     }
 
 
@@ -414,7 +414,8 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
                                             return ans;
                                         },
-                                        "LeakyRelu"
+                                        "leaky_relu"
+                                        //TODO: serializer
                     )( ex );
         };
     }
@@ -467,7 +468,8 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [alpha]( value_type& v_back, value_type const v_in ){ v_back = (v_in >= value_type{0}) ? v_back : alpha*std::exp(v_back); } );
                                             return ans;
                                         },
-                                        "ELU"
+                                        "elu"
+                                        //TODO: serializer
                     )( ex );
         };
     }
@@ -504,7 +506,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ){ a *= o; } );
                                         return ans;
                                     },
-                                    "Exponentional"
+                                    "exponentional"
                 )( ex );
     }
 
@@ -540,7 +542,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), input.begin(), []( auto& a, auto x ) { a = ((x > value_type{1}) || (x < value_type{-1})) ? value_type{0} : (a / value_type{2}); } );
                                         return ans;
                                     },
-                                    "HardSigmoid"
+                                    "hard_sigmoid"
                 )( ex );
     }
 
@@ -598,7 +600,7 @@ namespace ceras
                                         for_each( ans.begin(), ans.end(), [&_dgelu]( auto& x ) {  x = _dgelu(x); } );
                                         return ans;
                                     },
-                                    "GeLU"
+                                    "gelu"
                 )( ex );
     }
 

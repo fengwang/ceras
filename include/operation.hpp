@@ -15,6 +15,7 @@
 #include "./utils/id.hpp"
 #include "./utils/enable_shared.hpp"
 #include "./utils/fmt.hpp"
+#include "./utils/enable_serializer.hpp"
 
 namespace ceras
 {
@@ -41,24 +42,28 @@ namespace ceras
     }; // struct identity_output_shape_calculator
 
 
+
     ///
     /// @brief A unary operator is composed of a.) an input expression, b.) a forward action and c.) a backward action.
     ///
-    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator = identity_output_shape_calculator >
-    struct unary_operator : enable_id<unary_operator<Operator, Forward_Action, Backward_Action>, "Unary Operator">
+    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator, typename Serializer >
+    struct unary_operator :
+        enable_id<unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>, "Unary_Operator">,
+        enable_unary_serializer<unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer> >
     {
         Operator op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_;
         Output_Shape_Calculator output_shape_calculator_;
+        Serializer serializer_;
 
         typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
         tensor_type output_data_;
 
-        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator ) noexcept :
-            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator } { }
+        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator, Serializer const& serializer ) noexcept :
+            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator }, serializer_{ serializer } { }
 
         auto forward()
         {
@@ -89,20 +94,32 @@ namespace ceras
             return output_shape_calculator_( op_.shape() );
         }
 
+
+        Operator const op() const noexcept
+        {
+            return op_;
+        }
+
+        Serializer const serializer() const noexcept
+        {
+            return serializer_;
+        }
     };
 
     ///
     /// @brief Construct an unary operator by passing the forward/backward actions and output shape calculator
     ///
-    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
+    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator, typename Serializer = default_unary_expression_serializer >
     auto constexpr make_unary_operator( Forward_Action const& unary_forward_action,
                                         Backward_Action const& unary_backward_action,
-                                        std::string const& name = "Anonymous Unary Operator",
-                                        Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{} ) noexcept
+                                        std::string const& name = "Anonymous_Unary_Operator",
+                                        Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{},
+                                        Serializer const& serializer = Serializer{}
+            ) noexcept
     {
         return [&]( auto const& op ) noexcept
         {
-            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action, output_shape_calculator };
+            auto ans = unary_operator{ op, unary_forward_action, unary_backward_action, output_shape_calculator, serializer };
             ans.name_ = name;
             return ans;
         };
@@ -112,14 +129,18 @@ namespace ceras
     ///
     /// @brief A binary operator is composed of a.) a left-side input expression, b.) a right-side input expression, c.)  a forward action and d.) a backward action.
     ///
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
-    struct binary_operator :enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action>, "Binary Operator">
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator, typename Serializer >
+    struct binary_operator :
+        enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>, "Binary Operator">,
+        enable_binary_serializer<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>>
     {
         Lhs_Operator lhs_op_;
         Rhs_Operator rhs_op_;
         Forward_Action forward_action_;
         Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
         Output_Shape_Calculator output_shape_calculator_;
+        Serializer serializer_;
+
 
         typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
 
@@ -127,8 +148,8 @@ namespace ceras
         tensor_type rhs_input_data_;
         tensor_type output_data_;
 
-        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator ) noexcept :
-            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator } { }
+        binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator, Serializer const& serializer) noexcept :
+            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator }, serializer_{ serializer }  { }
 
         auto forward()
         {
@@ -184,17 +205,32 @@ namespace ceras
                 return output_shape_calculator_( lhs_op_.shape(), rhs_op_.shape() );
         }
 
+        Lhs_Operator const& lhs_op() const noexcept
+        {
+            return lhs_op_;
+        }
+
+        Rhs_Operator const& rhs_op() const noexcept
+        {
+            return rhs_op_;
+        }
+
+        Serializer const& serializer() const noexcept
+        {
+            return serializer_;
+        }
     };
 
-    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator >
+    template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator, typename Serializer = default_binary_expression_serializer >
     auto make_binary_operator( Forward_Action const& binary_forward_action,
                                Backward_Action const& binary_backward_action,
-                               std::string const& name = "Anonymous Binary Operator",
-                               Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{} ) noexcept
+                               std::string const& name = "Anonymous_Binary_Operator",
+                               Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{},
+                               Serializer const& serializer = Serializer{}) noexcept
     {
         return [&]( auto const& lhs_op, auto const& rhs_op ) noexcept
         {
-            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action, output_shape_calculator };
+            auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action, output_shape_calculator, serializer };
             ans.name_ = name;
             return ans;
         };
@@ -204,8 +240,8 @@ namespace ceras
     template< typename T >
     struct is_unary_operator : std::false_type{};
 
-    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator >
-    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator> > : std::true_type {};
+    template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator, typename Serializer >
+    struct is_unary_operator< unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer> > : std::true_type {};
 
     ///
     /// If T is an instance of a unary_operator, the constant value equals to `true`. `false` otherwise.
@@ -224,8 +260,8 @@ namespace ceras
     template< typename T >
     struct is_binary_operator : std::false_type{};
 
-    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator >
-    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator> > : std::true_type {};
+    template< typename Lhs_Operator, typename Rhs_Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator, typename Serializer >
+    struct is_binary_operator< binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer> > : std::true_type {};
 
     ///
     /// If T is an instance of a binary_operator, the constant value equals to `true`. Otherwise this value is `false`.
@@ -253,6 +289,12 @@ namespace ceras
     ///
     template< typename T >
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
+
+    template< Expression Ex >
+    std::vector<std::string, std::vector<std::string>> const serialize( Ex const& ex )
+    {
+        return ex.serialize();
+    }
 
 
     ///
@@ -390,7 +432,7 @@ namespace ceras
 
                     return ans;
                 },
-                "Broadcast",
+                "broadcast",
                 [new_shape]( std::vector<unsigned long> const&) noexcept { return new_shape; }
             )(ex);
         };
@@ -444,7 +486,7 @@ namespace ceras
         };
 
 
-        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "Plus", shape_calculator )( lhs_ex, rhs_ex );
+        return make_binary_operator( plus_context{}.make_forward(), plus_context{}.make_backward(), "plus", shape_calculator )( lhs_ex, rhs_ex );
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
@@ -525,9 +567,17 @@ namespace ceras
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
             std::shared_ptr<std::any> backward_cache_rhs = std::make_shared<std::any>();
-            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "Multiply", shape_calculator )( lhs_ex, rhs_ex );
+            return make_binary_operator( multiplication_context{}.make_forward()(forward_cache), multiplication_context{}.make_backward()(backward_cache_lhs, backward_cache_rhs), "multiply", shape_calculator )( lhs_ex, rhs_ex );
         }
     }
+
+
+    template< Expression Lhs_Expression, Expression Rhs_Expression >
+    auto multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    {
+        return lhs_ex * rhs_ex;
+    }
+
 
 
     ///
@@ -550,7 +600,7 @@ namespace ceras
                                         better_assert( !has_nan( grad ), "input gradient for operator negative contains NaN!" );
                                         return -grad;
                                     },
-                                    "Negative"
+                                    "negative"
                 )( ex );
     };
 
@@ -589,7 +639,7 @@ namespace ceras
                                         ans.resize( grad.shape() );
                                         return ans;
                                     },
-                                    "Inverse"
+                                    "inverse"
                 )( ex );
     };
 
@@ -626,7 +676,7 @@ namespace ceras
                                         };
                                         return std::make_tuple( grad_fun( lhs_input, rhs_input ), grad_fun( rhs_input, lhs_input ) );
                                      },
-                                     "HadamardProduct"
+                                     "elementwise_product"
                 )( lhs_ex, rhs_ex );
     };
 
@@ -697,7 +747,7 @@ namespace ceras
                                         ans *= grad[0];
                                         return ans;
                                     },
-                                    "Sum",
+                                    "sum_reduce",
                                     []( std::vector<unsigned long> const& ) noexcept { return std::vector<unsigned long>{ {1,} }; }
                 )( ex );
     }
@@ -738,7 +788,7 @@ namespace ceras
                                         ans /= static_cast<typename Tsor::value_type>(batch_size);
                                         return ans;
                                     },
-                                    "Mean",
+                                    "mean_reduce",
                                     []( std::vector<unsigned long> const& ) noexcept { return std::vector<unsigned long>{ {1,} }; }
                 )( ex );
     }
@@ -814,7 +864,7 @@ namespace ceras
                                         ans *= typename Tsor::value_type{2};
                                         return ans;
                                     },
-                                    "Square"
+                                    "square"
                 )( ex );
     }
 
@@ -866,7 +916,7 @@ namespace ceras
                                                            ans[idx];
                                             return ans;
                                         },
-                                        "Clip"
+                                        "clip"
                     )( ex );
         };
     }
@@ -918,7 +968,7 @@ namespace ceras
                     ans.reshape( input.shape() );
                     return ans;
                 },
-                "Reshape",
+                "reshape",
                 [new_shape, include_batch_flag]( std::vector<unsigned long> const& shape ) noexcept
                 {
 
@@ -948,6 +998,7 @@ namespace ceras
                     return ans;
                     */
                 }
+            //TODO: this op need a serializer
             )( ex );
         };
     }
@@ -977,7 +1028,7 @@ namespace ceras
                 Tsor ans = grad;
                 return ans.reshape( input.shape() );
             },
-            "Flatten",
+            "flatten",
             []( std::vector<unsigned long> const& shape ) noexcept
             {
                 unsigned long const total = std::accumulate( shape.begin()+1, shape.end(), 1, []( unsigned long x, unsigned long y ){ return x*y; } );
@@ -1017,13 +1068,14 @@ namespace ceras
                     ans.reshape( input.shape() );
                     return ans;
                 },
-                "ExpandDims",
+                "expand_dims",
                 [axis]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
                     if ( axis == -1 ) axis = ans.size();
                     ans.insert( ans.begin()+axis, 1 );
                 }
+            //TODO: this op needs a serializer
             )(ex);
         };
     }
@@ -1088,7 +1140,7 @@ namespace ceras
                     for_each( back_ans.begin(), back_ans.end(), []( auto& v ){ v = 0.0; } ); // always return zero
                     return back_ans;
                 },
-                "Argmax",
+                "argmax",
                 [axis]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
@@ -1146,7 +1198,8 @@ namespace ceras
                                             flip( grad, axis, ans );
                                             return ans;
                                         },
-                                        "Flip"
+                                        "flip"
+                                        //TODO: this op needs a serializer
                     )( ex );
         };
     }
@@ -1200,7 +1253,7 @@ namespace ceras
 
                 return back_ans;
             },
-            "Transpose",
+            "transpose",
             []( std::vector<unsigned long> const& shape ) noexcept
             {
                 better_assert( shape.size() == 2, fmt::format( "expecting shape size of 2, but got {}", shape.size() ) );
@@ -1327,7 +1380,7 @@ namespace ceras
                     img2col_backward( input, output, grad, back_grad );
                     return Tsor{back_grad};
                 },
-                "Img2Col",
+                "img2col",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     better_assert( shape.size() == 4, fmt::format("Expecting a 4D tensor, but got {}.", shape.size()) );
@@ -1528,8 +1581,9 @@ namespace ceras
 
                     return back_ans;
                 },
-                "Conv2dTransposeIntermediate",
+                "conv2d_transpose_intermediate",
                 shape_calculator
+                // TODO: a serializer
             )(ex);
         };
     }
@@ -1621,7 +1675,8 @@ namespace ceras
                         ans[idx] *= mask__[idx];
                     return ans;
                 },
-                "Dropout"
+                "dropout"
+                //TODO: serializer
             )( ex );
         };
     }
@@ -1742,12 +1797,13 @@ namespace ceras
             (
                 max_pooling_2d_context{}.make_forward()( stride, mask, forward_cache ),
                 max_pooling_2d_context{}.make_backward()( stride, mask, backward_cache ),
-                "MaxPooling2D",
+                "max_pooling_2d",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
                 }
+                // TODO: serializer
             )( ex );
         };
     }
@@ -1811,12 +1867,13 @@ namespace ceras
                                     ta[bs][r][c][ch] = factor * tg[bs][r/stride][c/stride][ch];
                     return ans;
                 },
-                "AveragePooling2D",
+                "average_pooling_2d",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
                 }
+                // serializer
             )( ex );
         };
     }
@@ -1904,12 +1961,13 @@ namespace ceras
             (
                 up_sampling_2d_context{}.make_forward()( stride, forward_cache ),
                 up_sampling_2d_context{}.make_backward()( stride, backward_cache ),
-                "UpSampling2D",
+                "up_sampling_2d",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]*stride, shape[2]*stride, shape[3]} };
                 }
+                //TODO: serializer
             )( ex );
         };
     }
@@ -2043,7 +2101,8 @@ namespace ceras
                             ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
                     return ans;
                 },
-                "Normalization"
+                "normalization_batch"
+                // TODO: normalizer
             )( ex );
         };
     }
@@ -2114,7 +2173,7 @@ namespace ceras
 
                     return std::make_tuple( l_ans, r_ans );
                 },
-                "Concatenate",
+                "concatenate",
                 [axe]( std::vector<unsigned long> const& l, std::vector<unsigned long> const& r ) noexcept
                 {
                     better_assert( l.size() == r.size(), fmt::format( "expecting of same size, but lhs.size is {} and rhs.size is {}.", l.size(), r.size() ) );
@@ -2124,6 +2183,7 @@ namespace ceras
                     ans[axe] += r[axe];
                     return ans;
                 }
+                // TODO serializer
             )( lhs_ex, rhs_ex );
         };
     }
@@ -2186,7 +2246,7 @@ namespace ceras
 
                 return std::make_tuple( l_ans, r_ans );
             },
-            "Maximum"
+            "maximum"
         )( lhs_ex, rhs_ex );
     }
 
@@ -2225,7 +2285,7 @@ namespace ceras
 
                 return std::make_tuple( l_ans, r_ans );
             },
-            "Minmum"
+            "minmum"
         )( lhs_ex, rhs_ex );
     }
 
@@ -2257,7 +2317,7 @@ namespace ceras
                 for_each( grad.begin(), grad.end(), l_ans.begin(), r_ans.begin(), lhs_input.begin(), rhs_input.begin(), []( auto const g, auto& l, auto& r, auto const x, auto const y ) { auto const c = x*x+y*y; l = -g*y/c; r = g*x/c; } );
                 return std::make_tuple( l_ans, r_ans );
             },
-            "Arctan2"
+            "atan2"
         )( lhs_ex, rhs_ex );
     }
 
@@ -2289,7 +2349,7 @@ namespace ceras
                 {
                     return zeros_like( grad );
                 },
-                "RandomNormalLike"
+                "random_normal_like"
             )(ex);
         };
     }
@@ -2310,7 +2370,7 @@ namespace ceras
         (
             []<Tensor Tsor>( Tsor const& tsor ) noexcept { return ones_like( tsor ); },
             []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
-            "OnesLike"
+            "ones_like"
         )(ex);
     }
 
@@ -2330,7 +2390,7 @@ namespace ceras
         (
             []<Tensor Tsor>( Tsor const& tsor ) noexcept { return zeros_like( tsor ); },
             []<Tensor Tsor>( Tsor const&, Tsor const& , Tsor const& grad ) noexcept { return zeros_like( grad ); },
-            "ZerosLike"
+            "zeros_like"
         )(ex);
     }
 
@@ -2372,7 +2432,7 @@ namespace ceras
                 std::fill( ans.begin(), ans.end(), value_type{0} );
                 return std::make_tuple( ans, ans );
             },
-            "Equal"
+            "equal"
         )( lhs_ex, rhs_ex );
     }
 
@@ -2411,7 +2471,7 @@ namespace ceras
                 std::fill( ans.begin(), ans.end(), value_type{0} ); //TF gives zeros, we follow TF here
                 return ans;
             },
-            "Sign"
+            "sign"
         )( ex );
     };
 
@@ -2525,7 +2585,7 @@ namespace ceras
             (
                 zero_padding_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
                 zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
-                "ZeroPadding2D",
+                "zero_padding_2d",
                 [=]( std::vector<unsigned long> const& shape ) noexcept { return std::vector<unsigned long>{ {shape[0], shape[1]+top+bottom, shape[2]+left+right, shape[3]} }; }
             )( ex );
         };
@@ -2645,18 +2705,19 @@ namespace ceras
             (
                 cropping_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
                 cropping_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
-                "ZeroPadding2D",
+                "cropping_2d",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     return std::vector<unsigned long>{ {shape[0], shape[1]-top-bottom, shape[2]-left-right, shape[3]} };
                 }
+                //TODO: serializer
             )( ex );
         };
     }
 
 
-    namespace
-    {
+    //namespace
+    //{
 
         inline auto detailed_sliding_2d( unsigned long const pixels, std::shared_ptr<std::any> shift_cache,
                                          std::shared_ptr<std::any> forward_cache, std::shared_ptr<std::any> backward_cache) noexcept
@@ -2743,12 +2804,12 @@ namespace ceras
                         }
                         return ans;
                     },
-                    "Sliding2D"
+                    "detailed_sliding_2d"
                 )( ex );
             };
         }
 
-    } // anonymous namespace
+    //} // anonymous namespace
 
     inline auto sliding_2d( unsigned long pixels ) noexcept
     {
@@ -2860,7 +2921,7 @@ namespace ceras
             (
                 repeat_context{}.make_forward()( repeats, axis, forward_cache ),
                 repeat_context{}.make_backward()( repeats, axis, backward_cache ),
-                "Repeat",
+                "repeat",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
@@ -2868,6 +2929,7 @@ namespace ceras
                     ans[axis] *= repeats;
                     return ans;
                 }
+                //TODO: serializer
             )
             ( ex );
         };
@@ -2992,7 +3054,7 @@ namespace ceras
             (
                 reduce_min_context{}.make_forward()( axis, forward_cache, index_cache ),
                 reduce_min_context{}.make_backward()( axis, backward_cache, index_cache ),
-                "ReduceMin",
+                "reduce_min",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
@@ -3001,6 +3063,7 @@ namespace ceras
                     ans.resize( ans.size() - 1 );
                     return ans;
                 }
+                //TODO: serializer
             )
             ( ex );
         };
@@ -3126,7 +3189,7 @@ namespace ceras
             (
                 reduce_max_context{}.make_forward()( axis, forward_cache, index_cache ),
                 reduce_max_context{}.make_backward()( axis, backward_cache, index_cache ),
-                "ReduceMax",
+                "reduce_max",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
@@ -3135,6 +3198,7 @@ namespace ceras
                     ans.resize( ans.size() - 1 );
                     return ans;
                 }
+                //TODO: serializer
             )
             ( ex );
         };
@@ -3241,7 +3305,7 @@ namespace ceras
             (
                 reduce_sum_context{}.make_forward()( axis, forward_cache ),
                 reduce_sum_context{}.make_backward()( axis, backward_cache ),
-                "ReduceSum",
+                "reduce_sum",
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
@@ -3250,6 +3314,7 @@ namespace ceras
                     ans.resize( ans.size() - 1 );
                     return ans;
                 }
+                //TODO: serializer
             )
             ( ex );
         };
@@ -3286,7 +3351,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * ((x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0)); } );
                                         return ans;
                                     },
-                                    "Abs"
+                                    "abs"
                 )( ex );
     };
 
@@ -3323,7 +3388,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g / std::sqrt(1.0-x*x); } );
                                         return ans;
                                     },
-                                    "Acos"
+                                    "acos"
                 )( ex );
     };
 
@@ -3360,7 +3425,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(x*x-1.0); } );
                                         return ans;
                                     },
-                                    "Acosh"
+                                    "acosh"
                 )( ex );
     };
 
@@ -3397,7 +3462,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0-x*x); } );
                                         return ans;
                                     },
-                                    "Asin"
+                                    "asin"
                 )( ex );
     };
 
@@ -3434,7 +3499,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / std::sqrt(1.0+x*x); } );
                                         return ans;
                                     },
-                                    "Asinh"
+                                    "asinh"
                 )( ex );
     };
 
@@ -3471,7 +3536,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1.0+x*x); } );
                                         return ans;
                                     },
-                                    "Atan"
+                                    "atan"
                 )( ex );
     };
 
@@ -3508,7 +3573,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (1-x*x); } );
                                         return ans;
                                     },
-                                    "Atanh"
+                                    "atanh"
                 )( ex );
     };
 
@@ -3545,7 +3610,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (3.0*o*o); } );
                                         return ans;
                                     },
-                                    "Cbert"
+                                    "cbert"
                 )( ex );
     };
 
@@ -3579,7 +3644,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Ceil"
+                                    "ceil"
                 )( ex );
     };
 
@@ -3616,7 +3681,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = - g * std::sin(x); } );
                                         return ans;
                                     },
-                                    "Cos"
+                                    "cos"
                 )( ex );
     };
 
@@ -3653,7 +3718,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::sinh(x); } );
                                         return ans;
                                     },
-                                    "Cosh"
+                                    "cosh"
                 )( ex );
     };
 
@@ -3690,7 +3755,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{1.12837916709551257389} * g * std::exp(-x*x); } );
                                         return ans;
                                     },
-                                    "Erf"
+                                    "erf"
                 )( ex );
     };
 
@@ -3728,7 +3793,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = typename Tsor::value_type{-1.12837916709551257389} * g * std::exp(-x*x); } );
                                         return ans;
                                     },
-                                    "Erfc"
+                                    "erfc"
                 )( ex );
     };
 
@@ -3765,7 +3830,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * o; } );
                                         return ans;
                                     },
-                                    "Exp"
+                                    "exp"
                 )( ex );
     };
 
@@ -3802,7 +3867,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = std::log(2.0) * g * o; } );
                                         return ans;
                                     },
-                                    "Exp2"
+                                    "exp2"
                 )( ex );
     };
 
@@ -3839,7 +3904,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (o+1.0); } );
                                         return ans;
                                     },
-                                    "Expm1"
+                                    "expm1"
                 )( ex );
     };
 
@@ -3892,7 +3957,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Floor"
+                                    "floor"
                 )( ex );
     };
 
@@ -3929,7 +3994,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Llrint"
+                                    "llrint"
                 )( ex );
     };
 
@@ -3962,7 +4027,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Llround"
+                                    "llround"
                 )( ex );
     };
 
@@ -3999,7 +4064,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
                                         return ans;
                                     },
-                                    "Log"
+                                    "log"
                 )( ex );
     };
 
@@ -4036,7 +4101,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (2.30258509299404568402*x); } );
                                         return ans;
                                     },
-                                    "Log10"
+                                    "log10"
                 )( ex );
     };
 
@@ -4073,7 +4138,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / x; } );
                                         return ans;
                                     },
-                                    "Log1p"
+                                    "log1p"
                 )( ex );
     };
 
@@ -4110,7 +4175,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g / (0.69314718055994530942*x); } );
                                         return ans;
                                     },
-                                    "Log2"
+                                    "log2"
                 )( ex );
     };
 
@@ -4141,7 +4206,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Lrint"
+                                    "lrint"
                 )( ex );
     };
 
@@ -4174,7 +4239,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Lround"
+                                    "lround"
                 )( ex );
     };
 
@@ -4207,7 +4272,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Nearbyint"
+                                    "nearbyint"
                 )( ex );
     };
 
@@ -4240,7 +4305,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Rint"
+                                    "rint"
                 )( ex );
     };
 
@@ -4273,7 +4338,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Round"
+                                    "round"
                 )( ex );
     };
 
@@ -4310,7 +4375,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cos(x); } );
                                         return ans;
                                     },
-                                    "Sin"
+                                    "sin"
                 )( ex );
     };
 
@@ -4347,7 +4412,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), []( auto x, auto g, auto& v ) noexcept { v = g * std::cosh(x); } );
                                         return ans;
                                     },
-                                    "Sinh"
+                                    "sinh"
                 )( ex );
     };
 
@@ -4384,7 +4449,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g / (o+o); } );
                                         return ans;
                                     },
-                                    "Sqrt"
+                                    "sqrt"
                 )( ex );
     };
 
@@ -4421,7 +4486,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto x, auto o, auto g, auto& v ) noexcept { v = g * (1.0+o*o); } );
                                         return ans;
                                     },
-                                    "Tan"
+                                    "tan"
                 )( ex );
     };
 
@@ -4458,7 +4523,7 @@ namespace ceras
                                         for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto, auto o, auto g, auto& v ) noexcept { v = g * (1.0-o*o); } );
                                         return ans;
                                     },
-                                    "Tanh"
+                                    "tanh"
                 )( ex );
     };
 
@@ -4487,7 +4552,7 @@ namespace ceras
                                     {
                                         return grad;
                                     },
-                                    "Trunc"
+                                    "trunc"
                 )( ex );
     };
 
@@ -4518,7 +4583,7 @@ namespace ceras
                                      {
                                         return std::make_tuple( zeros_like( lhs_input ), zeros_like( rhs_input ) );
                                      },
-                                     "Assign"
+                                     "assign"
                 )( lhs_ex, rhs_ex );
     };
 
@@ -4548,7 +4613,7 @@ namespace ceras
             {
                 return grad;
             },
-            "Poisson"
+            "poisson"
         )(ex);
     }
 
@@ -4580,7 +4645,8 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), [exponent]( auto x, auto g, auto& v ) noexcept { v = exponent * g * std::pow(x, exponent-1.0); } );
                                         return ans;
                                     },
-                                    "Pow"
+                                    "pow"
+                                    //TODO: Serializer
                 )( ex );
     };
 

@@ -1,16 +1,7 @@
 #ifndef _FMT_HPP_INCLUDED_LASDKADSLKJALKJDSALKJALKJSKLJDSLKJSLKSJALKJDSDLSKJDSLKDJASLDFKSJSALK
 #define _FMT_HPP_INCLUDED_LASDKADSLKJALKJDSALKJALKJSKLJDSLKJSLKSJALKJDSDLSKJDSLKDJASLDFKSJSALK
 
-#include <any>
-#include <memory>
-#include <optional>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <utility>
-#include <vector>
-#include <iterator>
+#include "../includes.hpp"
 
 namespace fmt
 {

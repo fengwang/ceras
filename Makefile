@@ -594,6 +594,10 @@ variable: test/variable.cc
 	$(LINK) -o $(BIN_DIR)/test_variable $(OBJECTS_DIR)/test_variable.o $(LFLAGS)
 
 
+mnist_mini_serialize: test/mnist_mini_serialize.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_mini_serialize.o test/mnist_mini_serialize.cc
+	$(LINK) -o $(BIN_DIR)/test_mnist_mini_serialize $(OBJECTS_DIR)/test_mnist_mini_serialize.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
