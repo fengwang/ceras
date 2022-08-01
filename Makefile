@@ -592,4 +592,5 @@ clean_misc:
 	-rm ./*.png
 	-rm ./*.dot
 	-rm ./*.session
+	-rm ./*.txt
 

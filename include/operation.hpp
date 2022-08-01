@@ -548,8 +548,6 @@ namespace ceras
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto operator * ( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
-
-
         // case of Value * Operator and Operator * Value
         if constexpr( is_value_v<Lhs_Expression> || is_value_v<Rhs_Expression> )
         {
@@ -571,14 +569,11 @@ namespace ceras
         }
     }
 
-
     template< Expression Lhs_Expression, Expression Rhs_Expression >
     auto multiply( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         return lhs_ex * rhs_ex;
     }
-
-
 
     ///
     /// @brief Negative operator, elementwise.
@@ -626,16 +621,16 @@ namespace ceras
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( tensor.shape() );
-                                        //for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = (x > 0.0) ? (1.0/std::max(eps, x)) : (1.0/std::min(-eps, x)); });
-                                        for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = 1.0/x; } );
+                                        for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = (x > 0.0) ? (1.0/std::max(eps, x)) : (1.0/std::min(-eps, x)); });
+                                        //for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = 1.0/x; } );
                                         return ans;
                                     },
                                     [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() );
-                                        //for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / std::max(z*z, eps); } );
-                                        for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / (z*z); } );
+                                        for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / std::max(z*z, eps); } );
+                                        //for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / (z*z); } );
                                         ans.resize( grad.shape() );
                                         return ans;
                                     },
@@ -720,9 +715,6 @@ namespace ceras
     {
         return divide( lhs_ex, rhs_ex );
     }
-
-
-
 
     ///
     /// @brief Sum up all elements, returns a scalar.
@@ -889,10 +881,6 @@ namespace ceras
         return sqrt( square(ex) + square(ey) );
     }
 
-
-
-
-
     template <typename Float> requires std::floating_point<Float>
     auto constexpr clip( Float lower, Float upper=std::numeric_limits<Float>::max() ) noexcept
     {
@@ -971,11 +959,6 @@ namespace ceras
                 "reshape",
                 [new_shape, include_batch_flag]( std::vector<unsigned long> const& shape ) noexcept
                 {
-
-                    //debug_log( fmt::format("Calculating Reshape layer size include_batch_flag = {}", include_batch_flag) );
-                    //debug_log( fmt::format("Calculating Reshape layer size with shape = {}", shape) );
-                    //debug_log( fmt::format("Calculating Reshape layer size with new_shape = {}, ", new_shape) );
-
                     if ( include_batch_flag == false )
                         return new_shape;
 
@@ -989,16 +972,15 @@ namespace ceras
                         std::copy( new_shape.begin(), new_shape.end(), batched_new_shape.begin()+1 );
                     }
                     return batched_new_shape;
-
-                    /*
-                    std::vector<unsigned long> ans;
-                    ans.resize( new_shape.size()+1 );
-                    ans[0] = shape[0];
-                    std::copy( new_shape.begin(), new_shape.end(), ans.begin()+1 );
-                    return ans;
-                    */
+                },
+                [new_shape, include_batch_flag]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+                { // serializer
+                    auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                    std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                    std::vector<std::string> self_expression_code = input_expression_code;
+                    self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*new_shape*/, {}/*include_batch_flag*/ )( {} );", self_expression_identity, self_expression.name(), new_shape, include_batch_flag, input_expression_name ) );
+                    return std::make_tuple( self_expression_identity, self_expression_code );
                 }
-            //TODO: this op need a serializer
             )( ex );
         };
     }

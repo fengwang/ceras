@@ -13,11 +13,10 @@ namespace ceras
         template< typename Unary_Expression, typename Input_Expression >
         std::tuple<std::string, std::vector<std::string>> const operator()( Unary_Expression const& unary_expression, Input_Expression const& input_expression ) const noexcept
         {
-            auto const& [ie_name, ie_code] = serialize( input_expression );
-            //auto const& [ie_name, ie_code] = input_expression.serialize();
+            auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
             std::string unary_expressionidentity = fmt::format( "unary_expression_{}_{}", unary_expression.name(), unary_expression.id() );
-            std::vector<std::string> unary_expressioncode = ie_code;
-            unary_expressioncode.emplace_back( fmt::format( "auto {} = {}({});", unary_expressionidentity, unary_expression.name(), ie_name ) );
+            std::vector<std::string> unary_expressioncode = input_expression_code;
+            unary_expressioncode.emplace_back( fmt::format( "auto {} = {}({});", unary_expressionidentity, unary_expression.name(), input_expression_name ) );
             return std::make_tuple( unary_expressionidentity, unary_expressioncode );
         }
 
@@ -29,9 +28,7 @@ namespace ceras
         std::tuple<std::string, std::vector<std::string>> const operator()( Binary_Expression const& binary_expression, Lhs_Expression const& lhs_input_expression, Rhs_Expression const& rhs_input_expression ) const noexcept
         {
             auto const& [lhs_ex_name, lhs_ex_code] = serialize( lhs_input_expression );
-            //auto const& [lhs_ex_name, lhs_ex_code] = lhs_input_expression.serialize();
             auto const& [rhs_ex_name, rhs_ex_code] = serialize( rhs_input_expression );
-            //auto const& [rhs_ex_name, rhs_ex_code] = rhs_input_expression.serialize();
 
             std::string binary_expression_identity = fmt::format( "binary_expression_{}_{}", binary_expression.name(), binary_expression.id() );
 

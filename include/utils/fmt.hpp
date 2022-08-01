@@ -820,7 +820,7 @@ namespace fmt
 
 
         #ifndef MAXFORMAT // maximum elements to format, in case of a container
-        constexpr unsigned long max_element_to_format = 7;
+        constexpr unsigned long max_element_to_format = 8;
         #else
         constexpr unsigned long max_element_to_format = MAXFORMAT;
         #endif
@@ -986,16 +986,16 @@ namespace fmt
             }
 
             std::stringstream ss;
-            ss << "( ";
+            ss << "{ ";
             for ( ; first != _last; ++first )
                 ss << to_string( *first )  << ", ";
 
             if (last == _last)
-                ss.seekp(-2, ss.cur);
+                ss.seekp(-1, ss.cur);
             else
                 ss << " ...";
 
-            ss << " )";
+            ss << " }";
             return ss.str();
         }
 
