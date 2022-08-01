@@ -16,6 +16,9 @@ int main()
         std::cout << "Resutl of argmax(0)( {3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = la.serialize();
+        for ( auto const& cc : cpp_codes )
+            std::cout << cc << std::endl;
     }
 
     {
@@ -24,6 +27,9 @@ int main()
         std::cout << "Resutl of argmax(1)( { 3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = la.serialize();
+        for ( auto const& cc : cpp_codes )
+            std::cout << cc << std::endl;
     }
 
 
