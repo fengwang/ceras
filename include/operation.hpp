@@ -291,7 +291,7 @@ namespace ceras
     concept Expression = Operator<T> || Variable<T> || Place_Holder<T> || Constant<T> || Value<T>;
 
     template< Expression Ex >
-    std::vector<std::string, std::vector<std::string>> const serialize( Ex const& ex )
+    std::tuple<std::string, std::vector<std::string>> const serialize( Ex const& ex )
     {
         return ex.serialize();
     }

@@ -212,7 +212,8 @@ namespace ceras
 
         std::string var_name = fmt::format( "variable_{}", var.id() );
         std::vector<std::string> var_code = data_code;
-        var_code.emplace_back( fmt::format( "ceras::variable<ceras::tensor<{}>> {}( {}, {}, {}, {} );", type2string<typename Var::value_type>(), var_name, data_name, var.l1_regularizer(), var.l2_regularizer(), var.trainable()  ) );
+        //variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}, regularizer_{l1, l2, true}, trainable_{trainable}
+        var_code.emplace_back( fmt::format( "ceras::variable<ceras::tensor<{}>> {}( {}/*tensor*/, {}/*l1 regularizer*/, {}/*l2 regularizer*/, {}/*trainable*/ );", type2string<typename Var::value_type>(), var_name, data_name, var.l1_regularizer(), var.l2_regularizer(), var.trainable()  ) );
 
         return std::forward_as_tuple( var_name, var_code );
     }

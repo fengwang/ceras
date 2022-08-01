@@ -1,47 +1,31 @@
+DEBUG := 0
+ifeq ($(DEBUG), 1)
+	DEBUGOP = -DDEBUG -pg -ggdb -O0
+	DEBUGLP = -pg -O0
+else
+	DEBUGOP =  -funsafe-math-optimizations -Ofast -flto=auto  -funroll-all-loops -pipe -march=native
+	DEBUGLP = -Ofast
+endif
+
+CUDA := 0
+ifeq ($(CUDA), 1)
+	CUDAOP = -DCUDA
+	CUDALP = -L/opt/cuda/lib64 -lcudart -lcublas
+else
+	CUDAOP =
+	CUDALP =
+endif
+
+
 LOP           = -Wl,--gc-sections -flto
-#OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
-OP            = -pg -O0 -DDEBUG# -ggdb3
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4  -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=999999 -Ofast -flto -pipe -march=native -DNDEBUG -DCUDA
-#OP            = -funsafe-math-optimizations -ftemplate-depth=100860 -Ofast -ferror-limit=2 -flto -pipe -march=native -DDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DNDEBUG -fsanitize=address
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCBLAS
-OP            = -fconcepts-diagnostics-depth=4  -O0 -pg -flto -pipe -march=native -DDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=native -DDEBUG -DCUDA
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto -pipe -march=skylake -DNDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG -Og -ggdb
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DNDEBUG
-OP            = -funsafe-math-optimizations -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 -Ofast -flto=auto  -funroll-all-loops -pipe -march=native -DDEBUG -DCUDA
+OP            = -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 $(DEBUGOP) $(CUDAOP)
 
 CXX           = g++
-#CXX           = clang++
-CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=3 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
+CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
 
-#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
-#LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs -lc++abi ${LOP}
-LFLAGS        = $(OP) -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs -lcblas ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lstdc++fs ${LOP}
-LFLAGS        = $(OP) -pg -O0 -pthread  ${LOP}
-LFLAGS        = $(OP) -L/opt/cuda/lib64 -pthread  -lcudart -lcublas -lstdc++fs ${LOP}
-
-#CXX           = g++
-#OP            = -O0  -pg -DDEBUG
-#CXXFLAGS      = -std=c++2a -Wall -Wextra -fmax-errors=1 $(OP)
-#LFLAGS        = $(OP) -pg -O0
-
-LINK          = $(CXX) $(LFLAGS)
+LFLAGS        = -pthread -lstdc++fs $(DEBUGLP) $(CUDALP) ${LOP}
+#LINK          = $(CXX) $(LFLAGS)
+LINK          = $(CXX)
 
 ####### Output directory
 OBJECTS_DIR   = ./obj

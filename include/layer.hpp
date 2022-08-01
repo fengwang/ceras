@@ -6,6 +6,7 @@
 #include "./loss.hpp"
 #include "./optimizer.hpp"
 #include "./utils/better_assert.hpp"
+#include "./utils/fmt.hpp"
 
 // try to mimic classes defined in tensorflow.keras
 
@@ -223,6 +224,7 @@ namespace ceras
     {
         return [=]<Expression Ex>( Ex const& ex )
         {
+            better_assert( ex.shape().size() >= 1, fmt::format("Error: expecting shape 2D, but got {}D of {}.", ex.shape().size(), ex.shape()) );
             unsigned long const input_size = *(ex.shape().rbegin());
             auto w = variable<tensor<float>>{ glorot_uniform<float>({input_size, output_size}), kernel_regularizer_l1, kernel_regularizer_l2 };
             auto b = variable<tensor<float>>{ zeros<float>({1, output_size}), bias_regularizer_l1, bias_regularizer_l2, use_bias }; // if use_baias, then b is trainable; otherwise, non-trainable.
@@ -472,17 +474,6 @@ namespace ceras
     {
         return average_pooling_2d( stride );
     }
-
-    //
-    // TODO: wrap more operations from 'operation.hpp'
-    //
-
-
-
-
-
-
-
 
 }//namespace f
 
