@@ -14,6 +14,10 @@ int main()
         std::cout << "Resutl of expand_dims(0)( {2, 3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = serialize( la );
+        std::cout << "Serialize to cpp :\n ";
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     {
@@ -22,6 +26,10 @@ int main()
         std::cout << "Resutl of expand_dims(1)( {2, 3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = serialize( la );
+        std::cout << "Serialize to cpp :\n ";
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     {
@@ -30,6 +38,10 @@ int main()
         std::cout << "Resutl of expand_dims(2)( {2, 3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = serialize( la );
+        std::cout << "Serialize to cpp :\n ";
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     {
@@ -38,6 +50,10 @@ int main()
         std::cout << "Resutl of expand_dims(-1)( {2, 3, 4} ) is " << result << std::endl;
         la.backward( ceras::ones_like( result ) );
         std::cout << "gradient is a=\n" << a.gradient() << std::endl;
+        auto const& [_, cpp_codes] = serialize( la );
+        std::cout << "Serialize to cpp :\n ";
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     return 0;

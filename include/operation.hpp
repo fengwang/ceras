@@ -1054,9 +1054,11 @@ namespace ceras
                 [axis]( std::vector<unsigned long> const& shape ) noexcept
                 {//shape calculator
                     std::vector<unsigned long> ans = shape;
-                    if ( axis == -1 ) axis = ans.size();
-                    ans.insert( ans.begin()+axis, 1 );
-                }
+                    //int offset = axis;
+                    //if ( axis == -1 ) offset = ans.size();
+                    int const offset = (axis == -1) ? shape.size() : axis;
+                    ans.insert( ans.begin()+offset, 1UL );
+                },
                 [axis]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
                 { // serializer
                     auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
