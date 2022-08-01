@@ -909,6 +909,26 @@ namespace ceras
         };
     }
 
+    template< typename ... Args >
+    inline constexpr auto make_argumented_unary_operator_serializer(  Args const& ... args ) noexcept
+    {
+        return [=]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+        {
+            auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+            std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+            std::vector<std::string> self_expression_code = input_expression_code;
+            constexpr unsigned long number_of_args = sizeof...( Args );
+            std::string arg_string_formater = std::string{ "{}" };
+            {
+                for ( unsigned long idx = 1; idx < number_of_args; ++idx )
+                    arg_string_formater += std::string{", {}"};
+            }
+            std::string code_formater =  std::string{"auto {} = {}( "} + arg_string_formater +  std::string{" )( {} );"};
+            self_expression_code.emplace_back( fmt::format( code_formater, self_expression_identity, self_expression.name(), args..., input_expression_name ) );
+            return std::make_tuple( self_expression_identity, self_expression_code );
+        };
+    }
+
     // include_batch_flag:
     //
     //  true: considering the batch size at the first dim
@@ -973,6 +993,7 @@ namespace ceras
                     }
                     return batched_new_shape;
                 },
+#if 0
                 [new_shape, include_batch_flag]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
                 { // serializer
                     auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
@@ -981,6 +1002,9 @@ namespace ceras
                     self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*new_shape*/, {}/*include_batch_flag*/ )( {} );", self_expression_identity, self_expression.name(), new_shape, include_batch_flag, input_expression_name ) );
                     return std::make_tuple( self_expression_identity, self_expression_code );
                 }
+#else
+                make_argumented_unary_operator_serializer( new_shape, include_batch_flag )
+#endif
             )( ex );
         };
     }
