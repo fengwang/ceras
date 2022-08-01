@@ -1036,7 +1036,7 @@ namespace ceras
             return make_unary_operator
             (
                 [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
-                {
+                {//forward propagation
                     Tsor ans = tsor;
                     std::vector<unsigned long> shape = ans.shape();
                     int const _axis = (axis == -1) ? shape.size() : axis;
@@ -1045,17 +1045,25 @@ namespace ceras
                     return ans;
                 },
                 [=]<Tensor Tsor>( Tsor const& input, Tsor const& /*output*/, Tsor const& grad ) noexcept
-                {
+                {//backward propagation
                     Tsor ans = grad;
                     ans.reshape( input.shape() );
                     return ans;
                 },
                 "expand_dims",
                 [axis]( std::vector<unsigned long> const& shape ) noexcept
-                {
+                {//shape calculator
                     std::vector<unsigned long> ans = shape;
                     if ( axis == -1 ) axis = ans.size();
                     ans.insert( ans.begin()+axis, 1 );
+                }
+                [axis]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+                { // serializer
+                    auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                    std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                    std::vector<std::string> self_expression_code = input_expression_code;
+                    self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*axis*/ )( {} );", self_expression_identity, self_expression.name(), axis, input_expression_name ) );
+                    return std::make_tuple( self_expression_identity, self_expression_code );
                 }
             //TODO: this op needs a serializer
             )(ex);
