@@ -19,6 +19,10 @@ int main()
         std::cout << "backward gradient\n" << grad << std::endl;
         la.backward( grad );
         std::cout << "gradient with a=\n" << a.gradient() << std::endl;
+
+        auto const& [_, cpp_codes] = la.serialize();
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     {
@@ -34,6 +38,10 @@ int main()
         std::cout << "backward gradient\n" << grad << std::endl;
         la.backward( grad );
         std::cout << "gradient with a=\n" << a.gradient() << std::endl;
+
+        auto const& [_, cpp_codes] = la.serialize();
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
     }
 
     return 0;
