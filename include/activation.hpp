@@ -414,8 +414,8 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
                                             return ans;
                                         },
-                                        "leaky_relu"
-                                        //TODO: serializer
+                                        "leaky_relu",
+                                        make_argumented_unary_operator_serializer( factor )
                     )( ex );
         };
     }
@@ -468,8 +468,8 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [alpha]( value_type& v_back, value_type const v_in ){ v_back = (v_in >= value_type{0}) ? v_back : alpha*std::exp(v_back); } );
                                             return ans;
                                         },
-                                        "elu"
-                                        //TODO: serializer
+                                        "elu",
+                                        make_argumented_unary_operator_serializer( alpha )
                     )( ex );
         };
     }

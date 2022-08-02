@@ -16,6 +16,7 @@
 #include "./utils/enable_shared.hpp"
 #include "./utils/fmt.hpp"
 #include "./utils/enable_serializer.hpp"
+#include "./utils/overload.hpp"
 
 namespace ceras
 {
@@ -117,6 +118,7 @@ namespace ceras
                                         Serializer const& serializer = Serializer{}
             ) noexcept
     {
+        static_assert( std::is_invocable_v<Output_Shape_Calculator, std::vector<unsigned long>>, "Unary operator shape calculator should be able to accept a vector of unsigned long." );
         return [&]( auto const& op ) noexcept
         {
             auto ans = unary_operator{ op, unary_forward_action, unary_backward_action, output_shape_calculator, serializer };
@@ -228,6 +230,7 @@ namespace ceras
                                Output_Shape_Calculator const& output_shape_calculator = Output_Shape_Calculator{},
                                Serializer const& serializer = Serializer{}) noexcept
     {
+        static_assert( std::is_invocable_v<Output_Shape_Calculator, std::vector<unsigned long>, std::vector<unsigned long>>, "Unary operator shape calculator should be able to accept two vectors of unsigned long." );
         return [&]( auto const& lhs_op, auto const& rhs_op ) noexcept
         {
             auto ans = binary_operator{ lhs_op, rhs_op, binary_forward_action, binary_backward_action, output_shape_calculator, serializer };
@@ -294,6 +297,61 @@ namespace ceras
     std::tuple<std::string, std::vector<std::string>> const serialize( Ex const& ex )
     {
         return ex.serialize();
+    }
+
+    template< typename ... Args >
+    inline constexpr auto make_argumented_operator_serializer(  Args const& ... args ) noexcept
+    {
+#if 0
+        return [=]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+        {
+            auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+            std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+            std::vector<std::string> self_expression_code = input_expression_code;
+            constexpr unsigned long number_of_args = sizeof...( Args );
+            std::string arg_string_formater = std::string{ "{}" };
+            {
+                for ( unsigned long idx = 1; idx < number_of_args; ++idx )
+                    arg_string_formater += std::string{", {}"};
+            }
+            std::string code_formater =  std::string{"auto {} = {}( "} + arg_string_formater +  std::string{" )( {} );"};
+            self_expression_code.emplace_back( fmt::format( code_formater, self_expression_identity, self_expression.name(), args..., input_expression_name ) );
+            return std::make_tuple( self_expression_identity, self_expression_code );
+        };
+#endif
+        return overload(    [=]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+                            {
+                                auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                                std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                                std::vector<std::string> self_expression_code = input_expression_code;
+                                constexpr unsigned long number_of_args = sizeof...( Args );
+                                std::string arg_string_formater = std::string{ "{}" };
+                                {
+                                    for ( unsigned long idx = 1; idx < number_of_args; ++idx )
+                                        arg_string_formater += std::string{", {}"};
+                                }
+                                std::string code_formater =  std::string{"auto {} = {}( "} + arg_string_formater +  std::string{" )( {} );"};
+                                self_expression_code.emplace_back( fmt::format( code_formater, self_expression_identity, self_expression.name(), args..., input_expression_name ) );
+                                return std::make_tuple( self_expression_identity, self_expression_code );
+                            },
+                            [=]<Expression Self_Expression, Expression LHS_Input_Expression, Expression RHS_Input_Expression>( Self_Expression const& self_expression, LHS_Input_Expression const& lhs_input_expression, RHS_Input_Expression const&  rhs_input_expression ) noexcept
+                            {
+                                auto const& [lhs_input_expression_name, lhs_input_expression_code] = serialize( lhs_input_expression );
+                                auto const& [rhs_input_expression_name, rhs_input_expression_code] = serialize( rhs_input_expression );
+                                std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                                std::vector<std::string> self_expression_code = lhs_input_expression_code;
+                                std::copy( rhs_input_expression_code.begin(), rhs_input_expression_code.end(), std::back_inserter( self_expression_code ) );
+                                constexpr unsigned long number_of_args = sizeof...( Args );
+                                std::string arg_string_formater = std::string{ "{}" };
+                                {
+                                    for ( unsigned long idx = 1; idx < number_of_args; ++idx )
+                                        arg_string_formater += std::string{", {}"};
+                                }
+                                std::string code_formater =  std::string{"auto {} = {}( "} + arg_string_formater +  std::string{" )( {}, {} );"};
+                                self_expression_code.emplace_back( fmt::format( code_formater, self_expression_identity, self_expression.name(), args..., lhs_input_expression_name, rhs_input_expression_name ) );
+                                return std::make_tuple( self_expression_identity, self_expression_code );
+                            }
+                        );
     }
 
 
@@ -433,7 +491,8 @@ namespace ceras
                     return ans;
                 },
                 "broadcast",
-                [new_shape]( std::vector<unsigned long> const&) noexcept { return new_shape; }
+                [new_shape]( std::vector<unsigned long> const&) noexcept { return new_shape; },
+                make_argumented_operator_serializer( new_shape )
             )(ex);
         };
     }
@@ -909,26 +968,6 @@ namespace ceras
         };
     }
 
-    template< typename ... Args >
-    inline constexpr auto make_argumented_unary_operator_serializer(  Args const& ... args ) noexcept
-    {
-        return [=]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
-        {
-            auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
-            std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
-            std::vector<std::string> self_expression_code = input_expression_code;
-            constexpr unsigned long number_of_args = sizeof...( Args );
-            std::string arg_string_formater = std::string{ "{}" };
-            {
-                for ( unsigned long idx = 1; idx < number_of_args; ++idx )
-                    arg_string_formater += std::string{", {}"};
-            }
-            std::string code_formater =  std::string{"auto {} = {}( "} + arg_string_formater +  std::string{" )( {} );"};
-            self_expression_code.emplace_back( fmt::format( code_formater, self_expression_identity, self_expression.name(), args..., input_expression_name ) );
-            return std::make_tuple( self_expression_identity, self_expression_code );
-        };
-    }
-
     // include_batch_flag:
     //
     //  true: considering the batch size at the first dim
@@ -1003,7 +1042,7 @@ namespace ceras
                     return std::make_tuple( self_expression_identity, self_expression_code );
                 }
 #else
-                make_argumented_unary_operator_serializer( new_shape, include_batch_flag )
+                make_argumented_operator_serializer( new_shape, include_batch_flag )
 #endif
             )( ex );
         };
@@ -1163,6 +1202,7 @@ namespace ceras
                     ans.resize( ans.size() - 1 );
                     return ans;
                 },
+#if 0
                 [axis]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
                 { // serializer
                     auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
@@ -1171,6 +1211,8 @@ namespace ceras
                     self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*axis*/ )( {} );", self_expression_identity, self_expression.name(), axis, input_expression_name ) );
                     return std::make_tuple( self_expression_identity, self_expression_code );
                 }
+#endif
+                make_argumented_operator_serializer( axis )
             )(ex);
         };
     }
@@ -1223,6 +1265,7 @@ namespace ceras
                                         },
                                         "flip",
                                         identity_output_shape_calculator{},
+#if 0
                                         [axis]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
                                         { // serializer
                                             auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
@@ -1231,6 +1274,8 @@ namespace ceras
                                             self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*axis*/ )( {} );", self_expression_identity, self_expression.name(), axis, input_expression_name ) );
                                             return std::make_tuple( self_expression_identity, self_expression_code );
                                         }
+#endif
+                                        make_argumented_operator_serializer( axis )
                     )( ex );
         };
     }
@@ -1422,7 +1467,8 @@ namespace ceras
                     unsigned long const output_column_matrix_row = row_kernel * col_kernel * CH;
                     unsigned long const output_column_matrix_col = BS * output_row * output_col;
                     return std::vector<unsigned long>{ {output_column_matrix_row, output_column_matrix_col} };
-                }
+                },
+                make_argumented_operator_serializer( row_kernel, col_kernel, row_padding, col_padding, row_stride, col_stride, row_dilation, col_dilation )
             )( ex );
         };
     }
@@ -1613,8 +1659,8 @@ namespace ceras
                     return back_ans;
                 },
                 "conv2d_transpose_intermediate",
-                shape_calculator
-                // TODO: a serializer
+                shape_calculator,
+                make_argumented_operator_serializer( row_kernel, col_kernel, row_stride, col_stride, padding )
             )(ex);
         };
     }
@@ -1706,8 +1752,9 @@ namespace ceras
                         ans[idx] *= mask__[idx];
                     return ans;
                 },
-                "dropout"
-                //TODO: serializer
+                "dropout",
+                identity_output_shape_calculator{},
+                make_argumented_operator_serializer( factor )
             )( ex );
         };
     }
@@ -1833,8 +1880,8 @@ namespace ceras
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
-                }
-                // TODO: serializer
+                },
+                make_argumented_operator_serializer( stride )
             )( ex );
         };
     }
@@ -1903,8 +1950,8 @@ namespace ceras
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]/stride, shape[2]/stride, shape[3]} };
-                }
-                // serializer
+                },
+                make_argumented_operator_serializer( stride )
             )( ex );
         };
     }
@@ -1997,8 +2044,8 @@ namespace ceras
                 {
                     better_assert( shape.size()==4, fmt::format( "expecting shape size of 4, but got {}", shape.size() ) );
                     return std::vector<unsigned long>{ {shape[0], shape[1]*stride, shape[2]*stride, shape[3]} };
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( stride )
             )( ex );
         };
     }
@@ -2132,8 +2179,9 @@ namespace ceras
                             ans_[r][c] = grad_[r][c] / std::sqrt( variance[c] + eps );
                     return ans;
                 },
-                "normalization_batch"
-                // TODO: normalizer
+                "normalization_batch",
+                identity_output_shape_calculator{},
+                make_argumented_operator_serializer( momentum )
             )( ex );
         };
     }
@@ -2213,8 +2261,8 @@ namespace ceras
                     if ( axe > ans.size() ) axe = ans.size() - 1;
                     ans[axe] += r[axe];
                     return ans;
-                }
-                // TODO serializer
+                },
+                make_argumented_operator_serializer( axe )
             )( lhs_ex, rhs_ex );
         };
     }
@@ -2380,7 +2428,9 @@ namespace ceras
                 {
                     return zeros_like( grad );
                 },
-                "random_normal_like"
+                "random_normal_like",
+                identity_output_shape_calculator{},
+                make_argumented_operator_serializer( mean, stddev )
             )(ex);
         };
     }
@@ -2610,14 +2660,15 @@ namespace ceras
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return [top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        return [padding, top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
                 zero_padding_2d_context{}.make_forward()( top, bottom, left, right, forward_cache ),
                 zero_padding_2d_context{}.make_backward()( top, bottom, left, right, backward_cache ),
                 "zero_padding_2d",
-                [=]( std::vector<unsigned long> const& shape ) noexcept { return std::vector<unsigned long>{ {shape[0], shape[1]+top+bottom, shape[2]+left+right, shape[3]} }; }
+                [=]( std::vector<unsigned long> const& shape ) noexcept { return std::vector<unsigned long>{ {shape[0], shape[1]+top+bottom, shape[2]+left+right, shape[3]} }; },
+                make_argumented_operator_serializer( padding )
             )( ex );
         };
     }
@@ -2730,7 +2781,7 @@ namespace ceras
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return [top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
+        return [padding, top, bottom, left, right, forward_cache, backward_cache]<Expression Ex>( Ex const& ex ) noexcept
         {
             return make_unary_operator
             (
@@ -2740,8 +2791,8 @@ namespace ceras
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     return std::vector<unsigned long>{ {shape[0], shape[1]-top-bottom, shape[2]-left-right, shape[3]} };
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( padding )
             )( ex );
         };
     }
@@ -2959,8 +3010,8 @@ namespace ceras
                     if ( axis >= ans.size() ) axis = ans.size()-1;
                     ans[axis] *= repeats;
                     return ans;
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( repeats, axis )
             )
             ( ex );
         };
@@ -3093,8 +3144,8 @@ namespace ceras
                     std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( axis )
             )
             ( ex );
         };
@@ -3228,8 +3279,8 @@ namespace ceras
                     std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( axis )
             )
             ( ex );
         };
@@ -3344,8 +3395,8 @@ namespace ceras
                     std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
-                }
-                //TODO: serializer
+                },
+                make_argumented_operator_serializer( axis )
             )
             ( ex );
         };
@@ -4676,8 +4727,15 @@ namespace ceras
                                         for_each( input.begin(), input.end(), grad.begin(), ans.begin(), [exponent]( auto x, auto g, auto& v ) noexcept { v = exponent * g * std::pow(x, exponent-1.0); } );
                                         return ans;
                                     },
-                                    "pow"
-                                    //TODO: Serializer
+                                    "pow",
+                                    [exponent]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+                                    { // serializer
+                                        auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                                        std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                                        std::vector<std::string> self_expression_code = input_expression_code;
+                                        self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}, {} );", self_expression_identity, self_expression.name(), input_expression_name, exponent ) );
+                                        return std::make_tuple( self_expression_identity, self_expression_code );
+                                    }
                 )( ex );
     };
 

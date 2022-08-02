@@ -164,6 +164,14 @@ int main()
     float const err = 1.0 * errors / 10000;
     std::cout << "Prediction error on the testing set is " << err << std::endl;
 
+    //auto output = Dense( 10 )( l5 );
+    //serialize
+    {
+        auto const& [_, cpp_codes] = output.serialize();
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
+    }
+
     return 0;
 }
 

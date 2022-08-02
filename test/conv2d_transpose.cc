@@ -24,6 +24,12 @@ void test_22()
 
     auto ans = s.run( cab );
     std::cout << "after convolution:\n" << ceras::squeeze(ans) << std::endl;
+
+    {
+        auto const& [_, cpp_codes] = cab.serialize();
+        for ( auto const& cpp_code : cpp_codes )
+            std::cout << cpp_code << std::endl;
+    }
 }
 
 

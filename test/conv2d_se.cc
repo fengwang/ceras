@@ -14,7 +14,8 @@ void test( unsigned long output_channels,std::vector<unsigned long> const& kerne
     ceras::tensor<float> input_data = ceras::random<float>( input_data_shape );
 
     auto input = ceras::variable{ input_data };
-    auto output = ceras::Conv2D( output_channels, kernel_size, input_shape, padding, strides )(input);
+    //auto output = ceras::Conv2D( output_channels, kernel_size, input_shape, padding, strides )(input);
+    auto output = ceras::Conv2D( output_channels, kernel_size, padding, strides )(input);
     //auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto& s = ceras::get_default_session<ceras::tensor<double>>();
     auto result = s.run( output );
@@ -24,7 +25,11 @@ void test( unsigned long output_channels,std::vector<unsigned long> const& kerne
               << " and input_shape[0] " << input_shape[0] << " and padding " << padding << " and strides[0] " << strides[0] << std::endl;
     std::cout << "The output shape is :\n";
     std::copy( output_shape.begin(), output_shape.end(), std::ostream_iterator<unsigned long>{std::cout, " " } );
-    std::cout << "\n";
+    std::cout << "\n\n";
+
+    auto const& [_, cpp_codes] = output.serialize();
+    for ( auto const& cpp_code : cpp_codes )
+        std::cout << cpp_code << std::endl;
 
 }
 
