@@ -80,6 +80,15 @@ namespace ceras
                 }
             }
 
+            void gc()
+            {
+                std::allocator<std::byte> alloc;
+                for ( auto& [size, address] : reserved_memory )
+                {
+                    alloc.deallocate( address, size );
+                }
+            }
+
         }; // struct memory_cache
 
         memory_cache& get_memory_cache()
