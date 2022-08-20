@@ -5,6 +5,7 @@
 #include "../config.hpp"
 #include "../backend/cuda.hpp"
 #include "./singleton.hpp"
+#include "./better_assert.hpp"
 
 namespace ceras
 {
@@ -53,7 +54,21 @@ namespace ceras
 
                 // create a fresh new memory
                 std::allocator<std::byte> alloc;
-                std::byte* ans = alloc.allocate( size );
+                //std::byte* ans = alloc.allocate( size );
+
+                std::byte* ans = nullptr;
+                try
+                {
+                    ans = alloc.allocate( size );
+                }
+                catch (const std::bad_alloc& e)
+                {
+                    if ( gc() ) // another attempt to allocate memory
+                        ans = alloc.allocate( size );
+                    else
+                        better_assert( false, "OOM...." );
+                }
+
                 allocated_memory.emplace( size, ans );
                 return ans;
             }
@@ -80,13 +95,17 @@ namespace ceras
                 }
             }
 
-            void gc()
+            // garbage collection, true for success, false for failure.
+            bool gc()
             {
+                if (reserved_memory.size()==0)
+                    return false;
+
                 std::allocator<std::byte> alloc;
                 for ( auto& [size, address] : reserved_memory )
-                {
                     alloc.deallocate( address, size );
-                }
+
+                return true;
             }
 
         }; // struct memory_cache
