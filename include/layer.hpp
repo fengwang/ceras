@@ -44,11 +44,11 @@ namespace ceras
     /// \endcode
     ///
     [[deprecated("input_shape is not required in the new Conv2D(), this interface will be removed.")]]
-    inline auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size,
-                        std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
-                        std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
-                        float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-           ) noexcept
+    inline constexpr auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size,
+                                  std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
+                                  std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
+                                  float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
+                               ) noexcept
     {
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
@@ -96,9 +96,9 @@ namespace ceras
     /// auto m = model{ x, u };
     /// \endcode
     ///
-    inline auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size, std::string const& padding="valid",
-                        std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
-                        float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
+    inline constexpr auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size, std::string const& padding="valid",
+                                  std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
+                                  float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
            ) noexcept
     {
 

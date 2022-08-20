@@ -33,7 +33,7 @@ void test_44_back()
     std::cout << "gradient generated as:\n" << grad << std::endl;
     ta.backward( grad );
 
-    auto new_g = *(va.gradient_);
+    auto new_g = va.gradient();
     std::cout << "propageated gradient:\n" << new_g << std::endl;
 }
 

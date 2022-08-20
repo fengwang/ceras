@@ -1527,7 +1527,7 @@ namespace ceras
     ///
     /// @brief Conv2D not constrained by the input shape.
     ///
-    auto inline general_conv2d
+    auto constexpr inline general_conv2d
     (
         unsigned long const row_stride=1, unsigned long const col_stride=1,
         unsigned long const row_dilation=1, unsigned long const col_dilation=1,
