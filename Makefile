@@ -582,6 +582,10 @@ mnist_mini_serialize: test/mnist_mini_serialize.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_mnist_mini_serialize.o test/mnist_mini_serialize.cc
 	$(LINK) -o $(BIN_DIR)/test_mnist_mini_serialize $(OBJECTS_DIR)/test_mnist_mini_serialize.o $(LFLAGS)
 
+gemm_optimization: examples/gemm_optimization.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization.o examples/gemm_optimization.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization $(OBJECTS_DIR)/test_gemm_optimization.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:

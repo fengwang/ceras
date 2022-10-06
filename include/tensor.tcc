@@ -414,7 +414,7 @@ namespace ceras
                 continue;
             }
 
-            better_assert( dim_a == dim_b, fmt::format("broadcasting: expecting same dimension, but got dim_a = {}, dim_b = {}", dim_a, dim_b) );
+            better_assert( dim_a == dim_b, fmt::format("broadcasting: expecting same dimension, but got dim_a = {}, dim_b = {}, while shape_a={}, shape_b={}", dim_a, dim_b, shape_a, shape_b) );
             ans.push_back( dim_a );
         }
 
@@ -827,6 +827,12 @@ namespace ceras
         tensor<T,A> ans{ shape };
         std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
         return ans;
+    }
+
+    template< typename T, typename A=default_allocator<T> >
+    tensor<T,A> rand( std::vector<unsigned long> const& shape, T min=T{0}, T max=T{1} )
+    {
+        return random( shape, min, max );
     }
 
     template< Tensor Tsor >
