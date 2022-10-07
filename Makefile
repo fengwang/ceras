@@ -586,6 +586,14 @@ gemm_optimization: examples/gemm_optimization.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization.o examples/gemm_optimization.cc
 	$(LINK) -o $(BIN_DIR)/test_gemm_optimization $(OBJECTS_DIR)/test_gemm_optimization.o $(LFLAGS)
 
+gemm_optimization_4x4: examples/gemm_optimization_4x4.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_4x4.o examples/gemm_optimization_4x4.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_4x4 $(OBJECTS_DIR)/test_gemm_optimization_4x4.o $(LFLAGS)
+
+gemm_optimization_nxn: examples/gemm_optimization_nxn.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_nxn.o examples/gemm_optimization_nxn.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_nxn $(OBJECTS_DIR)/test_gemm_optimization_nxn.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
