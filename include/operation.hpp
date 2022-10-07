@@ -680,16 +680,14 @@ namespace ceras
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( tensor.shape() );
-                                        for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = (x > 0.0) ? (1.0/std::max(eps, x)) : (1.0/std::min(-eps, x)); });
-                                        //for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = 1.0/x; } );
+                                        for_each( tensor.begin(), tensor.end(), ans.begin(), [](auto const x, auto& y) { y = (x > 0.0) ? (1.0/std::max(eps, static_cast<double>(x))) : (1.0/std::min(-eps, static_cast<double>(x))); });
                                         return ans;
                                     },
                                     [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() );
-                                        for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / std::max(z*z, eps); } );
-                                        //for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / (z*z); } );
+                                        for_each( ans.begin(), ans.end(), grad.begin(), input.begin(), []( auto& x, auto y, auto z ){ x = - y / std::max(static_cast<double>(z*z), eps); } );
                                         ans.resize( grad.shape() );
                                         return ans;
                                     },
