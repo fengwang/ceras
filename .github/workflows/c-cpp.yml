@@ -21,4 +21,4 @@ jobs:
     - name: make test CI
       run: make CXX=g++-11 ci && ./bin/test_ci
     - name: make mnist
-      run: make mnist && ./bin/test_mnist
+      run: make CXX=g++-11 mnist && ./bin/test_mnist
