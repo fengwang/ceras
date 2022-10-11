@@ -1,5 +1,7 @@
 # Ceras
 
+![CI](https://github.com/fengwang/ceras/actions/workflows/c-cpp.yml/badge.svg)
+
 ----
 
 <div align="center">
