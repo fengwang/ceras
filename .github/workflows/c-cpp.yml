@@ -1,0 +1,24 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up GCC
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 11
+        platform: x64
+    - name: make test CI
+      run: make CXX=g++-11 ci && ./bin/test_ci
+    - name: make mnist
+      run: make mnist && ./bin/test_mnist
