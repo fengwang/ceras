@@ -1,0 +1,7 @@
+doc/latex/*.eps
+doc/latex/*.tex
+doc/html
+reference
+tmp
+*.backup
+*.orig

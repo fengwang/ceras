@@ -1,7 +1,15 @@
+// ./bin/test_gemm_optimization_nxn -m 2 -ops 7 -epochs 1000 -training_samples 1023 -iteration 1025 -learning_rate 1.0
 #include "../include/ceras.hpp"
 #include "./parser.hpp"
+#include "../include/utils/fmt.hpp"
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
+
+inline int send_message( std::string const& message )
+{
+    return std::system( fmt::format( "/usr/bin/curl -s -X POST https://api.telegram.org/bot907795794:AAGbJnkHc_TVvR1CRDvH1UTSG7G0W-nCW1I/sendMessage -d chat_id=451479789 -d text=\"{}\"", message ).c_str() );
+}
 
 
 //(A \* a) .*  (B \* b) * c -> C
@@ -10,6 +18,9 @@ int main( int argc, char** argv )
 {
     using namespace ceras;
     random_generator.seed( 113 );
+    constexpr float stop_threshold = 1.0e-7f;
+    constexpr float success_threshold = 1.0e-3f;
+    constexpr unsigned long final_iterations = 128;
 
     unsigned long m = 4;
     unsigned long ops = 46;
@@ -34,9 +45,14 @@ int main( int argc, char** argv )
         std::cout << "training_samples = \t" << training_samples << "\n";
         std::cout << "iterations = \t" << iterations << "\n";
         std::cout << "learning_rate = \t" << learning_rate << "\n";
-    }
 
-    constexpr float stop_threshold = 1.0e-8f;
+
+        std::string const report = fmt::format( "Running gemm optimization with m={}, ops={}, epochs={}, training_samples={}, iterations={} and learning_rate={}", m, ops, epochs, training_samples, iterations, learning_rate );
+        std::cout << "Generated report:\n" << report << "\n";
+        send_message( report );
+        //std::system( fmt::format( "/usr/bin/curl -s -X POST https://api.telegram.org/bot907795794:AAGbJnkHc_TVvR1CRDvH1UTSG7G0W-nCW1I/sendMessage -d chat_id=451479789 -d text=\"{}\"", report ).c_str() );
+
+    }
 
     // prepare traing data
     tensor<float> train_A = rand<float>( {training_samples, m*m} );
@@ -74,11 +90,11 @@ int main( int argc, char** argv )
     auto c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0f) };
     auto _c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0) };
 
-    bool maybe_found = false;
+    bool found_flag = false;
 
     for ( auto it : range( iterations ) )
     {
-        if (maybe_found)
+        if (found_flag)
             break;
 
         value<float> alpha{ 1.0f + static_cast<float>(1000.0 * it*it / (iterations*iterations)) };
@@ -96,7 +112,7 @@ int main( int argc, char** argv )
             s.run( optimizer );
             if (current_error[0] <= stop_threshold)
             {
-                maybe_found = true;
+                found_flag = true;
                 std::cout << "Maybe found with loss = " << current_error[0] << std::endl;
                 std::cout << "BREAK!" << std::endl;
                 break;
@@ -116,37 +132,47 @@ int main( int argc, char** argv )
         auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
         auto CC = AB * elementwise_product( tanh( alpha * c ), sigmoid( alpha * _c ) ); // shape ( 1, ops )
         auto loss = mse( CC, C );
-        auto optimizer = adam{ loss, training_samples, 1.0e-5f };
+        auto optimizer = adam{ loss, training_samples, 1.0e-6f };
 
-        for ( auto idx : range( 16 ) )
+        for ( auto idx : range( final_iterations ) )
         {
             (void) idx; // cancel warning
             s.run( loss );
             s.run( optimizer );
         }
+
         auto current_error = s.run( loss );
-        std::cout << "The final error is : " << current_error << std::endl;
+        std::cout << "The final error is : " << current_error[0] << std::endl;
+        send_message( fmt::format("Finished with error: {}.\n", current_error[0]) );
+        if ( (current_error[0] > success_threshold) && (!found_flag) )
+            return 0;
 
         {
             auto op = elementwise_product( tanh( alpha * a ), sigmoid( alpha * _a ) );
             auto _ = s.run( op );
             std::cout << "AA is \n" << _ << std::endl;
+
+            send_message( fmt::format( "AA = {}\n", _ ) );
         }
 
         {
             auto op = elementwise_product( tanh( alpha * b ), sigmoid( alpha * _b ) );
             auto _ = s.run( op );
             std::cout << "BB is \n" << _ << std::endl;
+
+            send_message( fmt::format( "BB = {}\n", _ ) );
         }
 
         {
             auto op = elementwise_product( tanh( alpha * c ), sigmoid( alpha * _c ) );
             auto _ = s.run( op );
             std::cout << "CC is \n" << _ << std::endl;
+
+            send_message( fmt::format( "CC = {}\n", _ ) );
         }
 
-    }
 
+    }
 
     return 0;
 }
