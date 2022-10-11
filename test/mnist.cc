@@ -119,7 +119,7 @@ int main()
 
     std::cout << std::endl;
 
-    s.save( "./mnist.session" );
+    //s.save( "./mnist.session" );
 
     unsigned long const new_batch_size = 1;
 

@@ -828,17 +828,17 @@ namespace fmt
         template< typename T >
         std::string to_string( T const& );
 
-        inline constexpr std::string to_string(  bool b ) noexcept
+        inline std::string to_string(  bool b ) noexcept
         {
             return b ? std::string( "true" ) : std::string( "false");
         }
 
-        inline constexpr  std::string to_string( std::string const& st ) noexcept
+        inline std::string to_string( std::string const& st ) noexcept
         {
             return st;
         }
 
-        inline constexpr std::string to_string( char ch ) noexcept
+        inline std::string to_string( char ch ) noexcept
         {
             return std::string{1, ch};
         }

@@ -21,7 +21,9 @@ namespace ceras
             return buf;
         }
 
-        constexpr operator std::string() const noexcept
+        //constexpr operator std::string() const noexcept
+        // FIXME: ‘std::__cxx11::basic_string<char>’ does not have ‘constexpr’ destructor  <-- gcc11
+        operator std::string() const noexcept
         {
             return std::string{buf};
         }
