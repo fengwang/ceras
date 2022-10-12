@@ -8,7 +8,7 @@
 
 inline int send_message( std::string const& message )
 {
-    return std::system( fmt::format( "/usr/bin/curl -s -X POST https://api.telegram.org/bot907795794:AAGbJnkHc_TVvR1CRDvH1UTSG7G0W-nCW1I/sendMessage -d chat_id=451479789 -d text=\"{}\"", message ).c_str() );
+    return 0;
 }
 
 
@@ -50,7 +50,6 @@ int main( int argc, char** argv )
         std::string const report = fmt::format( "Running gemm optimization with m={}, ops={}, epochs={}, training_samples={}, iterations={} and learning_rate={}", m, ops, epochs, training_samples, iterations, learning_rate );
         std::cout << "Generated report:\n" << report << "\n";
         send_message( report );
-        //std::system( fmt::format( "/usr/bin/curl -s -X POST https://api.telegram.org/bot907795794:AAGbJnkHc_TVvR1CRDvH1UTSG7G0W-nCW1I/sendMessage -d chat_id=451479789 -d text=\"{}\"", report ).c_str() );
 
     }
 
