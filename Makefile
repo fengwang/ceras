@@ -598,6 +598,18 @@ ci: test/ci.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_ci.o test/ci.cc
 	$(LINK) -o $(BIN_DIR)/test_ci $(OBJECTS_DIR)/test_ci.o $(LFLAGS)
 
+ps: examples/ps/main.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/ps.o examples/ps/main.cc
+	$(LINK) -o $(BIN_DIR)/ps $(OBJECTS_DIR)/ps.o $(LFLAGS)
+
+gemm_optimization_nxn_se: examples/gemm_optimization_nxn_se.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_nxn_se.o examples/gemm_optimization_nxn_se.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_nxn_se $(OBJECTS_DIR)/test_gemm_optimization_nxn_se.o $(LFLAGS)
+
+gemm_optimization_nxn_3rd: examples/gemm_optimization_nxn_3rd.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_nxn_3rd.o examples/gemm_optimization_nxn_3rd.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_nxn_3rd $(OBJECTS_DIR)/test_gemm_optimization_nxn_3rd.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:

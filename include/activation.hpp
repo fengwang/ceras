@@ -283,6 +283,7 @@ namespace ceras
                 {
                     return [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
                     {
+                        better_assert( input.size(), "relu::forward: empty input." );
                         typedef typename Tsor::value_type value_type;
                         Tsor& ans = context_cast<Tsor>( forward_cache );
                         ans.resize( input.shape()  );
@@ -296,8 +297,11 @@ namespace ceras
 
             auto make_backward() const noexcept
             {
-                return []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                return []<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
                 {
+                    better_assert( input.size(), "relu::backward: empty input." );
+                    better_assert( output.size(), "relu::backward: empty output." );
+                    better_assert( grad.size(), "relu::backward: empty grad." );
                     typedef typename Tsor::value_type value_type;
                     Tsor ans = grad; // shallow copy
                     //for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){ if ( x <= value_type{0} ) v = value_type{0}; } );

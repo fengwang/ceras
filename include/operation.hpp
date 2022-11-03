@@ -17,6 +17,7 @@
 #include "./utils/fmt.hpp"
 #include "./utils/enable_serializer.hpp"
 #include "./utils/overload.hpp"
+#include "./utils/concepts.hpp"
 
 namespace ceras
 {
@@ -456,6 +457,8 @@ namespace ceras
             (
                 [new_shape, forward_cache]<Tensor Tsor>( Tsor const& input )noexcept
                 {
+                    better_assert( input.size() , "broadcast::forward: empty input." );
+
                     std::vector<unsigned long> const& old_shape = input.shape();
                     if (new_shape == old_shape) return input;
 
@@ -472,6 +475,10 @@ namespace ceras
                 },
                 [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad) noexcept
                 {
+                    better_assert( input.size() , "broadcast::backward: empty input." );
+                    better_assert( output.size() , "broadcast::backward: empty output." );
+                    better_assert( grad.size() , "broadcast::backward: empty grad." );
+
                     if ( input.shape() == output.shape() ) return grad;
 
                     better_assert( output.shape() == grad.shape(), fmt::format( "Error with broadcast: shape mismatch. Output shape is {}, but grad shape is {}", output.shape(), grad.shape() ) );
@@ -570,6 +577,12 @@ namespace ceras
                 {
                     return [forward_cache]<Tensor Tsor>( Tsor const& lhs_tensor, Tsor const& rhs_tensor ) noexcept
                     {
+                        better_assert( lhs_tensor.size(), "multiplication::forward: empty lhs tensor." );
+                        better_assert( rhs_tensor.size(), "multiplication::forward: empty rhs tensor." );
+
+                        better_assert( lhs_tensor.ndim() == 2, "multiplication::forward: lhs_tensor is not 2D." );
+                        better_assert( rhs_tensor.ndim() == 2, "multiplication::forward: rhs_tensor is not 2D." );
+
                         Tsor& ans = context_cast<Tsor>( forward_cache );
                         multiply( lhs_tensor, rhs_tensor, ans );
                         return ans;
@@ -580,7 +593,7 @@ namespace ceras
             {
                 return []( std::shared_ptr<std::any> backward_cache_lhs, std::shared_ptr<std::any> backward_cache_rhs ) noexcept
                 {
-                    return [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+                    return [backward_cache_lhs, backward_cache_rhs]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, [[maybe_unused]] Tsor const& output, Tsor const& grad ) noexcept
                     {
                        // left branch <-- grad * rhs^T
                        auto const& g_shape = grad.shape();
@@ -657,6 +670,116 @@ namespace ceras
                                     "negative"
                 )( ex );
     };
+
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator + ( Ex const& ex, A const& rhs_val ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [rhs_val, forward_cache]<Tensor Tsor>( Tsor const& tensor ) noexcept
+                                    {
+                                        better_assert( tensor.size() > 0, "forward propagation for operator ex + a receives empty grad." );
+
+                                        typedef typename Tsor::value_type value_type;
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( tensor.shape() );
+                                        for_each( ans.begin(), ans.end(), tensor.begin(), [rhs_val]( value_type& x, value_type const& y ){ x = y + static_cast<value_type>(rhs_val); } );
+                                        return ans;
+                                    },
+                                    []<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    {
+                                        better_assert( grad.size() > 0, "backward propagation for operator ex + a receives empty grad." );
+
+                                        return grad;
+                                    },
+                                    "arithmetic_plus",
+                                    identity_output_shape_calculator{},
+                                    [rhs_val]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& unary_expression, Input_Expression const& input_expression ) noexcept
+                                    { // serializer
+                                        auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                                        std::string unary_expression_identity = fmt::format( "unary_expression_{}_{}", unary_expression.name(), unary_expression.id() );
+                                        std::vector<std::string> unary_expressioncode = input_expression_code;
+                                        unary_expressioncode.emplace_back( fmt::format( "auto {} = {} + {};", unary_expression_identity, input_expression_name, rhs_val ) );
+                                        return std::make_tuple( unary_expression_identity, unary_expressioncode );
+                                    }
+                )( ex );
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator + ( A const& lhs_val, Ex const& ex ) noexcept\
+    {
+        return ex + lhs_val;
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator - ( Ex const& ex, A const& rhs_val ) noexcept\
+    {
+        return ex + (-rhs_val); // TODO: corner cases of unsigned integers
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator - ( A const& lhs_val, Ex const& ex ) noexcept\
+    {
+        return (-ex) + lhs_val;
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator * ( Ex const& ex, A const& rhs_val ) noexcept
+    {
+        std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
+        std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
+        return make_unary_operator( [rhs_val, forward_cache]<Tensor Tsor>( Tsor const& tensor ) noexcept
+                                    {
+                                        better_assert( tensor.size() > 0, "forward propagation for operator ex * a receives empty grad." );
+
+                                        typedef typename Tsor::value_type value_type;
+                                        Tsor& ans = context_cast<Tsor>( forward_cache );
+                                        ans.resize( tensor.shape() );
+                                        for_each( ans.begin(), ans.end(), tensor.begin(), [rhs_val]( value_type& x, value_type const& y ){ x = y * static_cast<value_type>(rhs_val); } );
+                                        return ans;
+                                    },
+                                    [rhs_val, backward_cache]<Tensor Tsor>( [[maybe_unused]] Tsor const& input, [[maybe_unused]] Tsor const& output, Tsor const& grad ) noexcept
+                                    {
+                                        better_assert( grad.size() > 0, "backward propagation for operator ex * a receives empty grad." );
+                                        typedef typename Tsor::value_type value_type;
+                                        Tsor& ans = context_cast<Tsor>( backward_cache );
+                                        ans.resize( grad.shape() );
+                                        for_each( ans.begin(), ans.end(), grad.begin(), [rhs_val]( value_type& x, value_type const& y ){ x = y * static_cast<value_type>(rhs_val); } );
+
+                                        return ans;
+                                    },
+                                    "arithmetic_multiply",
+                                    identity_output_shape_calculator{},
+                                    [rhs_val]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& unary_expression, Input_Expression const& input_expression ) noexcept
+                                    { // serializer
+                                        auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                                        std::string unary_expression_identity = fmt::format( "unary_expression_{}_{}", unary_expression.name(), unary_expression.id() );
+                                        std::vector<std::string> unary_expressioncode = input_expression_code;
+                                        unary_expressioncode.emplace_back( fmt::format( "auto {} = {} * {};", unary_expression_identity, input_expression_name, rhs_val ) );
+                                        return std::make_tuple( unary_expression_identity, unary_expressioncode );
+                                    }
+                )( ex );
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator * ( A const& lhs_val, Ex const& ex ) noexcept
+    {
+        return ex * lhs_val;
+    }
+
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator / ( Ex const& ex, A const& rhs_val ) noexcept
+    {
+        return ex * ( 1.0 / rhs_val );
+    }
+
+    template< Expression Ex, arithmetic A >
+    auto constexpr operator / ( A const& lhs_val, Ex const& ex ) noexcept
+    {
+        return ex * inverse( lhs_val );
+    }
+
 
     template <Expression Ex>
     auto constexpr operator - ( Ex const& ex ) noexcept
