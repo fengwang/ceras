@@ -45,7 +45,7 @@ namespace ceras::dataset
             {
                 unsigned long const offset = 16;
                 unsigned long const samples = (image_data.size()-offset) / (28*28);
-                tensor<std::uint8_t> ans{ {samples, 28, 28} };
+                tensor<std::uint8_t> ans{ {samples, 28UL, 28UL} };
                 std::copy( image_data.begin()+offset, image_data.end(), ans.data() );
                 return ans;
             };
@@ -116,7 +116,7 @@ namespace ceras::dataset
             {
                 unsigned long const offset = 16;
                 unsigned long const samples = (image_data.size()-offset) / (28*28);
-                tensor<std::uint8_t> ans{ {samples, 28, 28} };
+                tensor<std::uint8_t> ans{ {samples, 28UL, 28UL} };
                 std::copy( image_data.begin()+offset, image_data.end(), ans.data() );
                 return ans;
             };

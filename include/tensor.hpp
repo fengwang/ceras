@@ -7,6 +7,7 @@
 #include "./includes.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/cached_allocator.hpp"
+#include "./utils/buffered_allocator.hpp"
 #include "./utils/debug.hpp"
 #include "./utils/fmt.hpp"
 #include "./utils/for_each.hpp"
@@ -46,18 +47,28 @@ namespace ceras
         typedef std::shared_ptr<vector_type> shared_vector;
         typedef tensor self_type;
 
-        std::vector<unsigned long> shape_;
+        // TODO: with buffered_allocator
+        //std::vector<unsigned long> shape_;
+        std::vector<unsigned long, buffered_allocator<unsigned long, 128>> shape_;
         shared_vector vector_;
 
         ///
         /// @breif Construct an empty vector
         ///
-        tensor() : shape_{std::vector<unsigned long>{}}, vector_{std::make_shared<vector_type>()} { }
+        tensor() : shape_{}, vector_{std::make_shared<vector_type>()} { }
 
         ///
         /// @brief Construct a vector with the specified shape, initialized value and a (default) allocator.
         ///
-        constexpr tensor( std::vector<unsigned long> const& shape, std::initializer_list<T> init ) : shape_{shape}, vector_{std::make_shared<vector_type>(init)}
+        template<typename Another_Alloc>
+        constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape, std::initializer_list<T> init ) :
+        shape_{shape.begin(), shape.end()}, vector_{std::make_shared<vector_type>(init)}
+        {
+            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
+        }
+
+        constexpr tensor( std::initializer_list<unsigned long> shape, std::initializer_list<T> init ) :
+        shape_{shape.begin(), shape.end()}, vector_{std::make_shared<vector_type>(init)}
         {
             better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
         }
@@ -65,14 +76,31 @@ namespace ceras
         ///
         /// @brief Construct a vector with the specified shape. All values initialized to default. With a default constructed allocator
         ///
-        constexpr tensor( std::vector<unsigned long> const& shape ) : shape_{shape},
-                                                                      vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}{}
+        template<typename Another_Alloc>
+        constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape ) :
+        shape_{shape.begin(), shape.end()},
+        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}
+        {}
+
+        constexpr tensor( std::initializer_list<unsigned long> shape ) :
+        shape_{ shape.begin(), shape.end() },
+        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}
+        {}
 
         ///
         /// @brief Construct a vector with the specified shape and all values initialized to `init`. With a default constructed allocator
         ///
-        constexpr tensor( std::vector<unsigned long> const& shape, T init ) : shape_{shape},
-                                                                              vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
+        template<typename Another_Alloc>
+        constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape, T init ) :
+        shape_{shape.begin(), shape.end()},
+        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
+        {
+            std::fill( begin(), end(), init );
+        }
+
+        constexpr tensor( std::initializer_list<unsigned long> shape,  T init ) :
+        shape_{shape.begin(), shape.end()},
+        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
         {
             std::fill( begin(), end(), init );
         }
@@ -261,9 +289,9 @@ namespace ceras
         ///
         /// @brief Shape of the tensor.
         ///
-        constexpr std::vector<unsigned long> const& shape() const noexcept
+        constexpr std::vector<unsigned long> const shape() const noexcept
         {
-            return shape_;
+            return std::vector<unsigned long>{ shape_.begin(), shape_.end() };
         }
 
 
@@ -309,7 +337,8 @@ namespace ceras
             unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
             if( (*this).size() != new_size )
                 (*vector_).resize(new_size);
-            (*this).shape_ = new_shape;
+            (*this).shape_.resize( new_shape.size() );
+            std::copy( new_shape.begin(), new_shape.end(), (*this).shape_.begin() );
             return *this;
         }
 
@@ -332,7 +361,9 @@ namespace ceras
             if ( (*this).size() != new_size ) return resize( _new_shape );
 
             better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            (*this).shape_ = _new_shape;
+            //(*this).shape_ = _new_shape;
+            (*this).shape_.resize( _new_shape.size() );
+            std::copy( _new_shape.begin(), _new_shape.end(), (*this).shape_.begin() );
             return *this;
         }
 
