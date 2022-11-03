@@ -6,6 +6,7 @@
 #include "../utils/singleton.hpp"
 #include "../utils/debug.hpp"
 #include "../utils/timer.hpp"
+#include "../utils/better_assert.hpp"
 
 extern "C"
 {
