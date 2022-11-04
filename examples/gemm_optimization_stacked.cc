@@ -1,4 +1,4 @@
-// ./bin/test_gemm_optimization_nxn -m 2 -ops 7 -epochs 1000 -training_samples 1023 -iteration 1025 -learning_rate 1.0
+// -m 2 -ops 7 -epochs 1000 -training_samples 1023 -iteration 1025 -learning_rate 1.0
 #include "../include/ceras.hpp"
 #include "./parser.hpp"
 #include "../include/utils/fmt.hpp"
@@ -99,20 +99,26 @@ int main( int argc, char** argv )
 
     auto A = place_holder<tensor<float>>();
     s.bind( A, train_A );
-    auto a = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
-    auto _a = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+    auto a = make_variables<2>( m*m, ops, 0.0f, 1.0f );
+    auto _a = make_variables<2>( m*m, ops, 0.0f, 1.0f );
 
-    auto a4 = make_variables<4>( m, ops );
+    //auto a = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+    //auto _a = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+
 
     auto B = place_holder<tensor<float>>();
     s.bind( B, train_B );
-    auto b = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
-    auto _b = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+    //auto b = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+    //auto _b = variable{ randn<float>({m*m, ops}, 0.0f, 1.0f) };
+    auto b = make_variables<2>( m*m, ops, 0.0f, 1.0f );
+    auto _b = make_variables<2>( m*m, ops, 0.0f, 1.0f );
 
     auto C = place_holder<tensor<float>>();
     s.bind( C, train_C );
-    auto c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0f) };
-    auto _c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0) };
+    //auto c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0f) };
+    //auto _c = variable{ randn<float>({ops, m*m}, 0.0f, 1.0) };
+    auto c = make_variables<2>( ops, m*m, 0.0f, 1.0f );
+    auto _c = make_variables<2>( ops, m*m, 0.0f, 1.0f );
 
     bool found_flag = false;
 
@@ -123,10 +129,10 @@ int main( int argc, char** argv )
 
         value<float> alpha{ 1.0f + static_cast<float>(1000.0 * it*it / (iterations*iterations)) };
 
-        auto AA = A * elementwise_product( tanh( alpha * a ), sigmoid( alpha * _a ) ); // shape ( 1, ops )
-        auto BB = B * elementwise_product( tanh( alpha * b ), sigmoid( alpha * _b ) ); // shape ( 1, ops )
+        auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
+        auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
         auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
-        auto CC = AB * elementwise_product( tanh( alpha * c ), sigmoid( alpha * _c ) ); // shape ( 1, ops )
+        auto CC = AB * (elementwise_product(tanh(alpha*c[0]), sigmoid(alpha*_c[0]))+elementwise_product(tanh(alpha*c[1]), sigmoid(alpha*_c[1]))); // shape ( 1, ops )
         auto loss = mse( CC, C );
 
         auto optimizer = adam{ loss, training_samples, learning_rate*static_cast<float>(1.0-it/iterations) };
@@ -134,29 +140,42 @@ int main( int argc, char** argv )
         {
             auto current_error = s.run( loss );
             s.run( optimizer );
-            if (current_error[0] <= stop_threshold)
+            if ((current_error[0]<=stop_threshold) && (it>=(iterations>>2)))
             {
-                found_flag = true;
-                std::cout << "Maybe found with loss = " << current_error[0] << std::endl;
-                std::cout << "BREAK!" << std::endl;
-                break;
+                {
+                    value<float> alpha{ 1.0e4f };
+                    auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
+                    auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
+                    auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
+                    auto CC = AB * (elementwise_product(tanh(alpha*c[0]), sigmoid(alpha*_c[0]))+elementwise_product(tanh(alpha*c[1]), sigmoid(alpha*_c[1]))); // shape ( 1, ops )
+                    auto loss = mse( CC, C );
+                    auto current_error = s.run( loss );
+                    if (current_error[0] < stop_threshold * 10.f )
+                    {
+                        found_flag = true;
+                        std::cout << "Maybe found with loss = " << current_error[0] << std::endl;
+                        std::cout << "BREAK!" << std::endl;
+                        break;
+                    }
+                }
+                continue;
             }
             std::cout.precision( 8 );
-            std::cout << "\rLoss at iteration\t" << it << ", epoch\t" << e << ":\t" << current_error[0];
+            std::cout << "\rLoss at iteration\t" << it << ", epoch\t" << e << ":\t" << current_error[0] << std::flush;
         }
     }
     std::cout << std::endl;
 
 
     {
-        value<float> alpha{ 1.0e3f };
-
-        auto AA = A * elementwise_product( tanh( alpha * a ), sigmoid( alpha * _a ) ); // shape ( 1, ops )
-        auto BB = B * elementwise_product( tanh( alpha * b ), sigmoid( alpha * _b ) ); // shape ( 1, ops )
+        value<float> alpha{ 1.0e4f };
+        auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
+        auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
         auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
-        auto CC = AB * elementwise_product( tanh( alpha * c ), sigmoid( alpha * _c ) ); // shape ( 1, ops )
+        auto CC = AB * (elementwise_product(tanh(alpha*c[0]), sigmoid(alpha*_c[0]))+elementwise_product(tanh(alpha*c[1]), sigmoid(alpha*_c[1]))); // shape ( 1, ops )
+
         auto loss = mse( CC, C );
-        auto optimizer = adam{ loss, training_samples, 1.0e-6f };
+        auto optimizer = adam{ loss, training_samples, 1.0e-10f };
 
         for ( auto idx : range( final_iterations ) )
         {
@@ -172,7 +191,7 @@ int main( int argc, char** argv )
             return 0;
 
         {
-            auto op = elementwise_product( tanh( alpha * a ), sigmoid( alpha * _a ) );
+            auto op = (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
             auto _ = s.run( op );
             std::cout << "AA is \n" << _ << std::endl;
 
@@ -180,7 +199,7 @@ int main( int argc, char** argv )
         }
 
         {
-            auto op = elementwise_product( tanh( alpha * b ), sigmoid( alpha * _b ) );
+            auto op = (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
             auto _ = s.run( op );
             std::cout << "BB is \n" << _ << std::endl;
 
@@ -188,7 +207,7 @@ int main( int argc, char** argv )
         }
 
         {
-            auto op = elementwise_product( tanh( alpha * c ), sigmoid( alpha * _c ) );
+            auto op = (elementwise_product(tanh(alpha*c[0]), sigmoid(alpha*_c[0]))+elementwise_product(tanh(alpha*c[1]), sigmoid(alpha*_c[1]))); // shape ( 1, ops )
             auto _ = s.run( op );
             std::cout << "CC is \n" << _ << std::endl;
 
