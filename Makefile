@@ -610,6 +610,10 @@ gemm_optimization_nxn_3rd: examples/gemm_optimization_nxn_3rd.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_nxn_3rd.o examples/gemm_optimization_nxn_3rd.cc
 	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_nxn_3rd $(OBJECTS_DIR)/test_gemm_optimization_nxn_3rd.o $(LFLAGS)
 
+gemm_optimization_stacked: examples/gemm_optimization_stacked.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_gemm_optimization_stacked.o examples/gemm_optimization_stacked.cc
+	$(LINK) -o $(BIN_DIR)/test_gemm_optimization_stacked $(OBJECTS_DIR)/test_gemm_optimization_stacked.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:

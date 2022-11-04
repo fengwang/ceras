@@ -49,7 +49,7 @@ namespace ceras
 
         // TODO: with buffered_allocator
         //std::vector<unsigned long> shape_;
-        std::vector<unsigned long, buffered_allocator<unsigned long, 128>> shape_;
+        std::vector<unsigned long, buffered_allocator<unsigned long, 256>> shape_;
         shared_vector vector_;
 
         ///
