@@ -426,7 +426,7 @@ namespace ceras
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     template< typename T > requires std::floating_point<T>
-    void gemm_cpu( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* C )
+    void gemm_cpu( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* __restrict__ C )
     {
         auto a_view = view_2d{ A, m, n, a_transposed };
         auto b_view = view_2d{ B, n, k, b_transposed };
@@ -473,31 +473,57 @@ namespace ceras
                 cuda_gemm( A.data(), false, B.data(), false, 128, 128, 128, C.data() );
             }
 
-            unsigned long dim = 16;
-            unsigned long increasement = 16;
-
-            while ( true )
+            if constexpr ( cblas_mode )
             {
-                auto A = tensor<float>( {dim*dim,} );
-                auto B = tensor<float>( {dim*dim,} );
-                auto C = tensor<float>( {dim*dim,} );
-                unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
-                unsigned long t_cpu = time_it( [&](){ gemm_cpu( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+                unsigned long dim = 16;
+                unsigned long increasement = 16;
 
-                if ( t_cpu > t_gpu ) break;
+                while ( true )
+                {
+                    auto A = tensor<float>( {dim*dim,} );
+                    auto B = tensor<float>( {dim*dim,} );
+                    auto C = tensor<float>( {dim*dim,} );
+                    unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+                    unsigned long t_cpu = time_it( [&](){ cblas_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
 
-                dim += increasement;
+                    if ( t_cpu > t_gpu ) break;
+
+                    dim += increasement;
+                }
+
+                cuda_gemm_threshold = dim * dim * dim;
+                std::cout << "Obtained cuda_gemm_threshold with cblas dim: "<< dim << std::endl;
+                // 48 for CPU-CBLAS mode with i7-7700HQ
             }
+            else
+            {
+                unsigned long dim = 16;
+                unsigned long increasement = 16;
 
-            cuda_gemm_threshold = dim * dim * dim;
+                while ( true )
+                {
+                    auto A = tensor<float>( {dim*dim,} );
+                    auto B = tensor<float>( {dim*dim,} );
+                    auto C = tensor<float>( {dim*dim,} );
+                    unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+                    unsigned long t_cpu = time_it( [&](){ gemm_cpu( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
+
+                    if ( t_cpu > t_gpu ) break;
+
+                    dim += increasement;
+                }
+
+                cuda_gemm_threshold = dim * dim * dim;
+                std::cout << "Obtained cuda_gemm_threshold with CPU dim: "<< dim << std::endl;
+                // 96 for CPU mode with i7-7700HQ
+            }
         }
-        std::cout << "Obtained cuda_gemm_threshold "<< cuda_gemm_threshold << std::endl;
     }
 
     // C <= A * B
     // where A or A' is [m x n], B or B' is [n x k] and C is [m x k]
     template< typename T > requires std::floating_point<T>
-    void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* C )
+    void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* __restrict__ C )
     {
         if ( cuda_gemm_threshold == 0 ) // global variable defined in config.h
             update_cuda_gemm_threshold();
@@ -509,15 +535,19 @@ namespace ceras
             if ( operations >= cuda_gemm_threshold )
                 cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
             else
-                gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
-        }
-        else if constexpr( cblas_mode )
-        {
-            cblas_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+            {
+                if constexpr( cblas_mode )
+                    cblas_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+                else
+                    gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
+            }
         }
         else
         {
-            gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
+            if constexpr( cblas_mode )
+                cblas_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
+            else
+                gemm_cpu( A, a_transposed, B, b_transposed, m, n, k, C );
         }
     }
 
