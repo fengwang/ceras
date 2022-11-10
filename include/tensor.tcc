@@ -491,6 +491,7 @@ namespace ceras
 
             cuda_gemm_threshold = dim * dim * dim;
         }
+        std::cout << "Obtained cuda_gemm_threshold "<< cuda_gemm_threshold << std::endl;
     }
 
     // C <= A * B

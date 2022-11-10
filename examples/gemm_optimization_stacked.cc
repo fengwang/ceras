@@ -1,4 +1,4 @@
-// -m 2 -ops 7 -epochs 1000 -training_samples 1023 -iteration 1025 -learning_rate 1.0
+// -m 2 -ops 7 -epochs 1000 -training_samples 1023 -iterations 1025 -learning_rate 1.0
 #include "../include/ceras.hpp"
 #include "./parser.hpp"
 #include "../include/utils/fmt.hpp"
@@ -127,7 +127,8 @@ int main( int argc, char** argv )
         if (found_flag)
             break;
 
-        value<float> alpha{ 1.0f + static_cast<float>(1000.0 * it*it / (iterations*iterations)) };
+        //value<float> alpha{ 1.0f + static_cast<float>(1000.0 * it*it / (iterations*iterations)) };
+        value<float> alpha{ 1.0f + 0.075f*it };
 
         auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
         auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
@@ -140,10 +141,11 @@ int main( int argc, char** argv )
         {
             auto current_error = s.run( loss );
             s.run( optimizer );
+            /*
             if ((current_error[0]<=stop_threshold) && (it>=(iterations>>2)))
             {
                 {
-                    value<float> alpha{ 1.0e4f };
+                    value<float> alpha{ 300.0f };
                     auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
                     auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
                     auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
@@ -160,6 +162,7 @@ int main( int argc, char** argv )
                 }
                 continue;
             }
+            */
             std::cout.precision( 8 );
             std::cout << "\rLoss at iteration\t" << it << ", epoch\t" << e << ":\t" << current_error[0] << std::flush;
         }
@@ -168,7 +171,7 @@ int main( int argc, char** argv )
 
 
     {
-        value<float> alpha{ 1.0e4f };
+        value<float> alpha{ 1000.0f };
         auto AA = A * (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
         auto BB = B * (elementwise_product(tanh(alpha*b[0]), sigmoid(alpha*_b[0]))+elementwise_product(tanh(alpha*b[1]), sigmoid(alpha*_b[1]))); // shape ( 1, ops )
         auto AB = elementwise_product( AA, BB ); // shape (1, ops ), real multiplication happens here
@@ -188,7 +191,9 @@ int main( int argc, char** argv )
         std::cout << "The final error is : " << current_error[0] << std::endl;
         send_message( fmt::format("Finished with error: {}.\n", current_error[0]) );
         if ( (current_error[0] > success_threshold) && (!found_flag) )
-            return 0;
+        {
+            std::cout << "Error is a bit large.\n";
+        }
 
         {
             auto op = (elementwise_product(tanh(alpha*a[0]), sigmoid(alpha*_a[0])) + elementwise_product(tanh(alpha*a[1]), sigmoid(alpha*_a[1]))); // shape ( 1, ops )
