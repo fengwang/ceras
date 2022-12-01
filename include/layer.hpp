@@ -121,6 +121,18 @@ namespace ceras
         };
     }
 
+    inline constexpr auto Conv1D( unsigned long filters, unsigned long kernel_size, unsigned long strides=1UL, std::string const& padding="valid",
+                                  unsigned long dilations=1UL, bool use_bias=true,
+                                  float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
+           ) noexcept
+    {
+        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        {   // ex is of shape [bs, n, ch]
+            auto ey = expand_dims( 2 )( ex ); // shape changed to [bs, n, 1, ch]
+            auto conv = Conv2D( filters, {kernel_size, 1,}, padding, {strides, 1,}, {dilations, 1,}, use_bias, kernel_regularizer_l1, kernel_regularizer_l2, bias_regularizer_l1, bias_regularizer_l2 )(ey);
+            return squeeze( 2 )(conv);
+        };
+    }
 
     ///
     /// @brief Transposed convolution layer.

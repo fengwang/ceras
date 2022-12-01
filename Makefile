@@ -631,6 +631,10 @@ mnist_label_smoothing: test/mnist_label_smoothing.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_0_1_optimization.o examples/0_1_optimization.cc
 	$(LINK) -o $(BIN_DIR)/test_0_1_optimization $(OBJECTS_DIR)/test_0_1_optimization.o $(LFLAGS)
 
+layer_conv1d: test/layer_conv1d.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_conv1d.o test/layer_conv1d.cc
+	$(LINK) -o $(BIN_DIR)/test_layer_conv1d $(OBJECTS_DIR)/test_layer_conv1d.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:

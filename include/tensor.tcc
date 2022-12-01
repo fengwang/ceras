@@ -808,6 +808,21 @@ namespace ceras
         return ans;
     }
 
+    template< Tensor Tsor >
+    Tsor squeeze( Tsor const& tsor, int axis )
+    {
+        if ( -1 == axis )
+            return squeeze( tsor );
+
+        better_assert( tsor.ndim() > static_cast<unsigned long>(axis), fmt::format( "axis {} is too large for a tensor with {} dimensions.", axis, tsor.ndim() ) );
+        std::vector<unsigned long> shape = tsor.shape();
+        better_assert( shape[axis] == 1UL, fmt::format("Expect {} dim of the tensor to be 1, but got {}.", axis, shape[axis] ) );
+        std::copy( shape.begin()+axis+1, shape.end(), shape.begin()+axis );
+        shape.resize( shape.size() - 1 );
+        auto ans = tsor;
+        return ans.reshape( shape );
+    }
+
     template< typename T, typename A=default_allocator<T> >
     tensor<T,A> randn( std::vector<unsigned long> const& shape, T mean=T{0}, T stddev=T{1} )
     {

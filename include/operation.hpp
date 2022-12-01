@@ -1242,6 +1242,7 @@ namespace ceras
                     //if ( axis == -1 ) offset = ans.size();
                     int const offset = (axis == -1) ? shape.size() : axis;
                     ans.insert( ans.begin()+offset, 1UL );
+                    return ans;
                 },
                 [axis]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
                 { // serializer
@@ -1251,6 +1252,53 @@ namespace ceras
                     self_expression_code.emplace_back( fmt::format( "auto {} = {}( {}/*axis*/ )( {} );", self_expression_identity, self_expression.name(), axis, input_expression_name ) );
                     return std::make_tuple( self_expression_identity, self_expression_code );
                 }
+            )(ex);
+        };
+    }
+
+    constexpr auto inline squeeze( int axis=-1 ) noexcept
+    {
+        return[=]<Expression Ex>( Ex const& ex ) noexcept
+        {
+            return make_unary_operator
+            (
+                [=]<Tensor Tsor>( Tsor const& tsor ) noexcept
+                {
+                    return squeeze( tsor, axis );
+                },
+                []<Tensor Tsor>( Tsor const& input, [[maybe_unused]] Tsor const& output, Tsor const& grad ) noexcept
+                {
+                    auto ans = grad;
+                    return ans.reshape( input.shape() );
+                },
+                "squeeze",
+                [=]( std::vector<unsigned long> const& shape ) noexcept
+                {
+                    if ( -1 == axis )
+                    {
+                        std::vector<unsigned long> ans;
+                        std::copy_if( shape.begin(), shape.end(), std::back_inserter( ans ), []( unsigned long n ){ return n != 1; } );
+                        if ( ans.size() > 0 )
+                            return ans;
+                        return std::vector<unsigned long>{ {1UL,} };
+                    }
+
+                    std::vector<unsigned long> ans = shape;
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    ans.resize( shape.size()-1 );
+                    return ans;
+                },
+                make_argumented_operator_serializer( axis )
+                /*
+                [=]<Expression Self_Expression, Expression Input_Expression>( Self_Expression const& self_expression, Input_Expression const& input_expression ) noexcept
+                {
+                    auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
+                    std::string const& self_expression_identity = fmt::format( "unary_expression_{}_{}", self_expression.name(), self_expression.id() );
+                    std::vector<std::string> self_expression_code = input_expression_code;
+                    self_expression_code.emplace_back( fmt::format( "auto {} = {}( {} )( {} );", self_expression_identity, self_expression.name(), axis, input_expression_name ) );
+                    return std::make_tuple( self_expression_identity, self_expression_code );
+                }
+                */
             )(ex);
         };
     }
@@ -1608,7 +1656,6 @@ namespace ceras
         //
         // Note: the rhs expression is fixed as a variable, as we need to extract the kernel shape from it
         //
-        //return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Variable Va>( Ex const& lhs_ex, Va const& rhs_ex ) noexcept
         return [row_input, col_input, row_stride, col_stride, row_dilation, col_dilation, padding ]<Expression Ex, Expression Ey>( Ex const& lhs_ex, Ey const& rhs_ex ) noexcept
         {
             std::vector<unsigned long> const& shape = rhs_ex.shape();
