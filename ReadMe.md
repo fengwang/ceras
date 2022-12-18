@@ -233,7 +233,7 @@ g++ -c -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -fu
 g++ -o ./bin/test_mnist ./obj/test_mnist.o -funsafe-math-optimizations  -Ofast -flto -pipe -march=native
 ```
 
-[CBLAS](https://www.netlib.org/lapack) can be optionally enabled by define macro `CBLAS` (tested with cblas 3.10.0, g++ 11.1.0):
+[CBLAS](https://www.netlib.org/lapack) can be optionally enabled by define macro `CBLAS` (tested with cblas 3.10.0, g++ 12.2.0):
 
 ```bash
 g++ -c -std=c++20 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCBLAS -o ./obj/test_mnist.o test/mnist.cc
@@ -241,7 +241,7 @@ g++ -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -o ./bin/test_
 ```
 
 
-[CUDA/CUBLAS](https://developer.nvidia.com/cuda-zone) could be optionally enabled by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 11.1.0, note the compile/link options)
+[CUDA/CUBLAS](https://developer.nvidia.com/cuda-zone) could be optionally enabled by defining macro `CUDA`: (tested with cuda 11.2.r11.2, gcc 12.2.0, note the compile/link options)
 
 ```bash
 g++ -c -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -funsafe-math-optimizations  -Ofast -flto -pipe -march=native -DCUDA -DNDEBUG -o ./obj/test_mnist.o test/mnist.cc
