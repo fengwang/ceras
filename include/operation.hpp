@@ -47,6 +47,8 @@ namespace ceras
 
     ///
     /// @brief A unary operator is composed of a.) an input expression, b.) a forward action and c.) a backward action.
+    ///                                  plus  d.) an output shape calculator and e.) a serializer
+    ///        Note: the above components may have some states, in this case, a shared_ptr is better than direct copy.
     ///
     template< typename Operator, typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator, typename Serializer >
     struct unary_operator :
@@ -77,7 +79,6 @@ namespace ceras
 
             if ( output_data_.empty() )
             {
-                //input_data_ = (*this).op().forward();
                 input_data_ = op().forward();
                 output_data_ = forward_action()( input_data_ );
                 sess.update_forward_cache( (*this).id(), output_data_ );
@@ -144,13 +145,16 @@ namespace ceras
         enable_id<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>, "Binary Operator">,
         enable_binary_serializer<binary_operator<Lhs_Operator, Rhs_Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>>
     {
-        Lhs_Operator lhs_op_;
-        Rhs_Operator rhs_op_;
-        Forward_Action forward_action_;
-        Backward_Action backward_action_; // backward action for binary operator produces a tuple of two tensors
-        Output_Shape_Calculator output_shape_calculator_;
-        Serializer serializer_;
-
+        struct binary_operator_state
+        {
+            Lhs_Operator lhs_op_;
+            Rhs_Operator rhs_op_;
+            Forward_Action forward_action_;
+            Backward_Action backward_action_;
+            Output_Shape_Calculator output_shape_calculator_;
+            Serializer serializer_;
+        };
+        std::shared_ptr<binary_operator_state> state_;
 
         typedef typename tensor_deduction<Lhs_Operator, Rhs_Operator>::tensor_type tensor_type; // defined in value.hpp
 
@@ -159,7 +163,7 @@ namespace ceras
         tensor_type output_data_;
 
         binary_operator( Lhs_Operator const& lhs_op, Rhs_Operator const& rhs_op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator, Serializer const& serializer) noexcept :
-            lhs_op_{lhs_op}, rhs_op_{rhs_op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator }, serializer_{ serializer }  { }
+            state_{ std::make_shared<binary_operator_state>(lhs_op, rhs_op, forward_action, backward_action, output_shape_calculator, serializer) } {}
 
         auto forward()
         {
@@ -173,21 +177,21 @@ namespace ceras
 
             if constexpr ( is_value_v<Lhs_Operator> )
             {
-                rhs_input_data_ = rhs_op_.forward();
-                lhs_input_data_ = lhs_op_.forward( rhs_input_data_ );
+                rhs_input_data_ = rhs_op().forward();
+                lhs_input_data_ = lhs_op().forward( rhs_input_data_ );
             }
             else if constexpr ( is_value_v<Rhs_Operator> )
             {
-                lhs_input_data_ = lhs_op_.forward();
-                rhs_input_data_ = rhs_op_.forward( lhs_input_data_ );
+                lhs_input_data_ = lhs_op().forward();
+                rhs_input_data_ = rhs_op().forward( lhs_input_data_ );
             }
             else
             {
-                lhs_input_data_ = lhs_op_.forward();
-                rhs_input_data_ = rhs_op_.forward();
+                lhs_input_data_ = lhs_op().forward();
+                rhs_input_data_ = rhs_op().forward();
             }
 
-            output_data_ = forward_action_( lhs_input_data_, rhs_input_data_ );
+            output_data_ = forward_action()( lhs_input_data_, rhs_input_data_ );
             sess.update_forward_cache( (*this).id(), output_data_ );
             return output_data_;
         }
@@ -197,9 +201,9 @@ namespace ceras
         ///
         void backward( tensor_type const& grad )
         {
-            auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action_( lhs_input_data_, rhs_input_data_, output_data_, grad );
-            lhs_op_.backward( current_gradient_lhs );
-            rhs_op_.backward( current_gradient_rhs );
+            auto const& [current_gradient_lhs, current_gradient_rhs] = backward_action()( lhs_input_data_, rhs_input_data_, output_data_, grad );
+            lhs_op().backward( current_gradient_lhs );
+            rhs_op().backward( current_gradient_rhs );
         }
 
         ///
@@ -208,28 +212,32 @@ namespace ceras
         std::vector<unsigned long> shape() const noexcept
         {
             if constexpr ( is_value_v<Lhs_Operator> )
-                return rhs_op_.shape();
+                return rhs_op().shape();
             else if constexpr ( is_value_v<Rhs_Operator> )
-                return lhs_op_.shape();
+                return lhs_op().shape();
             else
-                return output_shape_calculator_( lhs_op_.shape(), rhs_op_.shape() );
+                return output_shape_calculator()( lhs_op().shape(), rhs_op().shape() );
         }
 
-        Lhs_Operator const& lhs_op() const noexcept
-        {
-            return lhs_op_;
-        }
 
-        Rhs_Operator const& rhs_op() const noexcept
-        {
-            return rhs_op_;
-        }
+        Lhs_Operator const& lhs_op() const { return state_->lhs_op_; }
+        Rhs_Operator const& rhs_op() const { return state_->rhs_op_; }
+        Forward_Action const& forward_action() const { return state_->forward_action_; }
+        Backward_Action const& backward_action() const { return state_->backward_action_; }
+        Output_Shape_Calculator const& output_shape_calculator() const { return state_->output_shape_calculator_; }
+        Serializer const& serializer() const { return state_->serializer_; }
 
-        Serializer const& serializer() const noexcept
-        {
-            return serializer_;
-        }
-    };
+        Lhs_Operator& lhs_op() { return state_->lhs_op_; }
+        Rhs_Operator& rhs_op() { return state_->rhs_op_; }
+        Forward_Action& forward_action() { return state_->forward_action_; }
+        Backward_Action& backward_action() { return state_->backward_action_; }
+        Output_Shape_Calculator& output_shape_calculator() { return state_->output_shape_calculator_; }
+        Serializer& serializer() { return state_->serializer_; }
+
+        tensor_type output_data() { return output_data_; }
+        tensor_type lhs_input_data() { return lhs_input_data_; }
+        tensor_type rhs_input_data() { return rhs_input_data_; }
+    }; // struct binary_operator
 
     template< typename Forward_Action, typename Backward_Action, typename Output_Shape_Calculator= identity_output_shape_calculator, typename Serializer = default_binary_expression_serializer >
     auto make_binary_operator( Forward_Action const& binary_forward_action,
@@ -405,14 +413,14 @@ namespace ceras
             else if constexpr( is_binary_operator_v<Expr> )
             {
                 // for LHS operator
-                auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op_ );
+                auto const& [n_lhs_node, n_lhs_label] = generate_node_and_label( expr.lhs_op() );
                 std::string const& arrow_lhs_relation = n_lhs_node + std::string{" -> "} + node + std::string{" ;\n"};
-                std::string const& op_lhs_dot = _generate_dot( expr.lhs_op_, _generate_dot );
+                std::string const& op_lhs_dot = _generate_dot( expr.lhs_op(), _generate_dot );
 
                 // for RHS operator
-                auto const& [n_rhs_node, n_rhs_label] = generate_node_and_label( expr.rhs_op_ );
+                auto const& [n_rhs_node, n_rhs_label] = generate_node_and_label( expr.rhs_op() );
                 std::string const& arrow_rhs_relation = n_rhs_node + std::string{" -> "} + node + std::string{" ;\n"};
-                std::string const& op_rhs_dot = _generate_dot( expr.rhs_op_, _generate_dot );
+                std::string const& op_rhs_dot = _generate_dot( expr.rhs_op(), _generate_dot );
 
                 return expr_dot + arrow_lhs_relation + arrow_rhs_relation + op_lhs_dot + op_rhs_dot;
             }
