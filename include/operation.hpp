@@ -53,19 +53,22 @@ namespace ceras
         enable_id<unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer>, "Unary_Operator">,
         enable_unary_serializer<unary_operator<Operator, Forward_Action, Backward_Action, Output_Shape_Calculator, Serializer> >
     {
-        Operator op_;
-        Forward_Action forward_action_;
-        Backward_Action backward_action_;
-        Output_Shape_Calculator output_shape_calculator_;
-        Serializer serializer_;
+        struct unary_operator_state
+        {
+            Operator op_;
+            Forward_Action forward_action_;
+            Backward_Action backward_action_;
+            Output_Shape_Calculator output_shape_calculator_;
+            Serializer serializer_;
+        };
+        std::shared_ptr<unary_operator_state> state_;
 
-        typedef decltype( std::declval<Forward_Action>()( std::declval<decltype(op_)>().forward() ) ) tensor_type;
+        typedef decltype( std::declval<Forward_Action>()( std::declval<Operator>().forward() ) ) tensor_type;
 
         tensor_type input_data_;
         tensor_type output_data_;
 
-        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator, Serializer const& serializer ) noexcept :
-            op_{op}, forward_action_{ forward_action }, backward_action_{ backward_action }, output_shape_calculator_{ output_shape_calculator }, serializer_{ serializer } { }
+        unary_operator( Operator const& op, Forward_Action const& forward_action, Backward_Action const& backward_action, Output_Shape_Calculator const& output_shape_calculator, Serializer const& serializer ) noexcept : state_{ std::make_shared<unary_operator_state>( op, forward_action, backward_action, output_shape_calculator, serializer ) } {}
 
         auto forward()
         {
@@ -74,8 +77,9 @@ namespace ceras
 
             if ( output_data_.empty() )
             {
-                input_data_ = op_.forward();
-                output_data_ = forward_action_( input_data_ );
+                //input_data_ = (*this).op().forward();
+                input_data_ = op().forward();
+                output_data_ = forward_action()( input_data_ );
                 sess.update_forward_cache( (*this).id(), output_data_ );
             }
 
@@ -84,8 +88,8 @@ namespace ceras
 
         void backward( tensor_type const& grad )
         {
-            auto const& current_gradient = backward_action_( input_data_, output_data_, grad );
-            op_.backward( current_gradient );
+            auto const& current_gradient = backward_action()( input_data_, output_data_, grad );
+            op().backward( current_gradient );
         }
 
         ///
@@ -93,19 +97,22 @@ namespace ceras
         ///
         std::vector<unsigned long> shape() const noexcept
         {
-            return output_shape_calculator_( op_.shape() );
+            return output_shape_calculator()( op().shape() );
         }
 
+        Operator const& op() const { return state_->op_; }
+        Forward_Action const& forward_action() const { return state_->forward_action_; }
+        Backward_Action const& backward_action() const { return state_->backward_action_; }
+        Output_Shape_Calculator const& output_shape_calculator() const { return state_->output_shape_calculator_; }
+        Serializer const& serializer() const { return state_->serializer_; }
+        tensor_type output_data() { return output_data_; }
+        tensor_type input_data() { return input_data_; }
 
-        Operator const op() const noexcept
-        {
-            return op_;
-        }
-
-        Serializer const serializer() const noexcept
-        {
-            return serializer_;
-        }
+        Operator& op() { return state_->op_; }
+        Forward_Action& forward_action() { return state_->forward_action_; }
+        Backward_Action& backward_action() { return state_->backward_action_; }
+        Output_Shape_Calculator& output_shape_calculator() { return state_->output_shape_calculator_; }
+        Serializer& serializer() { return state_->serializer_; }
     };
 
     ///
@@ -390,9 +397,9 @@ namespace ceras
 
             if constexpr( is_unary_operator_v<Expr> )
             {
-                auto const& [n_node, n_label] = generate_node_and_label( expr.op_ );
+                auto const& [n_node, n_label] = generate_node_and_label( expr.op() );
                 std::string const& arrow_relation = n_node + std::string{" -> "} + node + std::string{" ;\n"};
-                std::string const& op_dot = _generate_dot( expr.op_, _generate_dot );
+                std::string const& op_dot = _generate_dot( expr.op(), _generate_dot );
                 return expr_dot + arrow_relation + op_dot;
             }
             else if constexpr( is_binary_operator_v<Expr> )
