@@ -3,5 +3,6 @@ doc/latex/*.tex
 doc/html
 reference
 tmp
+notes
 *.backup
 *.orig
