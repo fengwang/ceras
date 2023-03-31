@@ -21,5 +21,5 @@ jobs:
     - name: make test CI
       run: make CXX=g++-12 ci && ./bin/test_ci
     - name: make mnist_minimal
-      run: make CXX=g++-12 mnist_minimal && ./bin/test_mnist_minimal
+      run: make CXX=g++-12 mnist && ./bin/test_mnist
 
