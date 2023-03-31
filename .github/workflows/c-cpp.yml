@@ -16,7 +16,10 @@ jobs:
     - name: Set up GCC
       uses: egor-tensin/setup-gcc@v1
       with:
-        version: 11
+        version: 12
         platform: x64
     - name: make test CI
-      run: make CXX=g++-11 ci && ./bin/test_ci
+      run: make CXX=g++-12 ci && ./bin/test_ci
+    - name: make mnist_minimal
+      run: make CXX=g++-12 mnist_minimal && ./bin/mnist_minimal
+

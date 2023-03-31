@@ -571,7 +571,7 @@ namespace ceras
     {
         auto _gelu = []<typename T>( T x )
         {
-            auto const ans = 0.5 * x * ( 1.0 + std::tanh( 0.79788456080286535588 * x ( 1.0 + 0.044715*x*x ) ) );
+            auto const ans = 0.5 * x * ( 1.0 + std::tanh( 0.79788456080286535588 * x * ( 1.0 + 0.044715*x*x ) ) );
             return static_cast<T>( ans );
         };
         auto sech_2 = []( auto x )

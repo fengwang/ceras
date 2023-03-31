@@ -44,7 +44,8 @@ int main()
     auto l0 = reshape( {28, 28, 1} )( input );
 
     //auto l1 = relu( Conv2D( 32, {3, 3}, {28, 28, 1}, "valid" )( l0 ) );
-    auto l1 = relu( Conv2D( 32, {3, 3}, "valid" )( l0 ) );
+    //auto l1 = relu( Conv2D( 32, {3, 3}, "valid" )( l0 ) );
+    auto l1 = gelu( Conv2D( 32, {3, 3}, "valid" )( l0 ) );
     /*
     auto k1 = variable{ randn<float>( {32, 3, 3, 1}, 0.0, 10.0/std::sqrt(32.0*3*3*1) ) };
     auto l1 = relu( conv2d(28, 28, 1, 1, 1, 1, "valid" )( l0, k1 ) ); // 26, 26, 32
