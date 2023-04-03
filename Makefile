@@ -635,6 +635,10 @@ layer_conv1d: test/layer_conv1d.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_layer_conv1d.o test/layer_conv1d.cc
 	$(LINK) -o $(BIN_DIR)/test_layer_conv1d $(OBJECTS_DIR)/test_layer_conv1d.o $(LFLAGS)
 
+logging: test/logging.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_logging.o test/logging.cc
+	$(LINK) -o $(BIN_DIR)/test_logging $(OBJECTS_DIR)/test_logging.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
