@@ -639,6 +639,10 @@ logging: test/logging.cc
 	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_logging.o test/logging.cc
 	$(LINK) -o $(BIN_DIR)/test_logging $(OBJECTS_DIR)/test_logging.o $(LFLAGS)
 
+ps_bid: examples/ps_bid.cc
+	$(CXX) -c $(CXXFLAGS) -o $(OBJECTS_DIR)/test_ps_bid.o examples/ps_bid.cc
+	$(LINK) -o $(BIN_DIR)/test_ps_bid $(OBJECTS_DIR)/test_ps_bid.o $(LFLAGS)
+
 .PHONY: clean clean_obj clean_bin clean_misc
 clean: clean_obj clean_bin clean_misc
 clean_obj:
