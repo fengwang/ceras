@@ -535,7 +535,7 @@ namespace ceras
                 };
             }
 
-            auto const make_backward() const noexcept
+            auto make_backward() const noexcept
             {
                 return []<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
                 {
@@ -688,7 +688,7 @@ namespace ceras
 
 
     template< Expression Ex, arithmetic A >
-    auto constexpr operator + ( Ex const& ex, A const& rhs_val ) noexcept
+    auto operator + ( Ex const& ex, A const& rhs_val ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [rhs_val, forward_cache]<Tensor Tsor>( Tsor const& tensor ) noexcept
@@ -739,7 +739,7 @@ namespace ceras
     }
 
     template< Expression Ex, arithmetic A >
-    auto constexpr operator * ( Ex const& ex, A const& rhs_val ) noexcept
+    auto operator * ( Ex const& ex, A const& rhs_val ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -810,7 +810,7 @@ namespace ceras
     /// auto ix = inverse( x );
     /// @endcode
     template <Expression Ex>
-    auto constexpr inverse( Ex const& ex ) noexcept
+    auto inverse( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -1816,7 +1816,7 @@ namespace ceras
 
                     return ans;
                 },
-                [=]<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                [=]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
                 {
                     typedef typename Tsor::value_type value_type;
                     std::vector<unsigned long> const& input_shape = input.shape();
@@ -2441,8 +2441,8 @@ namespace ceras
                     better_assert( l.size() == r.size(), fmt::format( "expecting of same size, but lhs.size is {} and rhs.size is {}.", l.size(), r.size() ) );
                     // more assertion ?
                     std::vector<unsigned long> ans = l;
-                    if ( axe > ans.size() ) axe = ans.size() - 1;
-                    ans[axe] += r[axe];
+                    auto new_axe = (axe > ans.size()) ? (ans.size() - 1) : axe;
+                    ans[new_axe] += r[new_axe];
                     return ans;
                 },
                 make_argumented_operator_serializer( axe )
@@ -2474,7 +2474,7 @@ namespace ceras
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr maximum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto maximum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> mask_cache = std::make_shared<std::any>();
@@ -2513,7 +2513,7 @@ namespace ceras
     }
 
     template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr minimum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto minimum( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> mask_cache = std::make_shared<std::any>();
@@ -2555,7 +2555,7 @@ namespace ceras
     /// @brief Computes the arc tangent of y/x using the signs of arguments to determine the correct quadrant.
     ///
     template< Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr atan2( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto atan2( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache_lhs = std::make_shared<std::any>();
@@ -2673,7 +2673,7 @@ namespace ceras
     /// @endcode
     ///
     template< Expression Lhs_Expression, Expression Rhs_Expression, std::floating_point FP >
-    auto constexpr equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, FP threshold=0.5 ) noexcept
+    auto equal( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, FP threshold=0.5 ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -2689,10 +2689,11 @@ namespace ceras
                 for_each( lhs_tensor.begin(), lhs_tensor.end(), rhs_tensor.begin(), ans.begin(), [threshold]( auto l, auto r, auto& v ){ v = (std::abs(l-r) > threshold) ? value_type{0} : value_type{1}; } );
                 return ans;
             },
-            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const& rhs_input, Tsor const&, Tsor const& grad ) noexcept
+            [=]<Tensor Tsor>( Tsor const& lhs_input, Tsor const&, Tsor const&, Tsor const& ) noexcept
             {
                 typedef typename Tsor::value_type value_type;
                 Tsor& ans = context_cast<Tsor>( backward_cache );
+                ans.resize( lhs_input.shape() );
                 std::fill( ans.begin(), ans.end(), value_type{0} );
                 return std::make_tuple( ans, ans );
             },
@@ -2713,7 +2714,7 @@ namespace ceras
     /// @endcode
     ///
     template <Expression Ex>
-    auto constexpr sign( Ex const& ex ) noexcept
+    auto sign( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -2727,7 +2728,7 @@ namespace ceras
                 for_each( input.begin(), input.end(), ans.begin(), []( auto x, auto& v ){ v = (value_type{0} < x) - (x < value_type{0}); } );
                 return ans;
             },
-            [=]<Tensor Tsor>( Tsor const&input, Tsor const&, Tsor const& grad ) noexcept
+            [=]<Tensor Tsor>( Tsor const&input, Tsor const&, Tsor const& ) noexcept
             {
                 typedef typename Tsor::value_type value_type;
                 Tsor& ans = context_cast<Tsor>( backward_cache );
@@ -2831,7 +2832,11 @@ namespace ceras
         else if (padding.size() == 4 )
             std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[1], padding[2], padding[3] );
         else
+        {
+            //slient clang stupid uninitialized variable warning
+            std::tie( top, bottom, left, right ) = std::make_tuple( 0UL, 0UL, 0UL, 0UL );
             better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
+        }
 
         // checking extracted paddings
         better_assert( top >= 1, "Expecting zero_padding_2d top padding no less than 1, but got ", top );
@@ -2952,7 +2957,11 @@ namespace ceras
         else if (padding.size() == 4 )
             std::tie( top, bottom, left, right ) = std::make_tuple( padding[0], padding[1], padding[2], padding[3] );
         else
+        {
+            //slient clang stupid uninitialized variable warning
+            std::tie( top, bottom, left, right ) = std::make_tuple( 0UL, 0UL, 0UL, 0UL );
             better_assert( false, "Expecting padding has size of 1, 2 or 4, but got: ", padding.size() );
+        }
 
         // checking extracted paddings
         better_assert( top >= 1, "Expecting cropping_2d top padding no less than 1, but got ", top );
@@ -3190,8 +3199,8 @@ namespace ceras
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
-                    if ( axis >= ans.size() ) axis = ans.size()-1;
-                    ans[axis] *= repeats;
+                    auto new_axis = std::min( axis, ans.size()-1 );
+                    ans[new_axis] *= repeats;
                     return ans;
                 },
                 make_argumented_operator_serializer( repeats, axis )
@@ -3323,8 +3332,8 @@ namespace ceras
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
-                    if ( axis >= shape.size() ) axis = shape.size() - 1;
-                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    auto new_axis = std::min( axis, shape.size()-1 );
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+new_axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
                 },
@@ -3458,8 +3467,8 @@ namespace ceras
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
-                    if ( axis >= shape.size() ) axis = shape.size() - 1;
-                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    auto const new_axis = std::min( axis, shape.size()-1 );
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+new_axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
                 },
@@ -3574,8 +3583,8 @@ namespace ceras
                 [=]( std::vector<unsigned long> const& shape ) noexcept
                 {
                     std::vector<unsigned long> ans = shape;
-                    if ( axis >= shape.size() ) axis = shape.size() - 1;
-                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+axis );
+                    auto const new_axis = std::min( axis, shape.size()-1 );
+                    std::copy( ans.begin()+axis+1, ans.end(), ans.begin()+new_axis );
                     ans.resize( ans.size() - 1 );
                     return ans;
                 },
@@ -3598,7 +3607,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr abs( Ex const& ex ) noexcept
+    auto abs( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3635,7 +3644,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr acos( Ex const& ex ) noexcept
+    auto acos( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3672,7 +3681,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr acosh( Ex const& ex ) noexcept
+    auto acosh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3709,7 +3718,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr asin( Ex const& ex ) noexcept
+    auto asin( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3746,7 +3755,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr asinh( Ex const& ex ) noexcept
+    auto asinh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3783,7 +3792,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr atan( Ex const& ex ) noexcept
+    auto atan( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3820,7 +3829,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr atanh( Ex const& ex ) noexcept
+    auto atanh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3857,7 +3866,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr cbrt( Ex const& ex ) noexcept
+    auto cbrt( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3894,7 +3903,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr ceil( Ex const& ex ) noexcept
+    auto ceil( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3928,7 +3937,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr cos( Ex const& ex ) noexcept
+    auto cos( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -3965,7 +3974,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr cosh( Ex const& ex ) noexcept
+    auto cosh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4002,7 +4011,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr erf( Ex const& ex ) noexcept
+    auto erf( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4039,7 +4048,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr erfc( Ex const& ex ) noexcept
+    auto erfc( Ex const& ex ) noexcept
     {
 
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
@@ -4077,7 +4086,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr exp( Ex const& ex ) noexcept
+    auto exp( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4114,7 +4123,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr exp2( Ex const& ex ) noexcept
+    auto exp2( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4151,7 +4160,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr expm1( Ex const& ex ) noexcept
+    auto expm1( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4208,7 +4217,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr floor( Ex const& ex ) noexcept
+    auto floor( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4245,7 +4254,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr llrint( Ex const& ex ) noexcept
+    auto llrint( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4278,7 +4287,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr llround( Ex const& ex ) noexcept
+    auto llround( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4311,7 +4320,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr log( Ex const& ex ) noexcept
+    auto log( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4348,7 +4357,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr log10( Ex const& ex ) noexcept
+    auto log10( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4385,7 +4394,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr log1p( Ex const& ex ) noexcept
+    auto log1p( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4422,7 +4431,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr log2( Ex const& ex ) noexcept
+    auto log2( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4456,7 +4465,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr lrint( Ex const& ex ) noexcept
+    auto lrint( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4490,7 +4499,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr lround( Ex const& ex ) noexcept
+    auto lround( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4523,7 +4532,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr nearbyint( Ex const& ex ) noexcept
+    auto nearbyint( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4556,7 +4565,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr rint( Ex const& ex ) noexcept
+    auto rint( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4589,7 +4598,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr round( Ex const& ex ) noexcept
+    auto round( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4622,7 +4631,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr sin( Ex const& ex ) noexcept
+    auto sin( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4659,7 +4668,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr sinh( Ex const& ex ) noexcept
+    auto sinh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4696,7 +4705,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr sqrt( Ex const& ex ) noexcept
+    auto sqrt( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4733,7 +4742,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr tan( Ex const& ex ) noexcept
+    auto tan( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4748,7 +4757,7 @@ namespace ceras
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() );
-                                        for_each( input.begin(), input.end(), output.begin(), grad.begin(), ans.begin(), []( auto x, auto o, auto g, auto& v ) noexcept { v = g * (1.0+o*o); } );
+                                        for_each( output.begin(), output.end(), grad.begin(), ans.begin(), []( auto o, auto g, auto& v ) noexcept { v = g * (1.0+o*o); } ); // TODO: check this gradient
                                         return ans;
                                     },
                                     "tan"
@@ -4770,7 +4779,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr tanh( Ex const& ex ) noexcept
+    auto tanh( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
@@ -4803,7 +4812,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr trunc( Ex const& ex ) noexcept
+    auto trunc( Ex const& ex ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
@@ -4892,7 +4901,7 @@ namespace ceras
     /// \endcode
     ///
     template<Expression Ex, typename T>
-    auto constexpr pow( Ex const& ex, T exponent ) noexcept
+    auto pow( Ex const& ex, T exponent ) noexcept
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();

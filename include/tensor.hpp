@@ -473,7 +473,7 @@ namespace ceras
         template< typename U >
         constexpr auto as_type() const noexcept
         {
-            tensor<U, typename std::allocator_traits<Allocator>::rebind_alloc<U>> ans{ (*this).shape() };
+            tensor<U, typename std::allocator_traits<Allocator>:: template rebind_alloc<U>> ans{ (*this).shape() };
             std::copy( (*this).begin(), (*this).end(), ans.begin() );
             return ans;
         }

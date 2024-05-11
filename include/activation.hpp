@@ -597,7 +597,7 @@ namespace ceras
                                         ans.map([_gelu](auto& x) { x = _gelu(x); });
                                         return ans;
                                     },
-                                    [_dgelu]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    [_dgelu]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
                                     {
                                         //typedef typename Tsor::value_type value_type;
                                         Tsor ans = grad;

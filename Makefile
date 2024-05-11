@@ -3,7 +3,7 @@ ifeq ($(DEBUG), 1)
 	DEBUGOP = -DDEBUG -pg -ggdb -O0
 	DEBUGLP = -pg -O0
 else
-	DEBUGOP =  -funsafe-math-optimizations -Ofast -flto=auto  -funroll-all-loops -pipe -march=native
+	DEBUGOP =  -funsafe-math-optimizations -Ofast -flto=auto -pipe -march=native
 	DEBUGLP = -Ofast
 endif
 
@@ -26,11 +26,11 @@ else
 endif
 
 
-LOP           = -Wl,--gc-sections -flto -fopt-info-vec-optimized
-OP            = -fconcepts-diagnostics-depth=4 -ftemplate-depth=100860 $(DEBUGOP) $(CUDAOP) $(CBLASOP)
+LOP           = -Wl,--gc-sections -flto
+OP            = -ftemplate-depth=100860 $(DEBUGOP) $(CUDAOP) $(CBLASOP)
 
-CXX           = g++
-CXXFLAGS      = -std=c++20 -Wall -Wextra -fmax-errors=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections $(OP)
+CXX           = clang++
+CXXFLAGS      = -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections -Wno-braced-scalar-init $(OP)
 
 LFLAGS        = -pthread -lstdc++fs $(DEBUGLP) $(CUDALP) $(CBLASLP) ${LOP}
 #LINK          = $(CXX) $(LFLAGS)

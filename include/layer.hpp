@@ -14,7 +14,7 @@ namespace ceras
 {
 
 
-    inline auto Input( std::vector<unsigned long> const& input_shape = {{-1UL}} )
+    inline auto Input( std::vector<unsigned long> const& input_shape = {{-1UL,}} )
     {
         return place_holder<tensor<float>>{ input_shape };
     }
