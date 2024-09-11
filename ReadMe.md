@@ -1,8 +1,13 @@
+![](./assets/ceras.logo.png)
+
+
 # Ceras
 
 ![CI](https://github.com/fengwang/ceras/actions/workflows/c-cpp.yml/badge.svg)
 
 ----
+
+__Ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
 <div align="center">
 
@@ -12,7 +17,6 @@ What I cannot create, I do not understand. -- Richard Feynman
 
 </div>
 
-__Ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
 
 ----
 
