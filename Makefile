@@ -30,7 +30,7 @@ LOP           = -Wl,--gc-sections -flto
 OP            = -ftemplate-depth=100860 $(DEBUGOP) $(CUDAOP) $(CBLASOP)
 
 CXX           = clang++
-CXXFLAGS      = -std=c++20 -Wall -Wextra -ferror-limit=1 -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections -Wno-braced-scalar-init $(OP)
+CXXFLAGS      = -std=c++20 -Wall -Wextra -ftemplate-backtrace-limit=0 -fdata-sections -ffunction-sections -Wno-braced-scalar-init $(OP)
 
 LFLAGS        = -pthread -lstdc++fs $(DEBUGLP) $(CUDALP) $(CBLASLP) ${LOP}
 #LINK          = $(CXX) $(LFLAGS)
