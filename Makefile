@@ -3,7 +3,7 @@ ifeq ($(DEBUG), 1)
 	DEBUGOP = -DDEBUG -pg -ggdb -O0
 	DEBUGLP = -pg -O0
 else
-	DEBUGOP =  -funsafe-math-optimizations -Ofast -flto=auto -pipe -march=native
+	DEBUGOP =  -funsafe-math-optimizations -O3 -ffast-math -flto=auto -pipe -march=native
 	DEBUGLP = -Ofast
 endif
 
