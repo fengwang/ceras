@@ -1,0 +1,102 @@
+-- The CXX compiler identification is GNU 16.2.1
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/feng-cache/ceras-clean-gf06y0h_/build
+[ 14%] Building CXX object CMakeFiles/ceras_image.dir/src/image.cpp.o
+[ 14%] Building CXX object CMakeFiles/ceras_headers.dir/test/headers.cc.o
+[ 21%] Linking CXX executable ceras_headers
+[ 21%] Built target ceras_headers
+[ 28%] Building CXX object CMakeFiles/ceras_verification.dir/test/verification.cc.o
+[ 35%] Linking CXX static library libceras_image.a
+[ 35%] Built target ceras_image
+[ 42%] Building CXX object CMakeFiles/ceras_api.dir/test/api.cc.o
+[ 50%] Linking CXX executable ceras_api
+[ 50%] Built target ceras_api
+[ 57%] Building CXX object CMakeFiles/ceras_multi_tu.dir/test/multi_tu.cc.o
+[ 64%] Building CXX object CMakeFiles/ceras_multi_tu.dir/test/multi_tu_other.cc.o
+[ 71%] Linking CXX executable ceras_verification
+[ 71%] Built target ceras_verification
+[ 78%] Building CXX object CMakeFiles/ceras_regression.dir/test/regression.cc.o
+[ 85%] Linking CXX executable ceras_multi_tu
+[ 85%] Built target ceras_multi_tu
+[ 92%] Building CXX object CMakeFiles/ceras_regression.dir/test/image_other.cc.o
+[100%] Linking CXX executable ceras_regression
+[100%] Built target ceras_regression
+Test project /home/feng-cache/ceras-clean-gf06y0h_/build
+      Start  1: headers
+ 1/31 Test  #1: headers ..........................   Passed    0.00 sec
+      Start  2: gradients
+ 2/31 Test  #2: gradients ........................   Passed    0.00 sec
+      Start  3: boundaries
+ 3/31 Test  #3: boundaries .......................   Passed    0.00 sec
+      Start  4: contexts
+ 4/31 Test  #4: contexts .........................   Passed    0.00 sec
+      Start  5: recurrences
+ 5/31 Test  #5: recurrences ......................   Passed    0.00 sec
+      Start  6: optimizer_state
+ 6/31 Test  #6: optimizer_state ..................   Passed    0.00 sec
+      Start  7: normalization
+ 7/31 Test  #7: normalization ....................   Passed    0.00 sec
+      Start  8: training
+ 8/31 Test  #8: training .........................   Passed    0.00 sec
+      Start  9: allocation
+ 9/31 Test  #9: allocation .......................   Passed    0.00 sec
+      Start 10: restore
+10/31 Test #10: restore ..........................   Passed    0.00 sec
+      Start 11: ranges
+11/31 Test #11: ranges ...........................   Passed    0.00 sec
+      Start 12: parsers
+12/31 Test #12: parsers ..........................   Passed    0.00 sec
+      Start 13: api
+13/31 Test #13: api ..............................   Passed    0.00 sec
+      Start 14: multi_tu
+14/31 Test #14: multi_tu .........................   Passed    0.00 sec
+      Start 15: gemm
+15/31 Test #15: gemm .............................   Passed    0.00 sec
+      Start 16: storage
+16/31 Test #16: storage ..........................   Passed    0.00 sec
+      Start 17: parse
+17/31 Test #17: parse ............................   Passed    0.00 sec
+      Start 18: image
+18/31 Test #18: image ............................   Passed    0.00 sec
+      Start 19: hdr
+19/31 Test #19: hdr ..............................   Passed    0.00 sec
+      Start 20: idx
+20/31 Test #20: idx ..............................   Passed    0.00 sec
+      Start 21: parallel
+21/31 Test #21: parallel .........................   Passed    0.00 sec
+      Start 22: graph
+22/31 Test #22: graph ............................   Passed    0.00 sec
+      Start 23: softmax
+23/31 Test #23: softmax ..........................   Passed    0.00 sec
+      Start 24: mean
+24/31 Test #24: mean .............................   Passed    0.00 sec
+      Start 25: elu
+25/31 Test #25: elu ..............................   Passed    0.00 sec
+      Start 26: gelu
+26/31 Test #26: gelu .............................   Passed    0.00 sec
+      Start 27: maximum
+27/31 Test #27: maximum ..........................   Passed    0.00 sec
+      Start 28: lifetime
+28/31 Test #28: lifetime .........................   Passed    0.00 sec
+      Start 29: optimizers
+29/31 Test #29: optimizers .......................   Passed    0.00 sec
+      Start 30: adadelta
+30/31 Test #30: adadelta .........................   Passed    0.00 sec
+      Start 31: crossentropy
+31/31 Test #31: crossentropy .....................   Passed    0.00 sec
+
+100% tests passed out of 31
+
+Label Time Summary:
+concurrency    =   0.01 sec*proc (3 tests)
+
+Total Test time (real) =   0.06 sec

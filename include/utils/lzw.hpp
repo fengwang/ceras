@@ -475,7 +475,7 @@ namespace lzw
     /// @param [out] os     output stream
     /// @return 0 for success, -1 for failure
     ///
-    inline int decompress(std::istream& is, std::ostream& os)
+    inline int decompress(std::istream& is, std::ostream& os, std::size_t max_output=256UL*1024*1024)
     {
         using namespace details;
         std::vector<std::pair<CodeType, char>> dictionary;
@@ -494,9 +494,10 @@ namespace lzw
             // add dummy elements for the metacodes
             dictionary.push_back({0, '\x00'}); // MetaCode::Eof
         };
-        const auto rebuild_string = [&dictionary](CodeType k) -> const std::vector<char>*
+        std::vector<char> s;
+        const auto rebuild_string = [&dictionary, &s](CodeType k) -> const std::vector<char>*
         {
-            static std::vector<char> s; // String
+            // Per-call scratch storage.
 
             s.clear();
 
@@ -516,6 +517,7 @@ namespace lzw
         CodeReader cr(is);
         CodeType i {globals::dms}; // Index
         CodeType k; // Key
+        std::size_t written=0;
 
         while (true)
         {
@@ -536,9 +538,9 @@ namespace lzw
                 break;
             }
 
-            if (k > dictionary.size())
+            if (k > dictionary.size() || (k == dictionary.size() && i == globals::dms))
             {
-                better_assert(false, "lzw::invalid compression code with k = ", k, " but dictionary size ", dictionary.size());
+
                 return -1;
             }
 
@@ -557,13 +559,16 @@ namespace lzw
                     dictionary.push_back({i, s->front()});
             }
 
-            os.write(&s->front(), s->size());
+            if (s->empty() || s->size()>max_output-written) return -1;
+            written+=s->size();
+            os.write(s->data(), s->size());
+            if(!os) return -1;
             i = k;
         }
 
         if (cr.corrupted())
         {
-            better_assert(false, "lzw::corrupted comressed file.");
+
             return -1;
         }
 

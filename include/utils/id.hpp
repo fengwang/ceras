@@ -11,17 +11,15 @@ namespace ceras
         struct id
         {
             int value_;
-            constexpr id( int value = 0 ) noexcept: value_{value} {}
+            constexpr id( int value = 0 ): value_{value} {}
         };
     };//namespace ceras_private
 
     // return id sequentially
-    inline int generate_uid() noexcept
+    inline int generate_uid()
     {
-        static ceras_private::id id_generator;
-        int ans = id_generator.value_;
-        ++id_generator.value_;
-        return ans;
+        static std::atomic<int> next{0};
+        return next.fetch_add(1, std::memory_order_relaxed);
     }
 
     template< typename Base, string Name="Anonymous Class"  >
@@ -30,14 +28,14 @@ namespace ceras
         //char const * name_ = Name;
         std::string name_ = std::string{Name};
         int id_;
-        enable_id() noexcept : id_ { generate_uid() } {}
+        enable_id() : id_ { generate_uid() } {}
 
-        int id() const noexcept
+        int id() const
         {
             return id_;
         }
 
-        std::string name() const noexcept
+        std::string name() const
         {
             return name_;
         }

@@ -7,11 +7,22 @@
 namespace ceras
 {
 
+    template<class T>
+    auto make_argumented_unary_operator_serializer(T argument)
+    {
+        return [argument](auto const& expression, auto const& input) {
+            auto [name, code] = serialize(input);
+            auto output = fmt::format("unary_expression_{}", expression.id());
+            code.emplace_back(fmt::format("auto {} = {}({})({});", output, expression.name(), argument, name));
+            return std::make_tuple(output, code);
+        };
+    }
+
     struct default_unary_expression_serializer
     {
 
         template< typename Unary_Expression, typename Input_Expression >
-        std::tuple<std::string, std::vector<std::string>> const operator()( Unary_Expression const& unary_expression, Input_Expression const& input_expression ) const noexcept
+        std::tuple<std::string, std::vector<std::string>> const operator()( Unary_Expression const& unary_expression, Input_Expression const& input_expression ) const
         {
             auto const& [input_expression_name, input_expression_code] = serialize( input_expression );
             std::string unary_expressionidentity = fmt::format( "unary_expression_{}_{}", unary_expression.name(), unary_expression.id() );
@@ -25,7 +36,7 @@ namespace ceras
     struct default_binary_expression_serializer
     {
         template< typename Binary_Expression, typename Lhs_Expression, typename Rhs_Expression >
-        std::tuple<std::string, std::vector<std::string>> const operator()( Binary_Expression const& binary_expression, Lhs_Expression const& lhs_input_expression, Rhs_Expression const& rhs_input_expression ) const noexcept
+        std::tuple<std::string, std::vector<std::string>> const operator()( Binary_Expression const& binary_expression, Lhs_Expression const& lhs_input_expression, Rhs_Expression const& rhs_input_expression ) const
         {
             auto const& [lhs_ex_name, lhs_ex_code] = serialize( lhs_input_expression );
             auto const& [rhs_ex_name, rhs_ex_code] = serialize( rhs_input_expression );
@@ -65,4 +76,3 @@ namespace ceras
 }//namespace ceras
 
 #endif//HYCBVEQFSDADSADKVPHMHKRXPNEVODNAVXQACROFCJMIKFNBOQCFEVAGDEKVCXPNBQQJPXVTB
-

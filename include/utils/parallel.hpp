@@ -1,100 +1,40 @@
-#ifndef DVAOHBLMHGJXDTYKVKKSMCBAWCSHIBSLFWQARMEWBWMLKQGWFMOSTQFRQDXHJYHJELKQIHEXF
-#define DVAOHBLMHGJXDTYKVKKSMCBAWCSHIBSLFWQARMEWBWMLKQGWFMOSTQFRQDXHJYHJELKQIHEXF
-
+#pragma once
 #include "../includes.hpp"
 #include "../config.hpp"
-#include "./range.hpp"
-
-namespace ceras
-{
-
-#if 1
-
-    template< typename Function, std::unsigned_integral Integer_Type >
-    void parallel( Function const& func, Integer_Type dim_first, Integer_Type dim_last, unsigned long threshold = 8 ) // 1d parallel
-    {
-        if constexpr( parallel_mode == 0 )
-        {
-            for ( auto a : range( dim_first, dim_last ) )
-                func( a );
-            return;
-        }
-        else // <- this is constexpr-if, `else` is a must
-        {
-            unsigned int const total_cores = std::thread::hardware_concurrency();
-
-            // case of non-parallel or small jobs
-            if ( (total_cores <= 1) || ((dim_last - dim_first) <= threshold) )
-            {
-                for ( auto a : range( dim_first, dim_last ) )
-                    func( a );
-                return;
-            }
-
-            // case of small job numbers
-            std::vector<std::thread> threads;
-            if ( dim_last - dim_first <= total_cores )
-            {
-                for ( auto index = dim_first; index != dim_last; ++index )
-                    threads.emplace_back( std::thread{[&func, index](){ func( index ); }} );
-                for ( auto& th : threads )
-                    th.join();
-                return;
-            }
-
-            // case of more jobs than CPU cores
-            auto const& job_slice = [&func]( Integer_Type a, Integer_Type b )
-            {
-                if ( a >= b ) return;
-                while ( a != b )
-                    func(a++);
-            };
-
-            threads.reserve( total_cores-1 );
-            std::uint_least64_t tasks_per_thread = ( dim_last - dim_first + total_cores - 1 ) / total_cores;
-
-            for ( auto index : range( total_cores-1 ) )
-            {
-                Integer_Type first = tasks_per_thread * index + dim_first;
-                first = std::min( first, dim_last );
-                Integer_Type last =  first + tasks_per_thread;
-                last = std::min( last, dim_last );
-                threads.emplace_back( std::thread{ job_slice, first, last } );
-            }
-
-            job_slice( tasks_per_thread*(total_cores-1), dim_last );
-
-            for ( auto& th : threads )
-                th.join();
-        }
-    }//parallel
-
-#else
-    //
-    // Using std::execution::par or std::execution::par_unseq is deprecated.
-    // On my laptop, [archlinux 5.10.63-1-lts, Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz (8 cores) and g++11.1.0],
-    // to process a vector containing 200000000 elements
-    //
-    // std::execution::par consumes 0.70s
-    // std::execution::par_unseq consumes 0.68s
-    // parallel consumes 0.37s
-    //
-    template< typename Function, std::unsigned_integral Integer_Type >
-    void parallel( Function const& func, Integer_Type dim_first, Integer_Type dim_last, unsigned long threshold = 8 ) // 1d parallel
-    {
-        auto const& vec = range( dim_first, dim_last );
-        //std::for_each( std::execution::par, vec.cbegin(), vec.cend(), [&func]( Integer_Type const& idx ){ func(idx); } ); // this requires 0.70s to process a vector of 200000000
-        std::for_each( std::execution::par_unseq, vec.cbegin(), vec.cend(), [&func]( Integer_Type const& idx ){ func(idx); } ); // this requires 0.68s to process a vector of 200000000
+namespace ceras {
+inline thread_local std::size_t* parallel_thread_counter=nullptr;
+inline thread_local unsigned long parallel_min_work=4096;
+inline thread_local bool inside_parallel=false;
+template<class Function, std::unsigned_integral I>
+void parallel(Function const& func, I first, I last, unsigned long threshold=parallel_min_work,
+              unsigned int workers=std::thread::hardware_concurrency()) {
+    if(last<first) throw std::invalid_argument("reversed parallel range");
+    auto n=last-first;
+    if(!parallel_mode || inside_parallel || n<=threshold || workers<=1) {
+        for(auto i=first;i<last;++i) func(i);
+        return;
     }
-#endif
-
-    template< typename Function, typename Integer_Type >
-    void parallel( Function const& func, Integer_Type dim_last )
+    workers=static_cast<unsigned int>(std::min<std::uintmax_t>(workers, threshold ? std::max<std::uintmax_t>(1,n/threshold) : n));
+    std::exception_ptr failure;
+    std::mutex error_mutex;
+    auto run=[&](I a,I b) {
+        struct nesting {bool previous=inside_parallel;nesting(){inside_parallel=true;}~nesting(){inside_parallel=previous;}} scope;
+        try {for(auto i=a;i<b;++i) func(i);}
+        catch(...) {std::lock_guard lock(error_mutex);if(!failure) failure=std::current_exception();}
+    };
     {
-        parallel( func, Integer_Type{0}, dim_last );
-    }//parallel
-
-}//namespace ceras
-
-#endif//DVAOHBLMHGJXDTYKVKKSMCBAWCSHIBSLFWQARMEWBWMLKQGWFMOSTQFRQDXHJYHJELKQIHEXF
-
+        std::vector<std::jthread> threads;
+        threads.reserve(workers-1);
+        I cursor=first, base=n/workers, extra=n%workers;
+        for(unsigned int w=0;w<workers;++w) {
+            I end=cursor+base+(w<extra?1:0);
+            if(w+1==workers) run(cursor,end);
+            else {threads.emplace_back(run,cursor,end);if(parallel_thread_counter) ++*parallel_thread_counter;}
+            cursor=end;
+        }
+    }
+    if(failure) std::rethrow_exception(failure);
+}
+template<class Function,class I>
+void parallel(Function const& f,I last) {parallel(f,I{0},last);}
+}

@@ -27,13 +27,13 @@ namespace ceras
         value_type data_;
 
         value() = delete;
-        value( value_type v ) noexcept : enable_id<value<T>, "Value">{}, data_{ v } {}
-        value( value const& ) noexcept = default;
-        value( value && ) noexcept = default;
-        value& operator =( value const& ) noexcept = default;
-        value& operator =( value && ) noexcept = default;
+        value( value_type v ) : enable_id<value<T>, "Value">{}, data_{ v } {}
+        value( value const& ) = default;
+        value( value && ) = default;
+        value& operator =( value const& ) = default;
+        value& operator =( value && ) = default;
 
-        void backward( auto ) noexcept { }
+        void backward( auto ) { }
 
         template< Tensor Tsor >
         Tsor const forward( Tsor const& refer ) const
@@ -43,17 +43,17 @@ namespace ceras
             return ans;
         }
 
-        std::vector<unsigned long> shape() const noexcept
+        std::vector<unsigned long> shape() const
         {
             return std::vector<unsigned long>{ {-1UL,} };
         }
 
-        value_type data() const noexcept
+        value_type data() const
         {
             return data_;
         }
 
-        value_type& data() noexcept
+        value_type& data()
         {
             return data_;
         }
@@ -88,7 +88,7 @@ namespace ceras
     /// @brief Dump a value to cpp code.
     ///
     template< Value Val >
-    std::tuple<std::string, std::vector<std::string>> const serialize( Val const& v ) noexcept
+    std::tuple<std::string, std::vector<std::string>> const serialize( Val const& v )
     {
         std::string value_name = fmt::format( "value_{}", v.id() );
         std::vector<std::string> value_code;

@@ -35,7 +35,7 @@ namespace dm_details
     //
     // Warning: only works with Linux, not portable. Links to libc by default.
     //
-    unsigned short get_terminal_width()
+    inline unsigned short get_terminal_width()
     {
         if constexpr( ceras::is_windows_platform )
         {
@@ -43,9 +43,9 @@ namespace dm_details
         }
         else
         {
-            winsize w;
+            winsize w{};
             ioctl(0, 0x5413, &w); // 0x5413 is translated from macro 'TIOCGWINSZ'
-            return w.ws_col;
+            return w.ws_col ? w.ws_col : 80;
         }
     }
 }

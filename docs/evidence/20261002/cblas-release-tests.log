@@ -1,0 +1,507 @@
+Start testing: Oct 02 20:20 CEST
+----------------------------------------------------------
+1/31 Testing: headers
+1/31 Test: headers
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_headers"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"headers" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"headers" end time: Oct 02 20:20 CEST
+"headers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/31 Testing: gradients
+2/31 Test: gradients
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "gradients"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"gradients" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+checking softmax
+checking mean_reduce
+checking elu
+checking gelu
+checking sigmoid
+checking square
+checking CrossEntropyLoss
+checking sum_reduce
+gradients: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gradients" end time: Oct 02 20:20 CEST
+"gradients" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/31 Testing: boundaries
+3/31 Test: boundaries
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "boundaries"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"boundaries" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+boundaries: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"boundaries" end time: Oct 02 20:20 CEST
+"boundaries" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/31 Testing: contexts
+4/31 Test: contexts
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "contexts"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"contexts" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+contexts: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"contexts" end time: Oct 02 20:20 CEST
+"contexts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/31 Testing: recurrences
+5/31 Test: recurrences
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "recurrences"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"recurrences" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+recurrences: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"recurrences" end time: Oct 02 20:20 CEST
+"recurrences" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/31 Testing: optimizer_state
+6/31 Test: optimizer_state
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "optimizer_state"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"optimizer_state" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+optimizer_state: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"optimizer_state" end time: Oct 02 20:20 CEST
+"optimizer_state" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/31 Testing: normalization
+7/31 Test: normalization
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "normalization"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"normalization" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+normalization: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"normalization" end time: Oct 02 20:20 CEST
+"normalization" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/31 Testing: training
+8/31 Test: training
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "training"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"training" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+training: PASS
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"training" end time: Oct 02 20:20 CEST
+"training" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/31 Testing: allocation
+9/31 Test: allocation
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "allocation"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"allocation" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+allocation: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"allocation" end time: Oct 02 20:20 CEST
+"allocation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/31 Testing: restore
+10/31 Test: restore
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "restore"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"restore" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+restore: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"restore" end time: Oct 02 20:20 CEST
+"restore" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/31 Testing: ranges
+11/31 Test: ranges
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "ranges"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"ranges" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+ranges: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"ranges" end time: Oct 02 20:20 CEST
+"ranges" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/31 Testing: parsers
+12/31 Test: parsers
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_verification" "parsers"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"parsers" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+parsers: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"parsers" end time: Oct 02 20:20 CEST
+"parsers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/31 Testing: api
+13/31 Test: api
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_api"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"api" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+API PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"api" end time: Oct 02 20:20 CEST
+"api" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/31 Testing: multi_tu
+14/31 Test: multi_tu
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_multi_tu"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"multi_tu" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"multi_tu" end time: Oct 02 20:20 CEST
+"multi_tu" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/31 Testing: gemm
+15/31 Test: gemm
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "gemm"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"gemm" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+gemm: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gemm" end time: Oct 02 20:20 CEST
+"gemm" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/31 Testing: storage
+16/31 Test: storage
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "storage"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"storage" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+storage: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"storage" end time: Oct 02 20:20 CEST
+"storage" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/31 Testing: parse
+17/31 Test: parse
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "parse"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"parse" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+parse: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"parse" end time: Oct 02 20:20 CEST
+"parse" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/31 Testing: image
+18/31 Test: image
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "image"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"image" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+image: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"image" end time: Oct 02 20:20 CEST
+"image" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/31 Testing: hdr
+19/31 Test: hdr
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "hdr"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"hdr" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+hdr: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"hdr" end time: Oct 02 20:20 CEST
+"hdr" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/31 Testing: idx
+20/31 Test: idx
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "idx"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"idx" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+idx: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"idx" end time: Oct 02 20:20 CEST
+"idx" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/31 Testing: parallel
+21/31 Test: parallel
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "parallel"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"parallel" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+parallel: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"parallel" end time: Oct 02 20:20 CEST
+"parallel" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/31 Testing: graph
+22/31 Test: graph
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "graph"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"graph" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+graph: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"graph" end time: Oct 02 20:20 CEST
+"graph" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/31 Testing: softmax
+23/31 Test: softmax
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "softmax"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"softmax" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+softmax: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"softmax" end time: Oct 02 20:20 CEST
+"softmax" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/31 Testing: mean
+24/31 Test: mean
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "mean"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"mean" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+mean: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"mean" end time: Oct 02 20:20 CEST
+"mean" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/31 Testing: elu
+25/31 Test: elu
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "elu"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"elu" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+elu: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"elu" end time: Oct 02 20:20 CEST
+"elu" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/31 Testing: gelu
+26/31 Test: gelu
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "gelu"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"gelu" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+gelu: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"gelu" end time: Oct 02 20:20 CEST
+"gelu" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/31 Testing: maximum
+27/31 Test: maximum
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "maximum"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"maximum" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+maximum: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"maximum" end time: Oct 02 20:20 CEST
+"maximum" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/31 Testing: lifetime
+28/31 Test: lifetime
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "lifetime"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"lifetime" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+lifetime: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"lifetime" end time: Oct 02 20:20 CEST
+"lifetime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/31 Testing: optimizers
+29/31 Test: optimizers
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "optimizers"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"optimizers" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+optimizers: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"optimizers" end time: Oct 02 20:20 CEST
+"optimizers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/31 Testing: adadelta
+30/31 Test: adadelta
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "adadelta"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"adadelta" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+adadelta: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"adadelta" end time: Oct 02 20:20 CEST
+"adadelta" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/31 Testing: crossentropy
+31/31 Test: crossentropy
+Command: "/workspace/github.repo/ceras/build/cblas-release/ceras_regression" "crossentropy"
+Directory: /workspace/github.repo/ceras/build/cblas-release
+"crossentropy" start time: Oct 02 20:20 CEST
+Output:
+----------------------------------------------------------
+crossentropy: PASS
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"crossentropy" end time: Oct 02 20:20 CEST
+"crossentropy" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 02 20:20 CEST
+
+concurrency =   0.01 sec*proc

@@ -23,9 +23,9 @@ namespace ceras
     /// \endcode
     ///
     template< std::floating_point Float >
-    auto constexpr heaviside_step( Float f ) noexcept // f should not be zero
+    auto constexpr heaviside_step( Float f ) // f should not be zero
     {
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex>( Ex const& ex )
         {
             return sigmoid( value( f+f ) * ex );
         };
@@ -33,7 +33,7 @@ namespace ceras
 
     // alias of heaviside_step(20)
     template <Expression Ex>
-    auto constexpr soft_sign( Ex const& ex ) noexcept // soft-sign
+    auto constexpr soft_sign( Ex const& ex ) // soft-sign
     {
         return heaviside_step( 20.0 )( ex );
     }
@@ -41,14 +41,14 @@ namespace ceras
 
     // alias of heaviside_step(20)
     template <Expression Ex>
-    auto constexpr unit_step( Ex const& ex ) noexcept
+    auto constexpr unit_step( Ex const& ex )
     {
         return soft_sign( ex );
     }
 
     // alias of heaviside_step(20)
     template <Expression Ex>
-    auto constexpr binary_step( Ex const& ex ) noexcept
+    auto constexpr binary_step( Ex const& ex )
     {
         return soft_sign( ex );
     }
@@ -66,7 +66,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr gaussian( Ex const& ex ) noexcept
+    auto constexpr gaussian( Ex const& ex )
     {
         return exp( negative( square(ex) ) );
     }
@@ -87,9 +87,9 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto constexpr softmax( Ex const& ex ) noexcept
+    auto constexpr softmax( Ex const& ex )
     {
-        return make_unary_operator( []<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( []<Tensor Tsor>( Tsor const& input )
                                     {
                                         better_assert( !input.empty(), "softmax forward: input tensor is empty!" );
                                         Tsor x = deep_copy( input );
@@ -105,11 +105,16 @@ namespace ceras
                                         }
                                         return x;
                                     },
-                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad )
                                     {
                                         better_assert( !has_nan( grad ), "backprop: upcoming gradient for activation softmax contains NaN" );
-                                        Tsor ans = grad;
-                                        for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ) { a *= o * ( typename Tsor::value_type{1} - o ); } );
+                                        Tsor ans = deep_copy(grad);
+                                        auto width=output.shape().back();
+                                        for (std::size_t row=0;row<output.size();row+=width) {
+                                            typename Tsor::value_type dot=0;
+                                            for (std::size_t i=0;i<width;++i) dot+=grad[row+i]*output[row+i];
+                                            for (std::size_t i=0;i<width;++i) ans[row+i]=output[row+i]*(grad[row+i]-dot);
+                                        }
                                         return ans;
                                     },
                                     "softmax"
@@ -128,12 +133,12 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline selu( Ex const& ex ) noexcept
+    auto inline selu( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         typedef typename Tsor::value_type value_type;
                                         value_type const lambda = 1.0507;
@@ -146,7 +151,7 @@ namespace ceras
                                         ans.map( [lambda, alpha](auto& x){ x = (x >= value_type{0}) ? (lambda * x) : (lambda * alpha * (std::exp(x) - value_type{1})); } );
                                         return ans;
                                     },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                     {
                                         typedef typename Tsor::value_type value_type;
                                         value_type const lambda = 1.0507;
@@ -174,12 +179,12 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline softplus( Ex const& ex ) noexcept
+    auto inline softplus( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
@@ -187,7 +192,7 @@ namespace ceras
                                         ans.map( [](auto& x){ x = std::log(1.0+std::exp(x)); } ); // ln( 1+e^x )
                                         return ans;
                                     },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() ); // 1 / ( 1 + exp(-x) )
@@ -211,12 +216,12 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline softsign( Ex const& ex ) noexcept
+    auto inline softsign( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
@@ -224,7 +229,7 @@ namespace ceras
                                         ans.map( [](auto& x){ x /= typename Tsor::value_type{1} + std::abs(x); } ); //  x / ( 1+|x| )
                                         return ans;
                                     },
-                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    [backward_cache]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( input.shape() ); // 1 / ( 1 + |x| )^2
@@ -247,11 +252,11 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline sigmoid( Ex const& ex ) noexcept
+    auto inline sigmoid( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         std::shared_ptr<std::any> backward_cache = std::make_shared<std::any>();
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
@@ -260,7 +265,7 @@ namespace ceras
                                         ans.map( [](auto& x){ x = 1.0 / (1.0+std::exp(-x)); } );
                                         return ans;
                                     },
-                                    [backward_cache]<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
+                                    [backward_cache]<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad )
                                     {
                                         Tsor& ans = context_cast<Tsor>( backward_cache );
                                         ans.resize( output.shape() );
@@ -277,11 +282,11 @@ namespace ceras
     {
         struct relu_context
         {
-            auto make_forward() const noexcept
+            auto make_forward() const
             {
-                return []( std::shared_ptr<std::any> forward_cache ) noexcept
+                return []( std::shared_ptr<std::any> forward_cache )
                 {
-                    return [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                    return [forward_cache]<Tensor Tsor>( Tsor const& input )
                     {
                         better_assert( input.size(), "relu::forward: empty input." );
                         typedef typename Tsor::value_type value_type;
@@ -295,15 +300,15 @@ namespace ceras
                 };
             }
 
-            auto make_backward() const noexcept
+            auto make_backward() const
             {
-                return []<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad ) noexcept
+                return []<Tensor Tsor>( Tsor const& input, Tsor const& output, Tsor const& grad )
                 {
                     better_assert( input.size(), "relu::backward: empty input." );
                     better_assert( output.size(), "relu::backward: empty output." );
                     better_assert( grad.size(), "relu::backward: empty grad." );
                     typedef typename Tsor::value_type value_type;
-                    Tsor ans = grad; // shallow copy
+                    Tsor ans = deep_copy(grad); // shallow copy
                     //for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){ if ( x <= value_type{0} ) v = value_type{0}; } );
                     for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){  v *= ( x > value_type{0} ); } );
                     return ans;
@@ -325,7 +330,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto relu( Ex const& ex ) noexcept
+    auto relu( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( relu_context{}.make_forward()( forward_cache ), relu_context{}.make_backward(), "relu")( ex );
@@ -336,11 +341,11 @@ namespace ceras
     {
         struct relu6_context
         {
-            auto make_forward() const noexcept
+            auto make_forward() const
             {
-                return []( std::shared_ptr<std::any> forward_cache ) noexcept
+                return []( std::shared_ptr<std::any> forward_cache )
                 {
-                    return [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+                    return [forward_cache]<Tensor Tsor>( Tsor const& input )
                     {
                         typedef typename Tsor::value_type value_type;
                         Tsor& ans = context_cast<Tsor>( forward_cache );
@@ -351,12 +356,12 @@ namespace ceras
                 };
             }
 
-            auto make_backward() const noexcept
+            auto make_backward() const
             {
-                return []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                return []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                 {
                     typedef typename Tsor::value_type value_type;
-                    Tsor ans = grad; // shallow copy
+                    Tsor ans = deep_copy(grad); // shallow copy
                     //const typename Tsor::value_type zero{0};
                     for_each( ans.begin(), ans.end(), input.begin(), []( auto& v, auto x ){ if ( (x <= value_type{0}) || (x >= value_type{6}) ) v = value_type{0}; } );
                     return ans;
@@ -378,7 +383,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto relu6( Ex const& ex ) noexcept
+    auto relu6( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
         return make_unary_operator( relu6_context{}.make_forward()( forward_cache ), relu6_context{}.make_backward(), "relu6")( ex );
@@ -397,28 +402,29 @@ namespace ceras
     /// \endcode
     ///
     template< typename T > requires std::floating_point<T>
-    auto leaky_relu( T const factor=0.2 ) noexcept
+    auto leaky_relu( T const factor=0.2 )
     {
         better_assert( factor > T{0}, "Expecting leak_relu with a factor greater than 0, but got factor = ", factor );
         better_assert( factor < T{1}, "Expecting leak_relu with a factor less than 1, but got factor = ", factor );
-        return [factor]<Expression Ex>( Ex const& ex ) noexcept
+        return [factor]<Expression Ex>( Ex const& ex )
         {
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-            return make_unary_operator( [factor, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+            return make_unary_operator( [factor, forward_cache]<Tensor Tsor>( Tsor const& input )
                                         {
                                             Tsor& ans = context_cast<Tsor>( forward_cache );
                                             ans.resize( input.shape()  );
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( auto& v_out, auto v_in ){ v_out = std::max( T{v_in}, T{factor*v_in} ); } );
                                             return ans;
                                         },
-                                        [factor]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                        [factor]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                         {
                                             typedef typename Tsor::value_type value_type;
-                                            Tsor ans = grad;// OK for shallow copy
+                                            Tsor ans = deep_copy(grad);// OK for shallow copy
                                             for_each( ans.begin(), ans.end(), input.begin(), [factor]( value_type& v_back, value_type const v_in ){ v_back = (v_in > value_type{0}) ? v_back : factor*v_back; } );
                                             return ans;
                                         },
                                         "leaky_relu",
+                                        identity_output_shape_calculator{},
                                         make_argumented_unary_operator_serializer( factor )
                     )( ex );
         };
@@ -428,13 +434,13 @@ namespace ceras
     /// @PReLU is an alias name of Leaky_ReLU
     ///
     template< typename T > requires std::floating_point<T>
-    auto prelu( T const factor ) noexcept
+    auto prelu( T const factor )
     {
         return leaky_relu( factor );
     }
 
     template <Expression Ex>
-    auto negative_relu( Ex const& ex ) noexcept
+    auto negative_relu( Ex const& ex )
     {
         return negative( relu( ex ) );
     }
@@ -452,12 +458,12 @@ namespace ceras
     /// \endcode
     ///
     template< typename T=float > requires std::floating_point<T>
-    auto elu( T const alpha=1.0 ) noexcept
+    auto elu( T const alpha=1.0 )
     {
-        return [alpha]<Expression Ex>( Ex const& ex ) noexcept
+        return [alpha]<Expression Ex>( Ex const& ex )
         {
             std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
-            return make_unary_operator( [alpha, forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+            return make_unary_operator( [alpha, forward_cache]<Tensor Tsor>( Tsor const& input )
                                         {
                                             typedef typename Tsor::value_type value_type;
                                             Tsor& ans = context_cast<Tsor>( forward_cache );
@@ -465,14 +471,15 @@ namespace ceras
                                             for_each( ans.begin(), ans.end(), input.begin(), [alpha]( auto& v_out, auto v_in ){ v_out = (v_in > value_type{0}) ? v_in : (alpha * (std::exp(v_in) - value_type{1})); } );
                                             return ans;
                                         },
-                                        [alpha]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                        [alpha]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                         {
                                             typedef typename Tsor::value_type value_type;
-                                            Tsor ans = grad;// OK for shallow copy
-                                            for_each( ans.begin(), ans.end(), input.begin(), [alpha]( value_type& v_back, value_type const v_in ){ v_back = (v_in >= value_type{0}) ? v_back : alpha*std::exp(v_back); } );
+                                            Tsor ans = deep_copy(grad);// OK for shallow copy
+                                            for_each( ans.begin(), ans.end(), input.begin(), [alpha]( value_type& v_back, value_type const v_in ){ v_back = (v_in >= value_type{0}) ? v_back : v_back*alpha*std::exp(v_in); } );
                                             return ans;
                                         },
                                         "elu",
+                                        identity_output_shape_calculator{},
                                         make_argumented_unary_operator_serializer( alpha )
                     )( ex );
         };
@@ -490,11 +497,11 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline exponential( Ex const& ex ) noexcept
+    auto inline exponential( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
                                         ans.resize( input.shape() );
@@ -504,9 +511,9 @@ namespace ceras
                                         better_assert( !has_inf( ans ), "exponential operator forward output contains inf." );
                                         return ans;
                                     },
-                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const&, Tsor const& output, Tsor const& grad )
                                     {
-                                        Tsor ans = grad;
+                                        Tsor ans = deep_copy(grad);
                                         for_each( ans.begin(), ans.end(), output.begin(), []( auto& a, auto o ){ a *= o; } );
                                         return ans;
                                     },
@@ -526,11 +533,11 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline hard_sigmoid( Ex const& ex ) noexcept
+    auto inline hard_sigmoid( Ex const& ex )
     {
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache]<Tensor Tsor>( Tsor const& input )
                                     {
                                         typedef typename Tsor::value_type value_type;
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
@@ -539,10 +546,10 @@ namespace ceras
                                         ans.map([](auto& x) { x = ( x > value_type{1} )  ? value_type{1} : ( x < value_type{-1} ) ? value_type{0} : (x+value_type{1})/value_type{2}; });
                                         return ans;
                                     },
-                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad ) noexcept
+                                    []<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                     {
                                         typedef typename Tsor::value_type value_type;
-                                        Tsor ans = grad;
+                                        Tsor ans = deep_copy(grad);
                                         for_each( ans.begin(), ans.end(), input.begin(), []( auto& a, auto x ) { a = ((x > value_type{1}) || (x < value_type{-1})) ? value_type{0} : (a / value_type{2}); } );
                                         return ans;
                                     },
@@ -567,7 +574,7 @@ namespace ceras
     /// \endcode
     ///
     template <Expression Ex>
-    auto inline gelu( Ex const& ex ) noexcept
+    auto inline gelu( Ex const& ex )
     {
         auto _gelu = []<typename T>( T x )
         {
@@ -582,13 +589,13 @@ namespace ceras
         {
             auto const sq_2_pi_x = 0.79788456080286535588 * x;
             auto const _xx = x * x;
-            auto const ans = 0.5 * ( 1.0 + std::tanh( sq_2_pi_x * ( 1.0 + 0.044715 * _xx ) ) ) + sq_2_pi_x * sech_2( sq_2_pi_x * (1.0 + 0.044715 * _xx ) * ( 1.0 + 0.134145 * _xx) );
+            auto const ans = 0.5 * ( 1.0 + std::tanh( sq_2_pi_x * ( 1.0 + 0.044715 * _xx ) ) ) + 0.5 * sq_2_pi_x * sech_2( sq_2_pi_x * (1.0 + 0.044715 * _xx ) ) * ( 1.0 + 0.134145 * _xx);
             return static_cast<T>( ans );
         };
 
         std::shared_ptr<std::any> forward_cache = std::make_shared<std::any>();
 
-        return make_unary_operator( [forward_cache, _gelu]<Tensor Tsor>( Tsor const& input ) noexcept
+        return make_unary_operator( [forward_cache, _gelu]<Tensor Tsor>( Tsor const& input )
                                     {
                                         //typedef typename Tsor::value_type value_type;
                                         Tsor& ans = context_cast<Tsor>( forward_cache );
@@ -597,11 +604,11 @@ namespace ceras
                                         ans.map([_gelu](auto& x) { x = _gelu(x); });
                                         return ans;
                                     },
-                                    [_dgelu]<Tensor Tsor>( Tsor const&, Tsor const&, Tsor const& grad ) noexcept
+                                    [_dgelu]<Tensor Tsor>( Tsor const& input, Tsor const&, Tsor const& grad )
                                     {
                                         //typedef typename Tsor::value_type value_type;
-                                        Tsor ans = grad;
-                                        for_each( ans.begin(), ans.end(), [&_dgelu]( auto& x ) {  x = _dgelu(x); } );
+                                        Tsor ans = deep_copy(grad);
+                                        for_each( ans.begin(), ans.end(), input.begin(), [&_dgelu]( auto& g, auto x ) { g *= _dgelu(x); } );
                                         return ans;
                                     },
                                     "gelu"
@@ -617,7 +624,7 @@ namespace ceras
     /// @param ex Input expression.
     ///
     template< Expression Ex >
-    auto swish( Ex const& ex ) noexcept
+    auto swish( Ex const& ex )
     {
         return hadamard_product( ex, sigmoid( ex ) );
     }
@@ -626,7 +633,7 @@ namespace ceras
     /// @brief An alias name of activation \link #swish.
     ///
     template< Expression Ex >
-    auto silu( Ex const& ex ) noexcept
+    auto silu( Ex const& ex )
     {
         return swish( ex );
     }
@@ -642,7 +649,7 @@ namespace ceras
     /// \endcode
     ///
     template< Expression Ex >
-    auto crelu( Ex const& ex ) noexcept
+    auto crelu( Ex const& ex )
     {
         return concatenate(-1)( relu(ex), relu(-ex) );
     }
@@ -656,7 +663,7 @@ namespace ceras
     /// \endcode
     ///
     template< Expression Ex >
-    auto tank_shrink( Ex const& ex ) noexcept
+    auto tank_shrink( Ex const& ex )
     {
         return ex - tanh( ex );
     }
@@ -671,7 +678,7 @@ namespace ceras
     /// \endcode
     ///
     template< Expression Ex >
-    auto mish( Ex const& ex ) noexcept
+    auto mish( Ex const& ex )
     {
         return ex*tanh(softplus(ex));
     }
@@ -686,7 +693,7 @@ namespace ceras
     /// \endcode
     ///
     template< Expression Ex >
-    auto lisht( Ex const& ex ) noexcept
+    auto lisht( Ex const& ex )
     {
         return ex*tanh(ex);
     }

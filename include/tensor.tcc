@@ -7,7 +7,7 @@ namespace ceras
     /// @brief The iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto begin( Tsor const& tsor ) noexcept
+    constexpr auto begin( Tsor const& tsor )
     {
         return tsor.begin();
     }
@@ -15,7 +15,7 @@ namespace ceras
     /// @brief The iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto cbegin( Tsor const& tsor ) noexcept
+    constexpr auto cbegin( Tsor const& tsor )
     {
         return tsor.begin();
     }
@@ -24,7 +24,7 @@ namespace ceras
     /// @brief The iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto begin( Tsor& tsor ) noexcept
+    constexpr auto begin( Tsor& tsor )
     {
         return tsor.begin();
     }
@@ -33,7 +33,7 @@ namespace ceras
     /// @brief The iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto end( Tsor const& tsor ) noexcept
+    constexpr auto end( Tsor const& tsor )
     {
         return tsor.end();
     }
@@ -41,7 +41,7 @@ namespace ceras
     /// @brief The iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto cend( Tsor const& tsor ) noexcept
+    constexpr auto cend( Tsor const& tsor )
     {
         return tsor.end();
     }
@@ -50,7 +50,7 @@ namespace ceras
     /// @brief The iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto end( Tsor& tsor ) noexcept
+    constexpr auto end( Tsor& tsor )
     {
         return tsor.end();
     }
@@ -61,7 +61,7 @@ namespace ceras
     /// @brief The reverse iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto rbegin( Tsor const& tsor ) noexcept
+    constexpr auto rbegin( Tsor const& tsor )
     {
         return tsor.rbegin();
     }
@@ -69,7 +69,7 @@ namespace ceras
     /// @brief The reverse iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto crbegin( Tsor const& tsor ) noexcept
+    constexpr auto crbegin( Tsor const& tsor )
     {
         return tsor.crbegin();
     }
@@ -78,7 +78,7 @@ namespace ceras
     /// @brief The reverse iterator to the first element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto rbegin( Tsor& tsor ) noexcept
+    constexpr auto rbegin( Tsor& tsor )
     {
         return tsor.rbegin();
     }
@@ -87,7 +87,7 @@ namespace ceras
     /// @brief The reverse iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto rend( Tsor const& tsor ) noexcept
+    constexpr auto rend( Tsor const& tsor )
     {
         return tsor.rend();
     }
@@ -95,7 +95,7 @@ namespace ceras
     /// @brief The reverse iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto crend( Tsor const& tsor ) noexcept
+    constexpr auto crend( Tsor const& tsor )
     {
         return tsor.crend();
     }
@@ -104,7 +104,7 @@ namespace ceras
     /// @brief The reverse iterator to the element following the last element of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto rend( Tsor& tsor ) noexcept
+    constexpr auto rend( Tsor& tsor )
     {
         return tsor.rend();
     }
@@ -113,7 +113,7 @@ namespace ceras
     /// @brief The reference to the first element in the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto front( Tsor& tsor ) noexcept
+    constexpr auto front( Tsor& tsor )
     {
         return tsor.front();
     }
@@ -122,7 +122,7 @@ namespace ceras
     /// @brief The reference to the first element in the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto front( Tsor const& tsor ) noexcept
+    constexpr auto front( Tsor const& tsor )
     {
         return tsor.front();
     }
@@ -131,7 +131,7 @@ namespace ceras
     /// @brief The reference to the last element in the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto back( Tsor& tsor ) noexcept
+    constexpr auto back( Tsor& tsor )
     {
         return tsor.back();
     }
@@ -140,7 +140,7 @@ namespace ceras
     /// @brief The reference to the last element in the tensor.
     ///
     template< Tensor Tsor >
-    constexpr auto back( Tsor const& tsor ) noexcept
+    constexpr auto back( Tsor const& tsor )
     {
         return tsor.back();
     }
@@ -151,7 +151,7 @@ namespace ceras
     /// @brief Checks if the container has elements.
     ///
     template< Tensor Tsor >
-    [[nodiscard]] constexpr bool empty( Tsor const& tsor ) noexcept
+    [[nodiscard]] constexpr bool empty( Tsor const& tsor )
     {
         return tsor.empty();
     }
@@ -161,7 +161,7 @@ namespace ceras
     /// @brief Number of elements in the tensor.
     ///
     template< Tensor Tsor >
-    constexpr unsigned long size( Tsor const& tsor ) noexcept
+    constexpr unsigned long size( Tsor const& tsor )
     {
         return tsor.size();
     }
@@ -171,7 +171,7 @@ namespace ceras
     /// @brief Dimension of the tensor.
     ///
     template< Tensor Tsor >
-    constexpr unsigned long ndim( Tsor const& tsor ) noexcept
+    constexpr unsigned long ndim( Tsor const& tsor )
     {
         return tsor.ndim();
     }
@@ -181,7 +181,7 @@ namespace ceras
     /// @brief Reset all emements in the tensor
     ///
     template< Tensor Tsor >
-    constexpr unsigned long reset( Tsor& tsor, typename Tsor::value_type val=0 ) noexcept
+    constexpr unsigned long reset( Tsor& tsor, typename Tsor::value_type val=0 )
     {
         return tsor.reset( val );
     }
@@ -191,7 +191,7 @@ namespace ceras
     /// @brief Shape of the tensor
     ///
     template< Tensor Tsor >
-    constexpr auto shape( Tsor const& tsor ) noexcept
+    constexpr auto shape( Tsor const& tsor )
     {
         return tsor.shape();
     }
@@ -200,7 +200,7 @@ namespace ceras
     /// @brief A deep copy of the tensor
     ///
     template< Tensor Tsor >
-    constexpr auto deep_copy( Tsor const& tsor ) noexcept
+    constexpr auto deep_copy( Tsor const& tsor )
     {
         return tsor.deep_copy();
     }
@@ -210,7 +210,7 @@ namespace ceras
     /// @brief Resize the tensor to a new shape. Size of the tensor might change.
     ///
     template< Tensor Tsor >
-    constexpr auto resize( Tsor& tsor, std::vector<unsigned long> const& new_shape ) noexcept
+    constexpr auto resize( Tsor& tsor, std::vector<unsigned long> const& new_shape )
     {
         return tsor.resize( new_shape );
     }
@@ -220,7 +220,7 @@ namespace ceras
     /// @brief Resize the tensor to a new shape. Size of the tensor remains the same as before.
     ///
     template< Tensor Tsor >
-    constexpr auto reshape( Tsor& tsor, std::vector<unsigned long> const& new_shape ) noexcept
+    constexpr auto reshape( Tsor& tsor, std::vector<unsigned long> const& new_shape )
     {
         return tsor.reshape( new_shape );
     }
@@ -229,7 +229,7 @@ namespace ceras
     /// @brief Returns pointer to the underlying array serving as element storage.
     ///
     template< Tensor Tsor >
-    constexpr auto data( Tsor const& tsor ) noexcept
+    constexpr auto data( Tsor const& tsor )
     {
         return tsor.data();
     }
@@ -238,7 +238,7 @@ namespace ceras
     /// @brief Returns pointer to the underlying array serving as element storage.
     ///
     template< Tensor Tsor >
-    constexpr auto data( Tsor& tsor ) noexcept
+    constexpr auto data( Tsor& tsor )
     {
         return tsor.data();
     }
@@ -256,7 +256,7 @@ namespace ceras
     /// @brief Cast to a new underlying type.
     ///
     template< Tensor Tsor, typename T >
-    constexpr auto as_type( Tsor const& tsor ) noexcept
+    constexpr auto as_type( Tsor const& tsor )
     {
         return tsor.template as_type<T>();
     }
@@ -300,8 +300,14 @@ namespace ceras
 
 
     template <Tensor Tsor>
-    Tsor broadcast_tensor( Tsor const& tsor, std::vector<unsigned long> const& new_shape ) noexcept
+    Tsor broadcast_tensor( Tsor const& tsor, std::vector<unsigned long> const& new_shape )
     {
+        if(new_shape.size()<tsor.ndim()) throw std::invalid_argument("broadcast reduces rank");
+        checked_elements(new_shape);
+        for(std::size_t i=0;i<tsor.ndim();++i) {
+            auto old=tsor.shape()[i],next=new_shape[new_shape.size()-tsor.ndim()+i];
+            if(old!=1 && old!=next)throw std::invalid_argument("incompatible broadcast extent");
+        }
         // case of same shapes
         if ( tsor.shape() == new_shape )
             return tsor;
@@ -333,9 +339,9 @@ namespace ceras
 
         // [headings..][1][tailings...] <- updated_shape
         // [headings..][x][tailings...] <- new_shape
-        unsigned long const headings = std::accumulate( updated_shape.begin(), updated_shape.begin()+dim_to_expand, 1UL, []( auto x, auto y ) noexcept { return x*y; } );
+        unsigned long const headings = std::accumulate( updated_shape.begin(), updated_shape.begin()+dim_to_expand, 1UL, []( auto x, auto y ) { return x*y; } );
         unsigned long const repeats = new_shape[dim_to_expand];
-        unsigned long const tailings = std::accumulate( updated_shape.begin()+dim_to_expand, updated_shape.end(), 1UL, []( auto x, auto y ) noexcept { return x*y; } );
+        unsigned long const tailings = std::accumulate( updated_shape.begin()+dim_to_expand, updated_shape.end(), 1UL, []( auto x, auto y ) { return x*y; } );
 
         std::vector<unsigned long> expanded_shape = updated_shape;
         expanded_shape[dim_to_expand] = new_shape[dim_to_expand];
@@ -382,7 +388,7 @@ namespace ceras
     /// @return Broadcasted shape of \ref shape_a and \ref shape_b.
     ///
     ///
-    inline std::vector<unsigned long> broadcast_shape( std::vector<unsigned long> const& shape_a, std::vector<unsigned long> const& shape_b ) noexcept
+    inline std::vector<unsigned long> broadcast_shape( std::vector<unsigned long> const& shape_a, std::vector<unsigned long> const& shape_b )
     {
         if (shape_a == shape_b)
             return shape_a;
@@ -414,7 +420,7 @@ namespace ceras
                 continue;
             }
 
-            better_assert( dim_a == dim_b, fmt::format("broadcasting: expecting same dimension, but got dim_a = {}, dim_b = {}, while shape_a={}, shape_b={}", dim_a, dim_b, shape_a, shape_b) );
+            if(dim_a!=dim_b) throw std::invalid_argument("incompatible broadcast shapes");
             ans.push_back( dim_a );
         }
 
@@ -428,6 +434,11 @@ namespace ceras
     template< typename T > requires std::floating_point<T>
     void gemm_cpu( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* __restrict__ C )
     {
+        checked_multiply(checked_multiply(m,n),sizeof(T));checked_multiply(checked_multiply(n,k),sizeof(T));
+        checked_multiply(checked_multiply(m,k),sizeof(T));
+        if(!m||!k)return;
+        if(!C || (n && (!A||!B)))throw std::invalid_argument("null GEMM buffer");
+
         auto a_view = view_2d{ A, m, n, a_transposed };
         auto b_view = view_2d{ B, n, k, b_transposed };
         auto c_view = view_2d{ C, m, k };
@@ -457,67 +468,10 @@ namespace ceras
     }
 
     // this function is used to update the threshod 'cuda_gemm_threshold' defined in '../config.hpp', only considering float case
-    inline void update_cuda_gemm_threshold()
-    {
-        if constexpr( cuda_mode == 0 )
-        {
-            cuda_gemm_threshold = std::numeric_limits<unsigned long>::max(); // very larger threshold to stop from using CUDA
-        }
-        else
-        {
-            //warm-up GPU
-            {
-                auto A = tensor<float>({128, 128});
-                auto B = tensor<float>({128, 128});
-                auto C = tensor<float>({128, 128});
-                cuda_gemm( A.data(), false, B.data(), false, 128, 128, 128, C.data() );
-            }
-
-            if constexpr ( cblas_mode )
-            {
-                unsigned long dim = 16;
-                unsigned long increasement = 16;
-
-                while ( true )
-                {
-                    auto A = tensor<float>( {dim*dim,} );
-                    auto B = tensor<float>( {dim*dim,} );
-                    auto C = tensor<float>( {dim*dim,} );
-                    unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
-                    unsigned long t_cpu = time_it( [&](){ cblas_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
-
-                    if ( t_cpu > t_gpu ) break;
-
-                    dim += increasement;
-                }
-
-                cuda_gemm_threshold = dim * dim * dim;
-                std::cout << "Obtained cuda_gemm_threshold with cblas dim: "<< dim << std::endl;
-                // 48 for CPU-CBLAS mode with i7-7700HQ
-            }
-            else
-            {
-                unsigned long dim = 16;
-                unsigned long increasement = 16;
-
-                while ( true )
-                {
-                    auto A = tensor<float>( {dim*dim,} );
-                    auto B = tensor<float>( {dim*dim,} );
-                    auto C = tensor<float>( {dim*dim,} );
-                    unsigned long t_gpu = time_it( [&](){ cuda_gemm( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
-                    unsigned long t_cpu = time_it( [&](){ gemm_cpu( A.data(), false, B.data(), false, dim, dim, dim, C.data() ); });
-
-                    if ( t_cpu > t_gpu ) break;
-
-                    dim += increasement;
-                }
-
-                cuda_gemm_threshold = dim * dim * dim;
-                std::cout << "Obtained cuda_gemm_threshold with CPU dim: "<< dim << std::endl;
-                // 96 for CPU mode with i7-7700HQ
-            }
-        }
+    // Compatibility reset: automatic calibration is removed. Set a threshold
+    // explicitly after measuring, or call the selected backend directly.
+    inline void update_cuda_gemm_threshold() {
+        cuda_gemm_threshold = std::numeric_limits<unsigned long>::max();
     }
 
     // C <= A * B
@@ -525,12 +479,11 @@ namespace ceras
     template< typename T > requires std::floating_point<T>
     void gemm( T const* A, bool a_transposed, T const* B, bool b_transposed, unsigned long m, unsigned long n, unsigned long k, T* __restrict__ C )
     {
-        if ( cuda_gemm_threshold == 0 ) // global variable defined in config.h
-            update_cuda_gemm_threshold();
+        checked_multiply(m,n); checked_multiply(n,k); checked_multiply(m,k);
 
         if constexpr( cuda_mode )
         {
-            unsigned long const operations = m * n * k;
+            auto const operations = checked_multiply(checked_multiply(m,n),k);
 
             if ( operations >= cuda_gemm_threshold )
                 cuda_gemm( A, a_transposed, B, b_transposed, m, n, k, C );
@@ -575,24 +528,24 @@ namespace ceras
     // [ 5, 6 ]                [ 4, 7 ]
     //
     template< Tensor Tsor >
-    Tsor add( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor add( Tsor const& lhs, Tsor const& rhs )
     {
         auto const& broadcasted_shape = broadcast_shape( lhs.shape(), rhs.shape() );
-        auto llhs = broadcast_tensor( lhs, broadcasted_shape );
+        auto llhs = broadcast_tensor( lhs, broadcasted_shape ).deep_copy();
         auto const& rrhs = broadcast_tensor( rhs, broadcasted_shape );
 
-        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) noexcept { x += y; } );
+        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) { x += y; } );
         return llhs;
     }
 
     template< Tensor Tsor >
-    Tsor operator + ( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator + ( Tsor const& lhs, Tsor const& rhs )
     {
         return add( lhs, rhs );
     }
 
     template< Tensor Tsor >
-    Tsor operator + ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator + ( typename Tsor::value_type const& lhs, Tsor const& rhs )
     {
         auto ans = rhs.deep_copy();
         ans.map( [lhs]( auto& v ){ v += lhs; } );
@@ -600,31 +553,31 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor operator + ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    Tsor operator + ( Tsor const& lhs, typename Tsor::value_type const& rhs )
     {
         return rhs + lhs;
     }
 
     template< Tensor Tsor >
-    Tsor minus( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor minus( Tsor const& lhs, Tsor const& rhs )
     {
         auto const& broadcasted_shape = broadcast_shape( lhs.shape(), rhs.shape() );
-        auto llhs = broadcast_tensor( lhs, broadcasted_shape );
+        auto llhs = broadcast_tensor( lhs, broadcasted_shape ).deep_copy();
         auto const& rrhs = broadcast_tensor( rhs, broadcasted_shape );
 
-        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) noexcept { x -= y; } );
+        for_each( llhs.begin(), llhs.end(), rrhs.begin(), []( auto& x, auto const& y ) { x -= y; } );
         return llhs;
         //return add( lhs, -rhs );
     }
 
     template< Tensor Tsor >
-    Tsor operator - ( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator - ( Tsor const& lhs, Tsor const& rhs )
     {
         return minus( lhs, rhs );
     }
 
     template< Tensor Tsor >
-    Tsor operator - ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator - ( typename Tsor::value_type const& lhs, Tsor const& rhs )
     {
         auto ans = rhs.deep_copy();
         ans.map( [lhs]( auto& v ){ v = lhs - v; } );
@@ -632,7 +585,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor operator - ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    Tsor operator - ( Tsor const& lhs, typename Tsor::value_type const& rhs )
     {
         auto ans = lhs.deep_copy();
         ans.map( [rhs]( auto& v ){ v -= rhs; } );
@@ -640,7 +593,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor operator * ( typename Tsor::value_type const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator * ( typename Tsor::value_type const& lhs, Tsor const& rhs )
     {
         auto ans = rhs.deep_copy();
         ans.map( [lhs]( auto& v ){ v *= lhs; } );
@@ -648,13 +601,13 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor operator * ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    Tsor operator * ( Tsor const& lhs, typename Tsor::value_type const& rhs )
     {
         return rhs * lhs;
     }
 
     template< Tensor Tsor >
-    Tsor operator / ( Tsor const& lhs, typename Tsor::value_type const& rhs ) noexcept
+    Tsor operator / ( Tsor const& lhs, typename Tsor::value_type const& rhs )
     {
         auto ans = lhs.deep_copy();
         ans.map( [rhs]( auto& v ){ v /= rhs; } );
@@ -669,7 +622,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    void multiply( Tsor const& lhs, Tsor const& rhs, Tsor& ans ) noexcept
+    void multiply( Tsor const& lhs, Tsor const& rhs, Tsor& ans )
     {
         if ( 1 == lhs.ndim() )
             return multiply( reshape( lhs, {1UL, lhs.size()} ), rhs, ans );
@@ -697,7 +650,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor multiply( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor multiply( Tsor const& lhs, Tsor const& rhs )
     {
         Tsor ans;
         multiply( lhs, rhs, ans );
@@ -705,14 +658,14 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor operator * ( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor operator * ( Tsor const& lhs, Tsor const& rhs )
     {
         return multiply( lhs, rhs );
     }
 
     // caution: only valid for channel last case
     template< Tensor Tsor >
-    Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor elementwise_product( Tsor const& lhs, Tsor const& rhs )
     {
         unsigned long const l_size = lhs.size();
         unsigned long const r_size = rhs.size();
@@ -732,13 +685,13 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor hadamard_product( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor hadamard_product( Tsor const& lhs, Tsor const& rhs )
     {
         return elementwise_product( lhs, rhs );
     }
 
     template< Tensor Tsor >
-    Tsor elementwise_divide( Tsor const& lhs, Tsor const& rhs ) noexcept
+    Tsor elementwise_divide( Tsor const& lhs, Tsor const& rhs )
     {
         better_assert( lhs.shape() == rhs.shape(), "Shape not match!" );
         Tsor ans{ lhs.shape() };
@@ -774,6 +727,7 @@ namespace ceras
     template< Tensor Tsor >
     Tsor reduce_mean( Tsor const& tsor )
     {
+        if(tsor.empty()) throw std::invalid_argument("mean of empty tensor");
         auto ans = reduce_sum( tsor );
         ans /= tsor.size();
         return ans;
@@ -828,7 +782,7 @@ namespace ceras
     {
         std::normal_distribution<T> distribution( mean, stddev );
         tensor<T,A> ans{ shape };
-        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
+        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_engine()); } );
         return ans;
     }
 
@@ -841,7 +795,7 @@ namespace ceras
         {
             for ( ;; )
             {
-                T x = distribution(random_generator);
+                T x = distribution(random_engine());
                 if ( x >= lower && x <= upper )
                 {
                     v = x;
@@ -861,7 +815,7 @@ namespace ceras
         for ( auto idx : range( ans.size() ) ) // Note: cannot parallel here
         {
             long const v = static_cast<long>(tsor[idx]);
-            ans[idx] = distribution( random_generator, std::poisson_distribution<long>::param_type(v) );
+            ans[idx] = distribution( random_engine(), std::poisson_distribution<long>::param_type(v) );
         }
         return ans;
     }
@@ -871,7 +825,7 @@ namespace ceras
     {
         std::uniform_real_distribution<T> distribution( min, max );
         tensor<T,A> ans{ shape };
-        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_generator); } );
+        std::generate( ans.data(), ans.data()+ans.size(), [&distribution](){ return distribution(random_engine()); } );
         return ans;
     }
 
@@ -912,7 +866,7 @@ namespace ceras
     }
 
     template< Tensor Tsor >
-    Tsor concatenate( Tsor const& lhs, Tsor const& rhs, unsigned long axis=0 ) noexcept
+    Tsor concatenate( Tsor const& lhs, Tsor const& rhs, unsigned long axis=0 )
     {
         if ( lhs.ndim() < rhs.ndim() )
             return concatenate( rhs, lhs, axis );
@@ -1003,11 +957,12 @@ namespace ceras
     auto max( Tsor const& tsor )
     {
         typedef typename Tsor::value_type value_type;
-        better_assert( tsor.size() != 0, "tensor::max error: input tensor should not be empty!" );
-        if ( tsor.size() == 0 ) return value_type{0};
-        value_type ans = std::numeric_limits<value_type>::min();
-        for ( auto idx : range( tsor.size() ) )
-            ans = std::max( tsor[idx], ans );
+        if (tsor.empty()) throw std::invalid_argument("empty maximum");
+        value_type ans = tsor[0];
+        for (auto value:tsor) {
+            if constexpr(std::floating_point<value_type>) if(std::isnan(value)) return value;
+            ans=std::max(ans,value);
+        }
         return ans;
     }
 
@@ -1021,11 +976,12 @@ namespace ceras
     auto min( Tsor const& tsor )
     {
         typedef typename Tsor::value_type value_type;
-        better_assert( tsor.size() != 0, "tensor::min error: input tensor should not be empty!" );
-        if ( tsor.size() == 0 ) return value_type{0};
-        value_type ans = std::numeric_limits<value_type>::max();
-        for ( auto idx : range( tsor.size() ) )
-            ans = std::min( tsor[idx], ans );
+        if (tsor.empty()) throw std::invalid_argument("empty minimum");
+        value_type ans = tsor[0];
+        for (auto value:tsor) {
+            if constexpr(std::floating_point<value_type>) if(std::isnan(value)) return value;
+            ans=std::min(ans,value);
+        }
         return ans;
     }
 
@@ -1071,18 +1027,16 @@ namespace ceras
     Tsor softmax( Tsor const& tsor )
     {
         typedef typename Tsor::value_type value_type;
-        better_assert( !tsor.empty(), "softmax argument is an empty tensor. " );
+        if(tsor.empty() || !tsor.ndim()) throw std::invalid_argument("softmax requires nonempty rows");
         Tsor ans = tsor.deep_copy();
-        unsigned long const last_dim = *(tsor.shape().rbegin());
-        unsigned long const rem_dim = tsor.size() / last_dim;
-        view_2d<value_type> mat{ ans.data(), rem_dim, last_dim };
-        for ( auto idx : range( rem_dim ) )
-        {
-            value_type const mx = *std::max_element( mat[idx], mat[idx+1] );
-            for_each( mat[idx], mat[idx+1], [mx]( auto& v ){ v -= mx; } );
-            value_type const ac = std::accumulate( mat[idx], mat[idx+1], value_type{0}, []( value_type init, value_type val ){ return init + std::exp(val); } );
-            for_each( mat[idx], mat[idx+1], [ac]( auto& v ){ v = std::exp(v) / (ac+eps); } );
-        }
+        auto width=tsor.shape().back(), rows=tsor.size()/width;
+        parallel([&](unsigned long row) {
+            auto first=ans.data()+row*width;
+            auto mx=*std::max_element(first,first+width);
+            value_type total=0;
+            for(unsigned long i=0;i<width;++i){first[i]=std::exp(first[i]-mx);total+=first[i];}
+            for(unsigned long i=0;i<width;++i)first[i]/=total;
+        },0UL,rows,std::max(1UL,parallel_min_work/width));
         return ans;
     }
 
@@ -1105,12 +1059,12 @@ namespace ceras
     }
 
     template< Tensor Tsor, typename Function >
-    Tsor reduce( Tsor const& ts, unsigned long axis, typename Tsor::value_type const& init, Function const& func, bool keepdims=false ) noexcept
+    Tsor reduce( Tsor const& ts, unsigned long axis, typename Tsor::value_type const& init, Function const& func, bool keepdims=false )
     {
-        if ( ts.empty() ) return ts;
+        if ( ts.empty() ) throw std::invalid_argument("empty reduction");
 
         axis = (axis == static_cast<unsigned long>( -1 )) ? ts.ndim()-1 : axis;
-        better_assert( axis < ts.ndim(), "Error with tensor::reduce, input axis ", axis, " is too large for a tensor with ", ts.ndim(), " dimensions." );
+        if (axis >= ts.ndim()) throw std::out_of_range("reduction axis");
 
         std::vector<unsigned long> _shape = ts.shape();
         unsigned long const pres = std::reduce( _shape.begin(), _shape.begin()+axis, 1Ul, []( unsigned long x, unsigned long y ){ return x*y; } );
@@ -1125,8 +1079,9 @@ namespace ceras
             for ( auto jdx : range( post ) )
             {
                 auto start = ts.begin() + idx * post * n + jdx;
-                stride_iterator si{ start, static_cast<std::int64_t>(post) };
-                *itor++ = std::reduce( si, si+n, init, func );
+                auto value=init;
+                for(unsigned long i=0;i<n;++i)value=func(value,start[i*post]);
+                *itor++=value;
             }
 
         if ( !keepdims )
@@ -1140,22 +1095,23 @@ namespace ceras
     }
 
     template <Tensor Tsor>
-    Tsor sum( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor sum( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
         return reduce( ts, axis, typename Tsor::value_type{0}, []( auto const& a, auto const& b ){ return a+b; }, keepdims );
     }
 
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
-    Tsor mean( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor mean( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
         typedef typename Tsor::value_type value_type;
         axis = ( axis == static_cast<unsigned long>( -1 ) ) ? ts.ndim()-1 : axis;
         auto const& _shape = ts.shape();
+        if (axis >= ts.ndim() || ts.empty()) throw std::invalid_argument("invalid mean reduction");
         return reduce( ts, axis, value_type{0}, []( auto const& a, auto const& b ){ return a+b; }, keepdims ) / static_cast<value_type>( _shape[axis] );
     }
 
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
-    Tsor variance( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor variance( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
         Tsor x = mean( ts, axis, true );
         x = x - ts;
@@ -1164,7 +1120,7 @@ namespace ceras
     }
 
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
-    Tsor standard_deviation( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor standard_deviation( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
         Tsor x = variance( ts, axis, keepdims );
         for_each( x.begin(), x.end(), [](auto& v){ v = std::sqrt(v); } );
@@ -1172,32 +1128,38 @@ namespace ceras
     }
 
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
-    typename Tsor::value_type var( Tsor const& ts ) noexcept
+    typename Tsor::value_type var( Tsor const& ts )
     {
         auto x = ts - mean(ts);
         return std::inner_product( x.begin(), x.end(), x.begin(), typename Tsor::value_type{0} );
     }
 
     template <Tensor Tsor> requires std::floating_point<typename Tsor::value_type>
-    typename Tsor::value_type std( Tsor const& ts ) noexcept
+    typename Tsor::value_type std( Tsor const& ts )
     {
         return std::sqrt( var(ts) );
     }
 
     template <Tensor Tsor>
-    Tsor max( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor max( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
-        return reduce( ts, axis, std::numeric_limits<typename Tsor::value_type>::min(), []( auto const& a, auto const& b ){ return a > b ? a : b; }, keepdims );
+        using V=typename Tsor::value_type;
+        V identity=std::numeric_limits<V>::lowest();
+        if constexpr(std::floating_point<V>) identity=-std::numeric_limits<V>::infinity();
+        return reduce(ts,axis,identity,[](V a,V b){if constexpr(std::floating_point<V>) if(std::isnan(a)||std::isnan(b)) return std::numeric_limits<V>::quiet_NaN(); return std::max(a,b);},keepdims);
     }
 
     template <Tensor Tsor>
-    Tsor min( Tsor const& ts, unsigned long axis, bool keepdims=false ) noexcept
+    Tsor min( Tsor const& ts, unsigned long axis, bool keepdims=false )
     {
-        return reduce( ts, axis, std::numeric_limits<typename Tsor::value_type>::max(), []( auto const& a, auto const& b ){ return a < b ? a : b; }, keepdims );
+        using V=typename Tsor::value_type;
+        V identity=std::numeric_limits<V>::max();
+        if constexpr(std::floating_point<V>) identity=std::numeric_limits<V>::infinity();
+        return reduce(ts,axis,identity,[](V a,V b){if constexpr(std::floating_point<V>) if(std::isnan(a)||std::isnan(b)) return std::numeric_limits<V>::quiet_NaN(); return std::min(a,b);},keepdims);
     }
 
     template < typename T, typename A=default_allocator<T> > requires std::floating_point<T>
-    tensor<T,A> linspace( T start, T stop, unsigned long num, bool endpoint=true ) noexcept
+    tensor<T,A> linspace( T start, T stop, unsigned long num, bool endpoint=true )
     {
         better_assert( num > 1, "tensor::linspace: expecting number larger than 1, but got ", num );
 
@@ -1214,33 +1176,48 @@ namespace ceras
     template<class _Tp, class _CharT, class _Traits, class _Alloc>
     std::basic_istream<_CharT, _Traits>& read_tensor(std::basic_istream<_CharT, _Traits>& __is, tensor<_Tp, _Alloc>& __x)
     {
-        better_assert( __is.good(), "Error with the istream!" );
-
-        // read the first line to extract shape
+        // Parse into an independent owner. Stream failures never modify the target.
         std::vector<unsigned long> shape;
-        {
-            std::string s_shape;
-            std::getline( __is, s_shape );
-            std::stringstream ss( s_shape );
-            std::copy( std::istream_iterator<unsigned long>( ss ), std::istream_iterator<unsigned long>(), std::back_inserter( shape ) );
+        std::string shape_line, values_line;
+        auto bounded_line = [&](std::string& line) {
+            char ch;
+            while (__is.get(ch)) {
+                if (ch == '\n') return true;
+                if (line.size() >= tensor_io_limits.max_line_bytes) return false;
+                line.push_back(ch);
+            }
+            return !line.empty();
+        };
+        auto fail = [&]() -> std::basic_istream<_CharT, _Traits>& {
+            __is.setstate(std::ios::failbit); return __is;
+        };
+        if (!bounded_line(shape_line) || !bounded_line(values_line)) return fail();
+        std::istringstream dims(shape_line);
+        std::string token;
+        while (dims >> token) {
+            if (shape.size() >= tensor_io_limits.max_rank || token.empty() || token[0]=='-') return fail();
+            unsigned long d=0;
+            auto [end, ec] = std::from_chars(token.data(), token.data()+token.size(), d);
+            if (ec != std::errc{} || end != token.data()+token.size()) return fail();
+            shape.push_back(d);
         }
-
-        // read data
-        std::vector< _Tp > buff;
-        {
-            std::string cache;
-            std::getline( __is, cache );
-            std::stringstream ss( cache );
-            std::copy( std::istream_iterator< _Tp >( ss ), std::istream_iterator< _Tp >(), std::back_inserter( buff ) );
+        if (shape.empty()) return fail();
+        std::size_t count;
+        try { count=checked_elements(shape); }
+        catch (std::length_error const&) { return fail(); }
+        if (count > tensor_io_limits.max_elements || count > tensor_io_limits.max_bytes/sizeof(_Tp)) return fail();
+        tensor<_Tp, _Alloc> parsed{shape};
+        std::istringstream values(values_line);
+        for (std::size_t i=0;i<count;++i) {
+            if constexpr (std::is_integral_v<_Tp> && sizeof(_Tp)==1) {
+                int v;
+                if (!(values >> v) || v < std::numeric_limits<_Tp>::lowest() || v > std::numeric_limits<_Tp>::max()) return fail();
+                parsed[i]=static_cast<_Tp>(v);
+            } else if (!(values >> parsed[i])) return fail();
         }
-
-        // copy and return
-        tensor<_Tp, _Alloc> ans{ shape };
-        __x.resize( shape );
-        {
-            better_assert( __x.size() == buff.size(), "tensor::loadtxt: shape suggests size of ", __x.size(), " but got ", buff.size() );
-            std::copy( buff.begin(), buff.end(), __x.begin() );
-        }
+        values >> std::ws;
+        if (!values.eof()) return fail();
+        __x = std::move(parsed);
 
         return __is;
     }
@@ -1259,7 +1236,7 @@ namespace ceras
             __os << "\n";
         }
         {//write data
-            std::copy( __x.begin(), __x.end(), std::ostream_iterator<_Tp>{ __os, " " } );
+            for (auto const& value : __x) __os << +value << " ";
         }
         __os << "\n";
 
@@ -1283,6 +1260,7 @@ namespace ceras
         tensor<T, A> ans;
         std::ifstream ifs{ file_name };
         read_tensor( ifs, ans );
+        if (ifs.fail()) throw std::runtime_error("Invalid tensor file: " + file_name);
         ifs.close();
         return ans;
     }

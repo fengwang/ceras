@@ -7,7 +7,7 @@
 
 ----
 
-__Ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20 and header-only.
+__Ceras__ is yet another deep learning engine aiming to reinvent Keras, in C++20. The numerical core is header-only; image I/O links the optional `ceras::image` target.
 
 <div align="center">
 
@@ -36,6 +36,17 @@ What I cannot create, I do not understand. -- Richard Feynman
 ----
 
 ## Getting Started
+
+The maintained build and regression suite use CMake:
+
+```sh
+cmake --preset cpu-debug
+cmake --build --preset cpu-debug
+ctest --preset cpu-debug --output-on-failure --no-tests=error
+```
+
+See the [2026 migration guide](docs/migration-20261002.md) for changed training normalization, image linking, allocator compatibility, execution contexts, and backend selection. The [implementation evidence](docs/implementation-20261002.md) tracks the review repairs.
+
 
 A `model` is a way to organize layers. Here is an example to build a sequential model.
 

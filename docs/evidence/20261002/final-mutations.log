@@ -1,0 +1,31 @@
+-- The CXX compiler identification is GNU 16.2.1
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/feng-cache/ceras-mutations-816yzky8/build
+[ 20%] Building CXX object CMakeFiles/ceras_image.dir/src/image.cpp.o
+[ 40%] Linking CXX static library libceras_image.a
+[ 40%] Built target ceras_image
+[ 60%] Building CXX object CMakeFiles/ceras_regression.dir/test/image_other.cc.o
+[ 80%] Building CXX object CMakeFiles/ceras_regression.dir/test/regression.cc.o
+[100%] Linking CXX executable ceras_regression
+[100%] Built target ceras_regression
+Detected mean: FAIL: actual=0.000000 expected=0.166667
+[ 40%] Built target ceras_image
+[ 60%] Building CXX object CMakeFiles/ceras_regression.dir/test/regression.cc.o
+[ 80%] Linking CXX executable ceras_regression
+[100%] Built target ceras_regression
+Detected optimizers: FAIL: actual=2.000000 expected=1.600000
+[ 40%] Built target ceras_image
+[ 60%] Building CXX object CMakeFiles/ceras_regression.dir/test/image_other.cc.o
+[ 80%] Building CXX object CMakeFiles/ceras_regression.dir/test/regression.cc.o
+[100%] Linking CXX executable ceras_regression
+[100%] Built target ceras_regression
+Detected parse: FAIL: oversized input accepted

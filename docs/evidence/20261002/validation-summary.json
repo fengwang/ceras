@@ -1,0 +1,42 @@
+{
+  "cpu-debug": {
+    "passed": 31,
+    "failed": 0
+  },
+  "cpu-release": {
+    "passed": 32,
+    "failed": 0
+  },
+  "clang-debug": {
+    "passed": 31,
+    "failed": 0
+  },
+  "clang-release": {
+    "passed": 31,
+    "failed": 0
+  },
+  "cblas-release": {
+    "passed": 31,
+    "failed": 0
+  },
+  "tsan": {
+    "passed": 3,
+    "failed": 0
+  },
+  "asan-ubsan-debug": {
+    "passed": 31,
+    "failed": 0
+  },
+  "asan-ubsan-release": {
+    "passed": 31,
+    "failed": 0
+  },
+  "cuda-release": {
+    "passed": 32,
+    "failed": 0
+  },
+  "cpp26": {
+    "passed": 31,
+    "failed": 0
+  }
+}

@@ -9,49 +9,49 @@ namespace ceras
 {
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr mean_squared_logarithmic_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr mean_squared_logarithmic_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return sum_reduce( square( minus(log( value{1.0} + clip(eps)(lhs_ex) ), log( value{1.0} + clip(eps)(rhs_ex) ))) );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr squared_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr squared_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return sum_reduce( square( minus(lhs_ex, rhs_ex)) );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr mean_squared_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr mean_squared_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return mean_reduce( square( minus(lhs_ex, rhs_ex)) );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr mse( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr mse( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return mean_squared_error( lhs_ex, rhs_ex );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr abs_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr abs_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return sum_reduce( abs( minus(lhs_ex, rhs_ex)) );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr mean_absolute_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr mean_absolute_error( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return mean_reduce( abs( minus(lhs_ex, rhs_ex)) );
     };
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr mae( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr mae( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return mean_absolute_error( lhs_ex, rhs_ex );
     };
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr cross_entropy( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr cross_entropy( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return negative( sum_reduce( hadamard_product( lhs_ex, log(rhs_ex) ) ) );
     }
@@ -60,64 +60,55 @@ namespace ceras
     {
         struct cross_entropy_loss_context
         {
-            template< std::floating_point T >
-            auto make_forward( T label_smoothing_factor ) const noexcept
-            {
-                return [label_smoothing_factor]<Tensor Tsor>( Tsor const& ground_truth_input, Tsor const& prediction_input ) noexcept
-                {
-                   Tsor sm = softmax( prediction_input );
-                   typedef typename Tsor::value_type value_type;
-                   typename Tsor::value_type ans{0};
-                   unsigned long const n = *(ground_truth_input.shape().rbegin());
-                   value_type const _c0 = label_smoothing_factor / (n-1);
-                   value_type const _c1 = value_type{1} - label_smoothing_factor;
-
-                   for ( auto idx : range( ground_truth_input.size() ) )
-                   {
-                       value_type const v = ground_truth_input[idx] > eps ? _c1 : _c0;
-                       ans -= v * std::log( std::max( static_cast<typename Tsor::value_type>(eps), sm[idx] ) );
-                       //ans -= ground_truth_input[idx] * std::log( std::max( static_cast<typename Tsor::value_type>(eps), sm[idx] ) );
-                   }
-                   auto result = as_tensor<typename Tsor::value_type, typename Tsor::allocator>(ans/(*(ground_truth_input.shape().begin())));
-                   return result;
+            template<Tensor Tsor> static void validate(Tsor const& target,Tsor const& logits) {
+                if(target.shape()!=logits.shape() || target.ndim()!=2 || target.empty() || target.shape()[1]<2)
+                    throw std::invalid_argument("cross entropy requires matching nonempty [batch,classes] tensors with at least two classes");
+            }
+            template<std::floating_point T> auto make_forward(T smoothing) const {
+                if(smoothing<0 || smoothing>1) throw std::invalid_argument("label smoothing outside [0,1]");
+                return [=]<Tensor Tsor>(Tsor const& target,Tsor const& logits) {
+                    validate(target,logits);
+                    using V=typename Tsor::value_type;
+                    auto batch=target.shape()[0],width=target.shape()[1];V result=0;
+                    for(unsigned long row=0;row<batch;++row) {
+                        auto first=logits.data()+row*width;
+                        V maximum=*std::max_element(first,first+width),total=0;
+                        for(unsigned long col=0;col<width;++col)total+=std::exp(first[col]-maximum);
+                        V normalizer=std::log(total);
+                        for(unsigned long col=0;col<width;++col) {
+                            V y=target[row*width+col];V t=(1-smoothing)*y+smoothing*(1-y)/(width-1);
+                            result-=t*(first[col]-maximum-normalizer);
+                        }
+                    }
+                    return as_tensor<V,typename Tsor::allocator>(result/batch);
                 };
             }
-
-            template< std::floating_point T >
-            auto make_backward( T label_smoothing_factor) const noexcept
-            {
-                return [=]<Tensor Tsor>( Tsor const& ground_truth_input, Tsor const& prediction_input, [[maybe_unused]]Tsor const& output_data, [[maybe_unused]]Tsor const& grad ) noexcept
-                {
-                   // In our implementation, the grad is always 1, unless this layer is nested contributing to a combined weighted loss
-                   typedef typename Tsor::value_type value_type;
-                   value_type const factor = grad[0]; // the shape of grad is {1,}
-
-                   unsigned long const n = *(ground_truth_input.shape().rbegin());
-                   value_type const _c0 = label_smoothing_factor / (n-1);
-                   value_type const _c1 = value_type{1} - label_smoothing_factor;
-
-                   Tsor ground_truth_gradient = ground_truth_input;
-
-                   //Tsor sm = softmax( prediction_input ) - ground_truth_input;
-                   //return std::make_tuple( ground_truth_gradient*factor, sm*factor );
-
-                   Tsor sm = softmax( prediction_input );
-                   for ( auto idx : range( ground_truth_input.size() ) )
-                   {
-                       value_type const v = ground_truth_gradient[idx] > eps ? _c1 : _c0;
-                       sm[idx] = factor * (sm[idx] - v );
-                   }
-
-                   return std::make_tuple( ground_truth_gradient*factor, sm );
+            template<std::floating_point T> auto make_backward(T smoothing) const {
+                return [=]<Tensor Tsor>(Tsor const& target,Tsor const& logits,Tsor const&,Tsor const& grad) {
+                    validate(target,logits);
+                    using V=typename Tsor::value_type;
+                    auto batch=target.shape()[0],width=target.shape()[1];V factor=grad[0]/batch;
+                    Tsor dy(target.shape()),dx=softmax(logits);
+                    for(unsigned long row=0;row<batch;++row) {
+                        auto first=logits.data()+row*width;
+                        V maximum=*std::max_element(first,first+width),total=0,weight=0;
+                        for(unsigned long col=0;col<width;++col) {total+=std::exp(first[col]-maximum);V y=target[row*width+col];weight+=(1-smoothing)*y+smoothing*(1-y)/(width-1);}
+                        V normalizer=std::log(total);
+                        for(unsigned long col=0;col<width;++col) {
+                            auto i=row*width+col;V y=target[i],t=(1-smoothing)*y+smoothing*(1-y)/(width-1);
+                            dx[i]=factor*(dx[i]*weight-t);
+                            dy[i]=-factor*(1-smoothing-smoothing/(width-1))*(first[col]-maximum-normalizer);
+                        }
+                    }
+                    return std::make_tuple(dy,dx);
                 };
             }
-
-        };//struct cross_entropy_loss_context
+        };
 
     }//anonymous namespace
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr binary_cross_entropy_loss( Lhs_Expression const& ground_truth, Rhs_Expression const& prediction ) noexcept
+    auto constexpr binary_cross_entropy_loss( Lhs_Expression const& ground_truth, Rhs_Expression const& prediction )
     {
         auto ones = ones_like( ground_truth );
         auto error = negative( hadamard_product( ground_truth, log(prediction) ) + hadamard_product( (ones - ground_truth), log(ones - prediction) ) );
@@ -127,13 +118,13 @@ namespace ceras
 
     // beware: do not apply softmax activation before this layer, as this loss is softmax+xentropy already
     template < Expression Lhs_Expression, Expression Rhs_Expression, std::floating_point F=float >
-    auto constexpr cross_entropy_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, F label_smoothing_factor=0.0 ) noexcept
+    auto constexpr cross_entropy_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex, F label_smoothing_factor=0.0 )
     {
         return make_binary_operator( cross_entropy_loss_context{}.make_forward( label_smoothing_factor ), cross_entropy_loss_context{}.make_backward( label_smoothing_factor ), "CrossEntropyLoss" )( lhs_ex, rhs_ex );
     }
 
     template < Expression Lhs_Expression, Expression Rhs_Expression >
-    auto constexpr hinge_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+    auto constexpr hinge_loss( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
     {
         return mean_reduce( maximum( value{0.0f}, value{1.0f} - hadamard_product(lhs_ex, rhs_ex) ) );
     }

@@ -1,0 +1,23 @@
+gemm: exit 0: gemm: PASS
+
+storage: exit 1: FAIL: resize corrupts alias
+
+parse: exit -6: [1;49;31mAssertion Failure[0m: '[0;49;32m__x.size() == buff.size()[0m' in File: [0;49;33minclude/./././././tensor.tcc[0m in Line: [0;49;34m1241[0m tensor::loadtxt: shape suggests size of 1 but got 3
+
+image: exit -6: free(): invalid size
+
+parallel: exit 1: FAIL: parallel range violated
+
+graph: exit -6: [1;49;31mAssertion Failure[0m: '[0;49;32minput.size()[0m' in File: [0;49;33minclude/./activation.hpp[0m in Line: [0;49;34m302[0m relu::backward: empty input.
+
+softmax: exit 1: FAIL: actual=0.250000 expected=0.000000
+
+mean: exit 1: FAIL: actual=0.500000 expected=0.166667
+
+elu: exit 1: FAIL: actual=1.000000 expected=0.000000
+
+gelu: exit 1: FAIL: actual=0.500000 expected=0.000000
+
+maximum: exit 1: FAIL: actual=0.000000 expected=-1.000000
+
+lifetime: exit 1: FAIL: session retains dead variable

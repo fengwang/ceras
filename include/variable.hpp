@@ -28,7 +28,10 @@ namespace ceras
     {
         Tsor data_;
         Tsor gradient_;
-        std::vector<Tsor> contexts_;
+        std::vector<Tsor> contexts_; // compatibility only; optimizers own their state
+        bool trainable_=true;
+        typename Tsor::value_type l1_=0, l2_=0;
+        bool synchronized_=true;
     };
 
     template< typename Float > requires std::floating_point<Float>
@@ -39,7 +42,7 @@ namespace ceras
         value_type l2_;
         bool synchronized_;
 
-        constexpr regularizer( value_type l1=0.0, value_type l2=0.0, bool synchronized=false ) noexcept : l1_{l1}, l2_{l2}, synchronized_{synchronized} {}
+        constexpr regularizer( value_type l1=0.0, value_type l2=0.0, bool synchronized=false ) : l1_{l1}, l2_{l2}, synchronized_{synchronized} {}
     };
 
     template< Tensor Tsor >
@@ -49,12 +52,11 @@ namespace ceras
         typedef typename tensor_type::value_type value_type;
 
         std::shared_ptr<variable_state<tensor_type>> state_;
-        regularizer<value_type> regularizer_;
-        bool trainable_;
 
-        variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}, regularizer_{l1, l2, true}, trainable_{trainable}
+        variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}
         {
             (*this).state_ = std::make_shared<variable_state<tensor_type>>();
+            state_->trainable_=trainable; state_->l1_=l1; state_->l2_=l2;
             (*((*this).state_)).data_ = data;
             (*((*this).state_)).gradient_ = tensor_type{ data.shape() };
 
@@ -63,28 +65,29 @@ namespace ceras
         }
 
         //variable() = delete;
-        variable() noexcept {}
+        variable() : state_{std::make_shared<variable_state<tensor_type>>()} {}
         variable( variable const& other ) = default;
         variable( variable && ) = default;
         variable& operator=( variable&&) = default;
         variable& operator=( variable const& other) = default;
 
-        tensor_type const forward() noexcept// const
+        tensor_type const forward()// const
         {
+            get_default_session<tensor_type>().remember(*this);
             auto& state = *((*this).state_);
 
             if ( learning_phase == 1 )
             {
                 typedef typename tensor_type::value_type value_type;
                 state.gradient_.reset( value_type{0} );
-                regularizer_.synchronized_ = false; // mark changes
+                state_->synchronized_ = false; // mark changes
             }
             return state.data_;
         }
 
-        void backward( auto const& grad ) noexcept
+        void backward( auto const& grad )
         {
-            if (!trainable_) return;
+            if (!state_->trainable_) return;
 
             auto& state = *((*this).state_);
             {
@@ -94,24 +97,24 @@ namespace ceras
             state.gradient_ += grad; // collecting all the gradients from its children nodes, will be called mulitple times in a single backward pass
 
             // apply regularizers
-            if (!(regularizer_.synchronized_)) // in case of multiple invoke of this method in a same backward pass
+            if (!(state_->synchronized_)) // in case of multiple invoke of this method in a same backward pass
             {
-                if ( regularizer_.l1_ >= eps ) // l1 regularizer
+                if ( state_->l1_ >= eps ) // l1 regularizer
                 {
-                    value_type const factor = regularizer_.l1_;
+                    value_type const factor = state_->l1_;
                     for_each( state.data_.begin(), state.data_.end(), state.gradient_.begin(), [factor]( value_type d, value_type& g ){ g += (d >= value_type{0}) ? factor : -factor; } );
                 }
-                if ( regularizer_.l2_ >= eps ) // l2 regularizer
+                if ( state_->l2_ >= eps ) // l2 regularizer
                 {
-                    value_type const factor = regularizer_.l2_;
+                    value_type const factor = state_->l2_;
                     for_each( state.data_.begin(), state.data_.end(), state.gradient_.begin(), [factor]( value_type d, value_type& g ){ g += value_type{2} * d * factor; } );
                 }
 
-                regularizer_.synchronized_ = true;
+                state_->synchronized_ = true;
             }
         }
 
-        std::vector<std::size_t> shape() const noexcept
+        std::vector<std::size_t> shape() const
         {
             auto& state = *((*this).state_);
             return state.data_.shape();
@@ -159,29 +162,29 @@ namespace ceras
             gradient().reset();
         }
 
-        bool trainable() const noexcept { return trainable_; }
-        bool& trainable() noexcept { return trainable_; }
+        bool trainable() const { return state_->trainable_; }
+        bool& trainable() { return state_->trainable_; }
 
-        void trainable( bool t ) { trainable_ = t; }
+        void trainable( bool t ) { state_->trainable_ = t; }
 
         value_type l1_regularizer() const
         {
-            return regularizer_.l1_;
+            return state_->l1_;
         }
 
         value_type& l1_regularizer()
         {
-            return regularizer_.l1_;
+            return state_->l1_;
         }
 
         value_type l2_regularizer() const
         {
-            return regularizer_.l2_;
+            return state_->l2_;
         }
 
         value_type& l2_regularizer()
         {
-            return regularizer_.l2_;
+            return state_->l2_;
         }
 
     };//struct variable
@@ -199,7 +202,7 @@ namespace ceras
     concept Variable = is_variable_v<T>;
 
     template< Variable Var >
-    bool operator == ( Var const& lhs, Var const& rhs ) noexcept
+    bool operator == ( Var const& lhs, Var const& rhs )
     {
         return lhs.id_ == rhs.id_;
     }
@@ -212,7 +215,7 @@ namespace ceras
 
         std::string var_name = fmt::format( "variable_{}", var.id() );
         std::vector<std::string> var_code = data_code;
-        //variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}, regularizer_{l1, l2, true}, trainable_{trainable}
+        //variable( tensor_type const& data, value_type l1=value_type{0}, value_type l2=value_type{0}, bool trainable=true ) : enable_id<variable<tensor_type>, "Variable">{}
         var_code.emplace_back( fmt::format( "ceras::variable<ceras::tensor<{}>> {}( {}/*tensor*/, {}/*l1 regularizer*/, {}/*l2 regularizer*/, {}/*trainable*/ );", type2string<typename Var::value_type>(), var_name, data_name, var.l1_regularizer(), var.l2_regularizer(), var.trainable()  ) );
 
         return std::forward_as_tuple( var_name, var_code );

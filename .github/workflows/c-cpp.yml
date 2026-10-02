@@ -1,25 +1,67 @@
-name: C/C++ CI
-
+name: C++ regression gates
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
-
+    branches: [main]
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  cpu:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+        configuration: [Debug, Release]
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up GCC
-      uses: egor-tensin/setup-gcc@v1
-      with:
-        version: 12
-        platform: x64
-    - name: make test CI
-      run: make CXX=g++-12 ci && ./bin/test_ci
-    - name: make mnist_minimal
-      run: make CXX=g++-12 mnist && ./bin/test_mnist
-
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build/ci -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+      - run: cmake --build build/ci --parallel 2
+      - run: ctest --test-dir build/ci --output-on-failure --no-tests=error
+      - run: cmake --build build/ci --target fuzz-smoke
+  sanitizers:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan-ubsan-debug, asan-ubsan-release, tsan]
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }}
+      - if: matrix.preset != 'tsan'
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure --no-tests=error
+      - if: matrix.preset == 'tsan'
+        run: ctest --preset tsan -L concurrency --output-on-failure --no-tests=error
+  blas-and-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libblas-dev
+      - run: cmake --preset cblas-release -DCERAS_MNIST_DIR="$GITHUB_WORKSPACE/dataset/mnist"
+      - run: cmake --build --preset cblas-release
+      - run: ctest --preset cblas-release --output-on-failure --no-tests=error
+  nightly:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake --preset asan-ubsan-debug && cmake --build --preset asan-ubsan-debug
+      - run: CERAS_FUZZ_ROUNDS=100000 build/asan-ubsan-debug/ceras_verification parsers
+      - run: python3 tools/check_regression_mutations.py
+  cuda:
+    # Opt in only after provisioning a runner with CUDA/cuBLAS and a GPU.
+    if: vars.CERAS_CUDA_RUNNER == 'enabled' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, linux, cuda]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake --preset cuda-release && cmake --build --preset cuda-release
+      - run: ctest --preset cuda-release --output-on-failure --no-tests=error
