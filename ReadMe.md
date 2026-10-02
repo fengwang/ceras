@@ -1,5 +1,3 @@
-![](./assets/ceras.logo.png)
-
 
 # Ceras
 
@@ -1069,9 +1067,6 @@ The full code is [here](./test/optimize.cc).
 + mimicking Tensorflow::Keras grammar, as close as possible
 + recurrent operations
 + provide a single-header file
-
-## [Documentation](https://fengwang.github.io/ceras/files.html)
-
 
 
 ## License
