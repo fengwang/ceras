@@ -56,7 +56,10 @@ namespace ceras
         template < typename Function, typename InputIterator1, typename... InputIteratorn >
         constexpr Function _for_each( Function f, InputIterator1 begin1, InputIterator1 end1, InputIteratorn... beginn )
         {
-            return _for_each_n( f, std::distance( begin1, end1 ), begin1, beginn... );
+            if(begin1==end1) return f;
+            auto count=std::distance(begin1,end1);
+            if(count<0) throw std::invalid_argument("reversed for_each range");
+            return _for_each_n( f, count, begin1, beginn... );
         }
 
         struct dummy { };

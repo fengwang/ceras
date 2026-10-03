@@ -1,0 +1,184 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "cpu-debug",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/cpu-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CERAS_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "cpu-release",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/cpu-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CERAS_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "asan-ubsan-debug",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/asan-ubsan-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CERAS_BUILD_TESTS": "ON",
+        "CERAS_ENABLE_ASAN": "ON",
+        "CERAS_ENABLE_UBSAN": "ON"
+      }
+    },
+    {
+      "name": "asan-ubsan-release",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/asan-ubsan-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CERAS_BUILD_TESTS": "ON",
+        "CERAS_ENABLE_ASAN": "ON",
+        "CERAS_ENABLE_UBSAN": "ON"
+      }
+    },
+    {
+      "name": "tsan",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/tsan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CERAS_BUILD_TESTS": "ON",
+        "CERAS_ENABLE_TSAN": "ON"
+      }
+    },
+    {
+      "name": "cblas-release",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/cblas-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CERAS_BUILD_TESTS": "ON",
+        "CERAS_ENABLE_CBLAS": "ON"
+      }
+    },
+    {
+      "name": "cuda-release",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/cuda-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CERAS_BUILD_TESTS": "ON",
+        "CERAS_ENABLE_CUDA": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "cpu-debug",
+      "configurePreset": "cpu-debug",
+      "jobs": 2
+    },
+    {
+      "name": "cpu-release",
+      "configurePreset": "cpu-release",
+      "jobs": 2
+    },
+    {
+      "name": "asan-ubsan-debug",
+      "configurePreset": "asan-ubsan-debug",
+      "jobs": 2
+    },
+    {
+      "name": "asan-ubsan-release",
+      "configurePreset": "asan-ubsan-release",
+      "jobs": 2
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan",
+      "jobs": 2
+    },
+    {
+      "name": "cblas-release",
+      "configurePreset": "cblas-release",
+      "jobs": 2
+    },
+    {
+      "name": "cuda-release",
+      "configurePreset": "cuda-release",
+      "jobs": 2
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "cpu-debug",
+      "configurePreset": "cpu-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "cpu-release",
+      "configurePreset": "cpu-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "asan-ubsan-debug",
+      "configurePreset": "asan-ubsan-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "asan-ubsan-release",
+      "configurePreset": "asan-ubsan-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "cblas-release",
+      "configurePreset": "cblas-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "cuda-release",
+      "configurePreset": "cuda-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    }
+  ]
+}

@@ -23,12 +23,12 @@ namespace ceras
         }
         else if constexpr (is_binary_operator_v<Ex>)
         {
-            make_trainable( ex.lhs_op_, t );
-            make_trainable( ex.rhs_op_, t );
+            make_trainable( ex.lhs_op(), t );
+            make_trainable( ex.rhs_op(), t );
         }
         else if constexpr (is_unary_operator_v<Ex>)
         {
-            make_trainable( ex.op_, t );
+            make_trainable( ex.op(), t );
         }
     }
 
@@ -49,18 +49,19 @@ namespace ceras
         }
         else if constexpr (is_place_holder_v<Ex>)
         {
-            return new_expression; // assuming only one place holder in the model
+            if (ex.id()!=old_place_holder.id()) throw std::invalid_argument("Model composition requires a single matching input");
+            return new_expression;
             //return (ex == old_place_holder) ? new_expression : ex;
         }
         else if constexpr (is_unary_operator_v<Ex>)
         {
-            return make_unary_operator( ex.forward_action_, ex.backward_action_, ex.name_, ex.output_shape_calculator_ )( replace_placeholder_with_expression( ex.op_, old_place_holder, new_expression ) );
+            return make_unary_operator( ex.forward_action(), ex.backward_action(), ex.name_, ex.output_shape_calculator(), ex.serializer() )( replace_placeholder_with_expression( ex.op(), old_place_holder, new_expression ) );
         }
         else if constexpr (is_binary_operator_v<Ex>)
         {
-            return make_binary_operator( ex.forward_action_, ex.backward_action_, ex.name_, ex.output_shape_calculator_ )
-                                       ( replace_placeholder_with_expression( ex.lhs_op_, old_place_holder, new_expression ),
-                                         replace_placeholder_with_expression( ex.rhs_op_, old_place_holder, new_expression ) );
+            return make_binary_operator( ex.forward_action(), ex.backward_action(), ex.name_, ex.output_shape_calculator(), ex.serializer() )
+                                       ( replace_placeholder_with_expression( ex.lhs_op(), old_place_holder, new_expression ),
+                                         replace_placeholder_with_expression( ex.rhs_op(), old_place_holder, new_expression ) );
         }
         else
         {
@@ -119,7 +120,7 @@ namespace ceras
             typedef typename Tsor::value_type value_type;
             value_type validation_error = 0;
 
-            learning_phase = 0; // for different behaviours in normalization and drop-out layers
+            learning_phase_scope phase{0};
 
             for ( auto l : tq::trange( loops ) )
             {
@@ -132,7 +133,6 @@ namespace ceras
                 validation_error += error;
             }
 
-            learning_phase = 1; // for different behaviours in normalization and drop-out layers
 
             return validation_error / loops;
         }
@@ -192,7 +192,7 @@ namespace ceras
             std::vector<value_type> training_errors;
             std::vector<value_type> validation_errors;
 
-            learning_phase = 1; // for different behaviours in normalization and drop-out layers
+            learning_phase_scope phase{1};
 
             for ( auto e : range( epoch ) )
             {
@@ -246,7 +246,7 @@ namespace ceras
         template< Tensor Tsor >
         auto train_on_batch( Tsor const& input, Tsor const& output )
         {
-            learning_phase = 1; // for different behaviours in normalization and drop-out layers
+            learning_phase_scope phase{1};
             auto& s = get_default_session<Tsor>();//.get();
             s.bind( input_place_holder_, input );
             s.bind( ground_truth_place_holder_, output );
@@ -265,7 +265,7 @@ namespace ceras
         }
 
         template< Expression Exp >
-        auto operator()( Exp const& ex ) const noexcept
+        auto operator()( Exp const& ex ) const
         {
             return model_( ex );
         }
@@ -305,12 +305,12 @@ namespace ceras
         ///
         /// Returns the input layer of the model, which is a place_holder.
         ///
-        input_layer_type input() const noexcept { return place_holder_; }
+        input_layer_type input() const { return place_holder_; }
 
         ///
         /// Returns the output layer of the model.
         ///
-        output_layer_type output() const noexcept { return expression_; }
+        output_layer_type output() const { return expression_; }
 
         ///
         /// @param place_holder The input layer of the model, a place holder.
@@ -345,7 +345,7 @@ namespace ceras
         template< Tensor Tsor>
         auto predict( Tsor const& input_tensor )
         {
-            learning_phase = 0; // for different behaviours in normalization and drop-out layers
+            learning_phase_scope phase{0};
 
             //session<Tsor> s;
             auto& s = get_default_session<Tsor>();//.get();
@@ -353,7 +353,7 @@ namespace ceras
 
             auto ans = s.run( expression_ );
 
-            learning_phase = 1; // restore learning phase
+
 
             return ans;
         }
@@ -379,7 +379,7 @@ namespace ceras
         /// @endcode
         ///
         template< Expression Exp >
-        auto operator()( Exp const& ex ) const noexcept
+        auto operator()( Exp const& ex ) const
         {
             return replace_placeholder_with_expression( expression_, place_holder_, ex );
         }
@@ -433,7 +433,7 @@ namespace ceras
         /// Print the model summary to console or to a file.
         /// @param file_name The file to save the summary. If empty, the summary will be printed to console. Empty by default.
         ///
-        void summary(std::string const& file_name=std::string{}) const noexcept
+        void summary(std::string const& file_name=std::string{}) const
         {
             auto g = computation_graph( expression_ );
 

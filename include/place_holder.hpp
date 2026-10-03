@@ -41,6 +41,7 @@ namespace ceras
         {
             (*this).state_ = std::make_shared<place_holder_state<Tsor>>();
             (*((*this).state_)).shape_hint_ = shape_hint;
+            if (shape_hint.empty()) throw std::invalid_argument("empty placeholder shape");
             if ( shape_hint[0] != -1UL )
             {
                 auto & si = (*((*this).state_)).shape_hint_;
@@ -62,20 +63,20 @@ namespace ceras
             return (*((*this).state_)).data_;
         }
 
-        void reset() noexcept
+        void reset()
         {
             (*((*this).state_)).data_ = Tsor{};
             (*((*this).state_)).shape_hint_ = std::vector<unsigned long>{{-1UL}};
         }
 
-        void backward( auto ) const noexcept { }
+        void backward( auto ) const { }
 
-        void shape( std::vector< unsigned long> const& shape_hint ) noexcept
+        void shape( std::vector< unsigned long> const& shape_hint )
         {
             (*((*this).state_)).shape_hint_ = shape_hint;
         }
 
-        std::vector<unsigned long> shape() const noexcept
+        std::vector<unsigned long> shape() const
         {
             if ( ! (*((*this).state_)).data_.empty() )
                 return (*((*this).state_)).data_.shape();
@@ -118,7 +119,7 @@ namespace ceras
     template< Place_Holder Ph >
     bool operator > ( Ph const& lhs, Ph const& rhs )
     {
-        return lhs.id() < rhs.id();
+        return lhs.id() > rhs.id();
     }
 
     template< Place_Holder Ph >

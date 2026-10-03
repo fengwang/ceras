@@ -1,185 +1,51 @@
-#ifndef RKQSLRMXHSPFGGPQCNEPEBAKCXHNXQPMXETNTTXBWEWBIQHVCFRKRFSFMLXXXRYFUKHEXYIGL
-#define RKQSLRMXHSPFGGPQCNEPEBAKCXHNXQPMXETNTTXBWEWBIQHVCFRKRFSFMLXXXRYFUKHEXYIGL
-
-#include "./tensor.hpp"
-#include "./includes.hpp"
-#include "./utils/better_assert.hpp"
-#include "./utils/for_each.hpp"
-
-namespace ceras::dataset
-{
-
-    namespace mnist
-    {
-        ///
-        /// Loads the MNIST dataset.
-        /// @param path Path where to cache the dataset locally. Default to "./dataset/mnist", should be updated if running the program somewhere else.
-        /// @return A tuple of 4 tensors: x_train, y_train, x_test, y_test. x_train, x_test: uint8 arrays of grayscale image data with shapes (num_samples, 28, 28).
-        ///  y_train, y_test: uint8 tensor of digit labels (integers in range 0-9) with shapes (num_samples, 10). Note: for digit 0, the corresponding array is `[[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`.
-        ///
-        /// Example usage:
-        /// @code{.cpp}
-        /// auto const& [x_train, y_train, x_test, y_test] = ceras::dataset::mnist::load_data("/home/feng/dataset/mnist");
-        /// @endcode
-        ///
-        /// Yann LeCun and Corinna Cortes hold the copyright of MNIST dataset, which is available under the terms of the Creative Commons Attribution-Share Alike 3.0 license.
-        ///
-        inline auto load_data( std::string const& path = std::string{"./dataset/mnist"} )
-        {
-            std::string const training_image_path = path + std::string{"/train-images-idx3-ubyte"};
-            std::string const training_label_path = path + std::string{"/train-labels-idx1-ubyte"};
-            std::string const test_image_path = path + std::string{"/t10k-images-idx3-ubyte"};
-            std::string const test_label_path = path + std::string{"/t10k-labels-idx1-ubyte"};
-
-            auto const& load_binary = []( std::string const& filename )
-            {
-                std::ifstream ifs( filename, std::ios::binary );
-                better_assert( ifs.good(), "Failed to load data from ", filename );
-                std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
-                std::vector<std::uint8_t> ans( buff.size() );
-                std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
-                return ans;
-            };
-
-            auto const& extract_image = []( std::vector<std::uint8_t> const& image_data )
-            {
-                unsigned long const offset = 16;
-                unsigned long const samples = (image_data.size()-offset) / (28*28);
-                tensor<std::uint8_t> ans{ {samples, 28UL, 28UL} };
-                std::copy( image_data.begin()+offset, image_data.end(), ans.data() );
-                return ans;
-            };
-
-            auto const& extract_label = []( std::vector<std::uint8_t> const& label_data )
-            {
-                unsigned long const offset = 8;
-                unsigned long const samples = label_data.size() - offset;
-                auto ans = zeros<std::uint8_t>({samples, 10});
-                auto ans_2d = matrix_view<std::uint8_t>{ ans.data(), samples, 10 };
-                for ( auto idx : range( samples ) )
-                    ans_2d[idx][label_data[idx+offset]] = 1;
-                return ans;
-            };
-
-            return std::make_tuple( extract_image(load_binary(training_image_path)),
-                                    extract_label(load_binary(training_label_path)),
-                                    extract_image(load_binary(test_image_path)),
-                                    extract_label(load_binary(test_label_path)) );
-        }
-    }
-
-    namespace fashion_mnist
-    {
-        ///
-        /// Loads the fashion-MNIST dataset.
-        /// @param path Path where to cache the dataset locally. Default to "./dataset/fashion_mnist", should be updated if running the program somewhere else.
-        /// @return A tuple of 4 tensors: x_train, y_train, x_test, y_test. x_train, x_test: uint8 arrays of grayscale image data with shapes (num_samples, 28, 28).
-        ///  y_train, y_test: uint8 tensor of digit labels (integers in range 0-9) with shapes (num_samples, 10). Note: for digit 0, the corresponding array is `[[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]`.
-        ///
-        /// Label   Description
-        ///  0      T-shirt/top
-        ///  1      Trouser
-        ///  2      Pullover
-        ///  3      Dress
-        ///  4      Coat
-        ///  5      Sandal
-        ///  6      Shirt
-        ///  7      Sneaker
-        ///  8      Bag
-        ///  9      Ankle boot
-        ///
-        /// Example usage:
-        /// @code{.cpp}
-        /// auto const& [x_train, y_train, x_test, y_test] = ceras::dataset::mnist::load_data("/home/feng/dataset/fashion_mnist");
-        /// @endcode
-        ///
-        /// The copyright for Fashion-MNIST is held by Zalando SE. Fashion-MNIST is licensed under the MIT license.
-        ///
-        inline auto load_data( std::string const& path = std::string{"./dataset/fashion_mnist"} )
-        {
-            std::string const training_image_path = path + std::string{"/train-images-idx3-ubyte"};
-            std::string const training_label_path = path + std::string{"/train-labels-idx1-ubyte"};
-            std::string const test_image_path = path + std::string{"/t10k-images-idx3-ubyte"};
-            std::string const test_label_path = path + std::string{"/t10k-labels-idx1-ubyte"};
-
-            auto const& load_binary = []( std::string const& filename )
-            {
-                std::ifstream ifs( filename, std::ios::binary );
-                better_assert( ifs.good(), "Failed to load data from ", filename );
-                std::vector<char> buff{ ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) };
-                std::vector<std::uint8_t> ans( buff.size() );
-                std::copy( buff.begin(), buff.end(), reinterpret_cast<char*>( ans.data() ) );
-                return ans;
-            };
-
-            auto const& extract_image = []( std::vector<std::uint8_t> const& image_data )
-            {
-                unsigned long const offset = 16;
-                unsigned long const samples = (image_data.size()-offset) / (28*28);
-                tensor<std::uint8_t> ans{ {samples, 28UL, 28UL} };
-                std::copy( image_data.begin()+offset, image_data.end(), ans.data() );
-                return ans;
-            };
-
-            auto const& extract_label = []( std::vector<std::uint8_t> const& label_data )
-            {
-                unsigned long const offset = 8;
-                unsigned long const samples = label_data.size() - offset;
-                auto ans = zeros<std::uint8_t>({samples, 10});
-                auto ans_2d = matrix_view<std::uint8_t>{ ans.data(), samples, 10 };
-                for ( auto idx : range( samples ) )
-                    ans_2d[idx][label_data[idx+offset]] = 1;
-                return ans;
-            };
-
-            return std::make_tuple( extract_image(load_binary(training_image_path)),
-                                    extract_label(load_binary(training_label_path)),
-                                    extract_image(load_binary(test_image_path)),
-                                    extract_label(load_binary(test_label_path)) );
-        }//load_data
-
-    }//fashion_mnist
-
-
-#if 0
-    namespace cifar10
-    {
-        inline auto load_data( std::string const& path = std::string{} )
-        {
-        }
-    }
-
-    namespace cifar100
-    {
-        inline auto load_data( std::string const& path = std::string{} )
-        {
-        }
-    }
-
-    namespace imdb
-    {
-        inline auto load_data( std::string const& path = std::string{} )
-        {
-        }
-    }
-
-    namespace reuters
-    {
-        inline auto load_data( std::string const& path = std::string{} )
-        {
-        }
-    }
-
-    namespace boston_housing
-    {
-        inline auto load_data( std::string const& path = std::string{} )
-        {
-        }
-    }
-#endif
-
-
-}//namespace ceras
-
-#endif//RKQSLRMXHSPFGGPQCNEPEBAKCXHNXQPMXETNTTXBWEWBIQHVCFRKRFSFMLXXXRYFUKHEXYIGL
-
+#pragma once
+#include "tensor.hpp"
+namespace ceras::dataset {
+namespace detail {
+inline std::vector<std::uint8_t> read_idx(std::string const& path) {
+    std::ifstream in(path, std::ios::binary | std::ios::ate);
+    if (!in) throw std::runtime_error("Cannot open IDX file: " + path);
+    auto length=in.tellg();
+    if (length<0 || static_cast<std::uintmax_t>(length)>tensor_io_limits.max_bytes)
+        throw std::length_error("IDX file exceeds input limit");
+    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(length));
+    in.seekg(0);
+    if (!in.read(reinterpret_cast<char*>(bytes.data()), bytes.size()))
+        throw std::runtime_error("Truncated IDX file: " + path);
+    return bytes;
+}
+inline std::uint32_t field(std::span<std::uint8_t const> b, std::size_t offset) {
+    if (offset>b.size() || b.size()-offset<4) throw std::invalid_argument("Short IDX header");
+    std::uint32_t v=0;
+    for(std::size_t i=0;i<4;++i) v=(v<<8)|b[offset+i];
+    return v;
+}
+inline auto load_pair(std::string const& images, std::string const& labels) {
+    auto x=read_idx(images),y=read_idx(labels);
+    if(field(x,0)!=2051 || field(y,0)!=2049 || field(x,8)!=28 || field(x,12)!=28)
+        throw std::invalid_argument("Invalid IDX magic or dimensions");
+    auto n=field(x,4);
+    if(field(y,4)!=n || x.size()-16!=checked_multiply(n,784) || y.size()-8!=n)
+        throw std::invalid_argument("IDX count/payload mismatch");
+    for(std::size_t i=8;i<y.size();++i)
+        if(y[i]>=10) throw std::invalid_argument("IDX label outside [0,9]");
+    tensor<std::uint8_t> input({n,28,28});
+    tensor<std::uint8_t> target({n,10});
+    std::copy(x.begin()+16,x.end(),input.begin());
+    for(std::size_t i=0;i<n;++i) target[i*10+y[i+8]]=1;
+    return std::make_pair(input,target);
+}
+inline auto load(std::string const& path) {
+    auto [x,y]=load_pair(path+"/train-images-idx3-ubyte",path+"/train-labels-idx1-ubyte");
+    auto [tx,ty]=load_pair(path+"/t10k-images-idx3-ubyte",path+"/t10k-labels-idx1-ubyte");
+    return std::make_tuple(x,y,tx,ty);
+}
+}
+namespace mnist {
+// Images: [samples,28,28]; labels: one-hot [samples,10].
+inline auto load_data(std::string const& path="./dataset/mnist") { return detail::load(path); }
+}
+namespace fashion_mnist {
+inline auto load_data(std::string const& path="./dataset/fashion_mnist") { return detail::load(path); }
+}
+}

@@ -4,6 +4,7 @@
 #include "./backend/cblas.hpp"
 #include "./backend/cuda.hpp"
 #include "./config.hpp"
+#include "./utils/checked_size.hpp"
 #include "./includes.hpp"
 #include "./utils/better_assert.hpp"
 #include "./utils/cached_allocator.hpp"
@@ -20,18 +21,30 @@
 
 namespace ceras
 {
+    struct tensor_parse_limits {
+        std::size_t max_rank=64;
+        std::size_t max_elements=16*1024*1024;
+        std::size_t max_bytes=256*1024*1024;
+        std::size_t max_line_bytes=256*1024*1024;
+    };
+    inline thread_local tensor_parse_limits tensor_io_limits;
+
     ///
     /// @brief Random seed for the tensor library.
     ///
     /// To reproduce the result involving random variates such as `rand`, `normal`, `poisson`, it is necessary to fix the random seed by
     /// \code{.cpp}
-    /// random_seed=42;
+    /// seed_random(42);
     /// \endcode
     ///
-    static unsigned long random_seed = std::chrono::system_clock::now().time_since_epoch().count();
+    inline thread_local unsigned long random_seed = std::chrono::system_clock::now().time_since_epoch().count();
 
     // static random number random_generator
-    static std::mt19937 random_generator{random_seed};
+    inline thread_local std::mt19937 random_generator{random_seed};
+
+    inline thread_local std::mt19937* active_random=nullptr;
+    inline std::mt19937& random_engine() {return active_random ? *active_random : random_generator;}
+    inline void seed_random(unsigned long seed) { random_seed=seed; random_engine().seed(seed); }
 
     template< typename T >
     using default_allocator = cached_allocator<T>;
@@ -49,7 +62,7 @@ namespace ceras
 
         // TODO: with buffered_allocator
         //std::vector<unsigned long> shape_;
-        std::vector<unsigned long, buffered_allocator<unsigned long, 256>> shape_;
+        std::vector<unsigned long> shape_;
         shared_vector vector_;
 
         ///
@@ -64,13 +77,13 @@ namespace ceras
         constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape, std::initializer_list<T> init ) :
         shape_{shape.begin(), shape.end()}, vector_{std::make_shared<vector_type>(init)}
         {
-            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
+            if (vector_->size() != checked_elements(shape_)) throw std::invalid_argument("initializer count differs from shape");
         }
 
         constexpr tensor( std::initializer_list<unsigned long> shape, std::initializer_list<T> init ) :
         shape_{shape.begin(), shape.end()}, vector_{std::make_shared<vector_type>(init)}
         {
-            better_assert( (*vector_).size() == std::accumulate( shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){ return x*y; } ), "Expecting vector has same size as the shape indicates." );
+            if (vector_->size() != checked_elements(shape_)) throw std::invalid_argument("initializer count differs from shape");
         }
 
         ///
@@ -79,12 +92,12 @@ namespace ceras
         template<typename Another_Alloc>
         constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape ) :
         shape_{shape.begin(), shape.end()},
-        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}
+        vector_{std::make_shared<vector_type>(checked_elements(shape_), T{0})}
         {}
 
         constexpr tensor( std::initializer_list<unsigned long> shape ) :
         shape_{ shape.begin(), shape.end() },
-        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;} ), T{0})}
+        vector_{std::make_shared<vector_type>(checked_elements(shape_), T{0})}
         {}
 
         ///
@@ -93,14 +106,14 @@ namespace ceras
         template<typename Another_Alloc>
         constexpr tensor( std::vector<unsigned long, Another_Alloc> const& shape, T init ) :
         shape_{shape.begin(), shape.end()},
-        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
+        vector_{std::make_shared<vector_type>(checked_elements(shape_), T{0})}
         {
             std::fill( begin(), end(), init );
         }
 
         constexpr tensor( std::initializer_list<unsigned long> shape,  T init ) :
         shape_{shape.begin(), shape.end()},
-        vector_{std::make_shared<vector_type>(std::accumulate(shape_.begin(), shape_.end(), 1UL, [](auto x, auto y){return x*y;}), T{0})}
+        vector_{std::make_shared<vector_type>(checked_elements(shape_), T{0})}
         {
             std::fill( begin(), end(), init );
         }
@@ -108,7 +121,7 @@ namespace ceras
         ///
         /// @brief Copy-ctor.
         ///
-        constexpr tensor( self_type const& other ) noexcept : shape_{ other.shape_ }
+        constexpr tensor( self_type const& other ) : shape_{ other.shape_ }
         {
             vector_ = other.vector_;
             (*this).id_ = other.id_;
@@ -117,7 +130,7 @@ namespace ceras
         ///
         /// @brief Move-ctor.
         ///
-        constexpr tensor( self_type && other ) noexcept : shape_{ other.shape_ }
+        constexpr tensor( self_type && other ) : shape_{ other.shape_ }
         {
             vector_ = other.vector_;
             (*this).id_ = other.id_;
@@ -126,7 +139,7 @@ namespace ceras
         ///
         /// @brief Copy-assignment.
         ///
-        constexpr self_type& operator = ( self_type const& other ) noexcept
+        constexpr self_type& operator = ( self_type const& other )
         {
             shape_ = other.shape_;
             vector_ = other.vector_;
@@ -137,7 +150,7 @@ namespace ceras
         ///
         /// @brief Move-assignment.
         ///
-        constexpr self_type& operator = ( self_type && other ) noexcept
+        constexpr self_type& operator = ( self_type && other )
         {
             shape_ = other.shape_;
             vector_ = other.vector_;
@@ -148,7 +161,7 @@ namespace ceras
         ///
         /// @brief Iterator to the first element of the tensor.
         ///
-        constexpr auto begin() noexcept
+        constexpr auto begin()
         {
             return data();
         }
@@ -156,7 +169,7 @@ namespace ceras
         ///
         /// @brief Iterator to the first element of the tensor.
         ///
-        constexpr auto begin() const noexcept
+        constexpr auto begin() const
         {
             return data();
         }
@@ -164,7 +177,7 @@ namespace ceras
         ///
         /// @brief Iterator to the first element of the tensor.
         ///
-        constexpr auto cbegin() const noexcept
+        constexpr auto cbegin() const
         {
             return begin();
         }
@@ -172,23 +185,23 @@ namespace ceras
         ///
         /// @brief Iterator to the element following the last element of the tensor.
         ///
-        constexpr auto end() noexcept
+        constexpr auto end()
         {
-            return begin() + size();
+            return size() ? begin() + size() : begin();
         }
 
         ///
         /// @brief Iterator to the element following the last element of the tensor.
         ///
-        constexpr auto end() const noexcept
+        constexpr auto end() const
         {
-            return begin() + size();
+            return size() ? begin() + size() : begin();
         }
 
         ///
         /// @brief Iterator to the element following the last element of the tensor.
         ///
-        constexpr auto cend() const noexcept
+        constexpr auto cend() const
         {
             return  end();
         }
@@ -197,7 +210,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the first element of the tensor.
         ///
-        constexpr auto rbegin() noexcept
+        constexpr auto rbegin()
         {
             return std::make_reverse_iterator( end() );
         }
@@ -205,7 +218,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the first element of the tensor.
         ///
-        constexpr auto rbegin() const noexcept
+        constexpr auto rbegin() const
         {
             return std::make_reverse_iterator( end() );
         }
@@ -213,7 +226,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the first element of the tensor.
         ///
-        constexpr auto crbegin() const noexcept
+        constexpr auto crbegin() const
         {
             return std::make_reverse_iterator( cend() );
         }
@@ -221,7 +234,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the element following the last element of the tensor.
         ///
-        constexpr auto rend() noexcept
+        constexpr auto rend()
         {
             return std::make_reverse_iterator( begin() );
         }
@@ -229,7 +242,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the element following the last element of the tensor.
         ///
-        constexpr auto rend() const noexcept
+        constexpr auto rend() const
         {
             return std::make_reverse_iterator( begin() );
         }
@@ -237,7 +250,7 @@ namespace ceras
         ///
         /// @brief Reverse iterator to the element following the last element of the tensor.
         ///
-        constexpr auto crend() const noexcept
+        constexpr auto crend() const
         {
             return std::make_reverse_iterator( cbegin() );
         }
@@ -246,7 +259,7 @@ namespace ceras
         ///
         /// @brief Number of elements in the tensor.
         ///
-        constexpr unsigned long size() const noexcept
+        constexpr unsigned long size() const
         {
             if ( !vector_ ) return 0;
             return (*vector_ ).size();
@@ -256,7 +269,7 @@ namespace ceras
         ///
         /// @brief Check if the tensor has elements.
         ///
-        [[nodiscard]] constexpr bool empty() const noexcept
+        [[nodiscard]] constexpr bool empty() const
         {
             return cbegin() == cend();
         }
@@ -281,7 +294,7 @@ namespace ceras
         ///
         /// @brief Dimension of the tensor
         ///
-        constexpr unsigned long ndim() const noexcept
+        constexpr unsigned long ndim() const
         {
             return shape_.size();
         }
@@ -289,7 +302,7 @@ namespace ceras
         ///
         /// @brief Shape of the tensor.
         ///
-        constexpr std::vector<unsigned long> const shape() const noexcept
+        constexpr std::vector<unsigned long> const shape() const
         {
             return std::vector<unsigned long>{ shape_.begin(), shape_.end() };
         }
@@ -300,13 +313,14 @@ namespace ceras
         ///
         constexpr self_type& deep_copy( self_type const& other )
         {
-            (*this).resize( other.shape() );
-            std::copy_n( other.data(), size(), (*this).data() );
+            auto replacement=other.deep_copy();
+            *this=std::move(replacement);
             return *this;
         }
 
         constexpr self_type const deep_copy() const
         {
+            if(shape_.empty() && empty()) return self_type{};
             self_type ans{ shape_ };
             std::copy_n( data(), size(), ans.data() );
             return ans;
@@ -320,12 +334,14 @@ namespace ceras
         // 1-D view
         constexpr value_type& operator[]( unsigned long idx )
         {
+            if (idx >= size()) throw std::out_of_range("tensor index");
             return *(data()+idx);
         }
 
         // 1-D view
         constexpr value_type const& operator[]( unsigned long idx ) const
         {
+            if (idx >= size()) throw std::out_of_range("tensor index");
             return *(data()+idx);
         }
 
@@ -334,11 +350,14 @@ namespace ceras
         ///
         constexpr self_type& resize( std::vector< unsigned long > const& new_shape )
         {
-            unsigned long const new_size = std::accumulate( new_shape.begin(), new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if( (*this).size() != new_size )
-                (*vector_).resize(new_size);
-            (*this).shape_.resize( new_shape.size() );
-            std::copy( new_shape.begin(), new_shape.end(), (*this).shape_.begin() );
+            auto shape = new_shape;
+            auto n = checked_elements(shape);
+            checked_multiply(n, sizeof(T));
+            if (size() != n) {
+                auto replacement = std::make_shared<vector_type>(n, T{});
+                vector_ = std::move(replacement);
+            }
+            shape_.swap(shape);
             return *this;
         }
 
@@ -354,16 +373,14 @@ namespace ceras
         constexpr self_type& reshape( std::vector<unsigned long> const& new_shape )
         {
             std::vector<unsigned long> _new_shape = new_shape;
-            if ( *(_new_shape.rbegin()) == static_cast<unsigned long>( -1 ) )
-                *(_new_shape.rbegin()) = (*this).size() / std::accumulate( _new_shape.begin(), _new_shape.end()-1, 1Ul, []( unsigned long x, unsigned long y ){ return x*y; } );
-
-            unsigned long const new_size = std::accumulate( _new_shape.begin(), _new_shape.end(), 1UL, [](auto x, auto y){ return x*y; } );
-            if ( (*this).size() != new_size ) return resize( _new_shape );
-
-            better_assert( (*this).size() == new_size, "reshape: expecting same size, but the original size is ", (*this).size(), ", and the new size is ", new_size );
-            //(*this).shape_ = _new_shape;
-            (*this).shape_.resize( _new_shape.size() );
-            std::copy( _new_shape.begin(), _new_shape.end(), (*this).shape_.begin() );
+            if (!_new_shape.empty() && _new_shape.back() == std::numeric_limits<unsigned long>::max()) {
+                _new_shape.back()=1;
+                auto known=checked_elements(_new_shape);
+                if(!known || size()%known) throw std::invalid_argument("invalid inferred extent");
+                _new_shape.back()=size()/known;
+            }
+            if(checked_elements(_new_shape)!=size()) throw std::invalid_argument("reshape changes element count; use resize");
+            shape_.swap(_new_shape);
             return *this;
         }
 
@@ -373,7 +390,7 @@ namespace ceras
         /// The pointer is such that range [data(); data() + size()) is always a valid range,
         /// even if the container is empty (data() is not dereferenceable in that case).
         ///
-        constexpr value_type* data() noexcept
+        constexpr value_type* data()
         {
             return (*vector_).data();
         }
@@ -384,7 +401,7 @@ namespace ceras
         /// The pointer is such that range [data(); data() + size()) is always a valid range,
         /// even if the container is empty (data() is not dereferenceable in that case).
         ///
-        constexpr const value_type* data() const noexcept
+        constexpr const value_type* data() const
         {
             return (*vector_).data();
         }
@@ -406,8 +423,7 @@ namespace ceras
 
         constexpr self_type& operator += ( self_type const& other )
         {
-            //better_assert( shape() == other.shape(), "Error with tensor::operator += : Shape mismatch! -- current shape is ", shape(), " and other tensor shape is ", other.shape() );
-            better_assert( shape() == other.shape(), fmt::format("Error with tensor::operator += : Shape mismatch! This shape is {}, while other shape is {}.", shape(), other.shape() ) );
+            if(shape()!=other.shape()) throw std::invalid_argument("tensor shape mismatch");
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x+y; } );
             return *this;
         }
@@ -420,6 +436,7 @@ namespace ceras
 
         constexpr self_type& operator -= ( self_type const& other )
         {
+            if(shape()!=other.shape()) throw std::invalid_argument("tensor shape mismatch");
             better_assert( shape() == other.shape(), "Error with tensor::operator -=: Shape not match!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x-y; } );
             return *this;
@@ -433,6 +450,7 @@ namespace ceras
 
         constexpr self_type& operator *= ( self_type const& other )
         {
+            if(shape()!=other.shape()) throw std::invalid_argument("tensor shape mismatch");
             better_assert( shape() == other.shape(), "Shape not match!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x*y; } );
             return *this;
@@ -446,6 +464,7 @@ namespace ceras
 
         constexpr self_type& operator /= ( self_type const& other )
         {
+            if(shape()!=other.shape()) throw std::invalid_argument("tensor shape mismatch");
             better_assert( shape() == other.shape(), "Shape not match!" );
             std::transform( data(), data()+size(), other.data(), data(), []( auto x, auto y ){ return x/y; } );
             return *this;
@@ -464,14 +483,14 @@ namespace ceras
             return  ans;
         }
 
-        constexpr value_type as_scalar() const noexcept
+        constexpr value_type as_scalar() const
         {
             better_assert( size() == 1, "Expecting tensor has a single value, but got ", size() );
             return *begin();
         }
 
         template< typename U >
-        constexpr auto as_type() const noexcept
+        constexpr auto as_type() const
         {
             tensor<U, typename std::allocator_traits<Allocator>:: template rebind_alloc<U>> ans{ (*this).shape() };
             std::copy( (*this).begin(), (*this).end(), ans.begin() );
@@ -480,7 +499,7 @@ namespace ceras
     }; // struct tensor
 
     template <typename T, typename A=default_allocator<T> >
-    constexpr tensor<T, A> as_tensor( T val ) noexcept
+    constexpr tensor<T, A> as_tensor( T val )
     {
         tensor<T, A> ans{ {1,} };
         ans[0] = val;

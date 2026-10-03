@@ -4,6 +4,11 @@
 #include "./config.hpp"
 
 #include <algorithm>
+#include <charconv>
+#include <mutex>
+#include <atomic>
+#include <span>
+#include <stdexcept>
 #include <any>
 #include <array>
 #include <cassert>
@@ -52,11 +57,8 @@
 // begin of 3rd party libraries
 //
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "./utils/3rd_party/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "./utils/3rd_party/stb_image_write.h"
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "./utils/3rd_party/stb_image_resize.h"
 
 #include "./utils/3rd_party/glob.hpp"

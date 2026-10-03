@@ -1,0 +1,53 @@
+Start testing: Oct 02 20:21 CEST
+----------------------------------------------------------
+4/31 Testing: contexts
+4/31 Test: contexts
+Command: "/workspace/github.repo/ceras/build/tsan/ceras_verification" "contexts"
+Directory: /workspace/github.repo/ceras/build/tsan
+"contexts" start time: Oct 02 20:21 CEST
+Output:
+----------------------------------------------------------
+contexts: PASS
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"contexts" end time: Oct 02 20:21 CEST
+"contexts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/31 Testing: ranges
+11/31 Test: ranges
+Command: "/workspace/github.repo/ceras/build/tsan/ceras_verification" "ranges"
+Directory: /workspace/github.repo/ceras/build/tsan
+"ranges" start time: Oct 02 20:21 CEST
+Output:
+----------------------------------------------------------
+ranges: PASS
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ranges" end time: Oct 02 20:21 CEST
+"ranges" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/31 Testing: parallel
+21/31 Test: parallel
+Command: "/workspace/github.repo/ceras/build/tsan/ceras_regression" "parallel"
+Directory: /workspace/github.repo/ceras/build/tsan
+"parallel" start time: Oct 02 20:21 CEST
+Output:
+----------------------------------------------------------
+parallel: PASS
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"parallel" end time: Oct 02 20:21 CEST
+"parallel" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 02 20:21 CEST
+
+concurrency =   0.03 sec*proc

@@ -40,12 +40,12 @@ namespace ceras
             return data().shape();
         }
 
-        tensor_type data() const noexcept
+        tensor_type data() const
         {
             return data_;
         }
 
-        tensor_type& data() noexcept
+        tensor_type& data()
         {
             return data_;
         }

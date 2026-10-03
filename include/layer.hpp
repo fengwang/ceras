@@ -48,13 +48,13 @@ namespace ceras
                                   std::vector<unsigned long> const& input_shape, std::string const& padding="valid",
                                   std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
                                   float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-                               ) noexcept
+                               )
     {
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
         better_assert( input_shape.size() ==3, "Expecting input_shape has 3 elements." );
         better_assert( strides.size() > 0, "Expecting strides at least has 1 elements." );
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex>( Ex const& ex )
         {
             unsigned long const kernel_size_x = kernel_size[0];
             unsigned long const kernel_size_y = kernel_size.size() == 2 ? kernel_size[1] : kernel_size[0];
@@ -99,13 +99,13 @@ namespace ceras
     inline constexpr auto Conv2D( unsigned long output_channels, std::vector<unsigned long> const& kernel_size, std::string const& padding="valid",
                                   std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
                                   float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-           ) noexcept
+           )
     {
 
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
         better_assert( strides.size() > 0, "Expecting strides at least has 1 elements." );
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex>( Ex const& ex )
         {
             unsigned long const kernel_size_x = kernel_size[0];
             unsigned long const kernel_size_y = kernel_size.size() == 2 ? kernel_size[1] : kernel_size[0];
@@ -124,9 +124,9 @@ namespace ceras
     inline constexpr auto Conv1D( unsigned long filters, unsigned long kernel_size, unsigned long strides=1UL, std::string const& padding="valid",
                                   unsigned long dilations=1UL, bool use_bias=true,
                                   float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-           ) noexcept
+           )
     {
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex>( Ex const& ex )
         {   // ex is of shape [bs, n, ch]
             auto ey = expand_dims( 2 )( ex ); // shape changed to [bs, n, 1, ch]
             auto conv = Conv2D( filters, {kernel_size, 1,}, padding, {strides, 1,}, {dilations, 1,}, use_bias, kernel_regularizer_l1, kernel_regularizer_l2, bias_regularizer_l1, bias_regularizer_l2 )(ey);
@@ -161,13 +161,13 @@ namespace ceras
     inline auto Conv2DTranspose(    unsigned long output_channels, std::vector<unsigned long> const& kernel_size, std::string const& padding="valid",
                                     std::vector<unsigned long> const& strides={1,1}, std::vector<unsigned long> const& dilations={1, 1}, bool use_bias=true,
                                     float kernel_regularizer_l1=0.0f, float kernel_regularizer_l2=0.0f, float bias_regularizer_l1=0.0f, float bias_regularizer_l2=0.0f
-           ) noexcept
+           )
     {
 
         better_assert( output_channels > 0, "Expecting output_channels larger than 0." );
         better_assert( kernel_size.size() > 0, "Expecting kernel_size at least has 1 elements." );
         better_assert( strides.size() > 0, "Expecting strides at least has 1 elements." );
-        return [=]<Expression Ex>( Ex const& ex ) noexcept
+        return [=]<Expression Ex>( Ex const& ex )
         {
             unsigned long const kernel_size_x = kernel_size[0];
             unsigned long const kernel_size_y = kernel_size.size() == 2 ? kernel_size[1] : kernel_size[0];
@@ -326,9 +326,9 @@ namespace ceras
     /// auto l12 = Concatenate()( l1, l2 ); // should be of shape (12, 11, 7)
     /// @endcode
     ///
-    inline auto Concatenate(unsigned long axis = -1) noexcept
+    inline auto Concatenate(unsigned long axis = -1)
     {
-        return [=]<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        return [=]<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
         {
             return concatenate( axis )( lhs_ex, rhs_ex );
         };
@@ -346,9 +346,9 @@ namespace ceras
     /// auto m = model{ input, x3 };
     /// @endcode
     ///
-    inline auto Add() noexcept
+    inline auto Add()
     {
-        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
         {
             return lhs_ex + rhs_ex;
         };
@@ -367,9 +367,9 @@ namespace ceras
     /// auto m = model{ input, x3 };
     /// @endcode
     ///
-    inline auto Subtract() noexcept
+    inline auto Subtract()
     {
-        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
         {
             return lhs_ex - rhs_ex;
         };
@@ -387,9 +387,9 @@ namespace ceras
     /// auto m = model{ input, x3 };
     /// @endcode
     ///
-    inline auto Multiply() noexcept
+    inline auto Multiply()
     {
-        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex ) noexcept
+        return []<Expression Lhs_Expression, Expression Rhs_Expression>( Lhs_Expression const& lhs_ex, Rhs_Expression const& rhs_ex )
         {
             return hadamard_product( lhs_ex, rhs_ex );
         };
@@ -399,7 +399,7 @@ namespace ceras
     /// Rectified Linear Unit activation function.
     ///
     template< Expression Ex >
-    inline auto ReLU( Ex const& ex ) noexcept
+    inline auto ReLU( Ex const& ex )
     {
         return relu( ex );
     }
@@ -407,9 +407,9 @@ namespace ceras
     ///
     /// Softmax activation function.
     ///
-    inline auto Softmax() noexcept
+    inline auto Softmax()
     {
-        return []< Expression Ex >( Ex const& ex ) noexcept
+        return []< Expression Ex >( Ex const& ex )
         {
             return softmax( ex );
         };
@@ -420,7 +420,7 @@ namespace ceras
     /// leaky relu activation function.
     ///
     template< typename T = float >
-    inline auto LeakyReLU( T const factor=0.2 ) noexcept
+    inline auto LeakyReLU( T const factor=0.2 )
     {
         return leaky_relu( factor );
     }
@@ -429,7 +429,7 @@ namespace ceras
     /// Exponential Linear Unit.
     ///
     template< typename T = float >
-    inline auto ELU( T const factor=0.2 ) noexcept
+    inline auto ELU( T const factor=0.2 )
     {
         return elu( factor );
     }
@@ -438,7 +438,7 @@ namespace ceras
     ///
     /// Reshapes inputs into the given shape.
     ///
-    inline auto Reshape( std::vector<unsigned long> const& new_shape, bool include_batch_flag=true ) noexcept
+    inline auto Reshape( std::vector<unsigned long> const& new_shape, bool include_batch_flag=true )
     {
         return reshape( new_shape, include_batch_flag );
     }
@@ -446,9 +446,9 @@ namespace ceras
     ///
     /// Flattens the input. Does not affect the batch size.
     ///
-    inline auto Flatten() noexcept
+    inline auto Flatten()
     {
-        return []<Expression Ex>( Ex const& ex ) noexcept
+        return []<Expression Ex>( Ex const& ex )
         {
             return flatten( ex );
         };
@@ -457,7 +457,7 @@ namespace ceras
     ///
     /// Max pooling operation for 2D spatial data.
     ///
-    inline auto MaxPooling2D( unsigned long stride ) noexcept
+    inline auto MaxPooling2D( unsigned long stride )
     {
         return max_pooling_2d( stride );
     }
@@ -465,7 +465,7 @@ namespace ceras
     ///
     /// Upsampling layer for 2D inputs.
     ///
-    inline auto UpSampling2D( unsigned long stride ) noexcept
+    inline auto UpSampling2D( unsigned long stride )
     {
         return up_sampling_2d( stride );
     }
@@ -474,7 +474,7 @@ namespace ceras
     /// Applies Dropout to the input.
     ///
     template< typename T >
-    inline auto Dropout( T factor ) noexcept
+    inline auto Dropout( T factor )
     {
         return drop_out( factor );
     }
@@ -482,7 +482,7 @@ namespace ceras
     ///
     /// Average pooling operation for spatial data.
     ///
-    inline auto AveragePooling2D( unsigned long stride ) noexcept
+    inline auto AveragePooling2D( unsigned long stride )
     {
         return average_pooling_2d( stride );
     }
